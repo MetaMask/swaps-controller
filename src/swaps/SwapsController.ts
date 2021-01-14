@@ -13,6 +13,7 @@ import {
   getMedianEthValueQuote,
   fetchGasPrices,
   calculateGasEstimateWithRefund,
+  fetchTopAssets,
 } from './SwapsUtil';
 import {
   Quote,
@@ -21,6 +22,7 @@ import {
   APIFetchQuotesParams,
   APIFetchQuotesMetadata,
   QuoteValues,
+  SwapsAsset,
 } from './SwapsInterfaces';
 
 const { Mutex } = require('await-semaphore');
@@ -33,6 +35,7 @@ export interface SwapsConfig extends BaseConfig {
   pollCountLimit: number;
   metaSwapAddress: string;
   fetchTokensThreshold: number;
+  fetchTopAssetsThreshold: number;
   quotePollingInterval: number;
   provider: any;
 }
@@ -43,10 +46,12 @@ export interface SwapsState extends BaseState {
   fetchParamsMetaData: APIFetchQuotesMetadata;
   topAggSavings: QuoteSavings | null;
   tokens: null | SwapsToken[];
+  topAssets: null | SwapsAsset[];
   quotesLastFetched: null | number;
   errorKey: null | SwapsError;
   topAggId: null | string;
   tokensLastFetched: number;
+  topAssetsLastFetched: number;
   customGasPrice?: string;
   isInPolling: boolean;
   isInFetch: boolean;
@@ -287,6 +292,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       pollCountLimit: 3,
       metaSwapAddress: SWAPS_CONTRACT_ADDRESS,
       fetchTokensThreshold: 1000 * 60 * 60 * 24,
+      fetchTopAssetsThreshold: 1000 * 60 * 30,
       quotePollingInterval: QUOTE_POLLING_INTERVAL,
       provider: undefined,
     };
@@ -315,8 +321,10 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       },
       topAggSavings: null,
       tokens: null,
+      topAssets: null,
       approvalTransaction: null,
       quotesLastFetched: 0,
+      topAssetsLastFetched: 0,
       errorKey: null,
       topAggId: null,
       tokensLastFetched: 0,
@@ -478,6 +486,18 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     }
   }
 
+  async fetchTopAssetsWithCache() {
+    if (!this.state.tokens || this.config.fetchTopAssetsThreshold < Date.now() - this.state.topAssetsLastFetched) {
+      const releaseLock = await this.mutex.acquire();
+      try {
+        const newTopAssets = await fetchTopAssets();
+        this.update({ topAssets: newTopAssets, topAssetsLastFetched: Date.now() });
+      } finally {
+        releaseLock();
+      }
+    }
+  }
+
   safeRefetchQuotes() {
     const { fetchParams } = this.state;
     if (!this.handle && fetchParams) {
@@ -498,7 +518,9 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       isInPolling: false,
       isInFetch: false,
       tokensLastFetched: this.state.tokensLastFetched,
+      topAssetsLastFetched: this.state.topAssetsLastFetched,
       tokens: this.state.tokens,
+      topAssets: this.state.topAssets,
       errorKey: error,
     });
   }
