@@ -14,6 +14,7 @@ import {
   fetchGasPrices,
   calculateGasEstimateWithRefund,
   fetchTopAssets,
+  fetchAggregatorMetadata,
 } from './SwapsUtil';
 import {
   Quote,
@@ -23,6 +24,7 @@ import {
   APIFetchQuotesMetadata,
   QuoteValues,
   SwapsAsset,
+  APIAggregatorMetadata,
 } from './SwapsInterfaces';
 
 const { Mutex } = require('await-semaphore');
@@ -34,6 +36,7 @@ export interface SwapsConfig extends BaseConfig {
   maxGasLimit: number;
   pollCountLimit: number;
   metaSwapAddress: string;
+  fetchAggregatorMetadataThreshold: number;
   fetchTokensThreshold: number;
   fetchTopAssetsThreshold: number;
   quotePollingInterval: number;
@@ -45,11 +48,13 @@ export interface SwapsState extends BaseState {
   fetchParams: APIFetchQuotesParams;
   fetchParamsMetaData: APIFetchQuotesMetadata;
   topAggSavings: QuoteSavings | null;
+  aggregatorMetadata: null | { [key: string]: APIAggregatorMetadata };
   tokens: null | SwapsToken[];
   topAssets: null | SwapsAsset[];
   quotesLastFetched: null | number;
   errorKey: null | SwapsError;
   topAggId: null | string;
+  aggregatorMetadataLastFetched: number;
   tokensLastFetched: number;
   topAssetsLastFetched: number;
   customGasPrice?: string;
@@ -291,6 +296,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       maxGasLimit: 2500000,
       pollCountLimit: 3,
       metaSwapAddress: SWAPS_CONTRACT_ADDRESS,
+      fetchAggregatorMetadataThreshold: 1000 * 60 * 60 * 24 * 15,
       fetchTokensThreshold: 1000 * 60 * 60 * 24,
       fetchTopAssetsThreshold: 1000 * 60 * 30,
       quotePollingInterval: QUOTE_POLLING_INTERVAL,
@@ -320,9 +326,11 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
         accountBalance: '0x',
       },
       topAggSavings: null,
+      aggregatorMetadata: null,
       tokens: null,
       topAssets: null,
       approvalTransaction: null,
+      aggregatorMetadataLastFetched: 0,
       quotesLastFetched: 0,
       topAssetsLastFetched: 0,
       errorKey: null,
@@ -492,6 +500,18 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       try {
         const newTopAssets = await fetchTopAssets();
         this.update({ topAssets: newTopAssets, topAssetsLastFetched: Date.now() });
+      } finally {
+        releaseLock();
+      }
+    }
+  }
+
+  async fetchAggregatorMetadataWithCache() {
+    if (!this.state.aggregatorMetadata || this.config.fetchAggregatorMetadataThreshold < Date.now() - this.state.aggregatorMetadataLastFetched) {
+      const releaseLock = await this.mutex.acquire();
+      try {
+        const newAggregatorMetada = await fetchAggregatorMetadata();
+        this.update({ aggregatorMetadata: newAggregatorMetada, aggregatorMetadataLastFetched: Date.now() });
       } finally {
         releaseLock();
       }
