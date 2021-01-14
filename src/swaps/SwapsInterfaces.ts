@@ -76,6 +76,7 @@ export interface APIAggregatorMetadata {
   color: string;
   title: string;
   icon: string;
+  iconPng: string;
 }
 
 interface QuoteTransaction extends Transaction {
