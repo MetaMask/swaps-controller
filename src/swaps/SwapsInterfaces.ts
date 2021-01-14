@@ -111,6 +111,7 @@ export interface QuoteSavings {
  * @property estimatedRefund - Destination token address
  * @property fetchTime - Fetch time
  * @property fee - MetaMask fee
+ * @property quoteRefreshSeconds - Refresh quotes time
  * @property gasMultiplier
  * @property aggregator - Aggregator id
  * @property aggType - Aggregator type
@@ -139,6 +140,7 @@ export interface Quote {
   aggregator: string;
   aggType: string;
   fee: number;
+  quoteRefreshSeconds: number;
   gasMultiplier: number;
   savings: QuoteSavings | null;
   gasEstimate: string | null;
