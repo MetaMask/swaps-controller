@@ -38,6 +38,86 @@ describe('util', () => {
     expect(util.hexToBN('0x1337').toNumber()).toBe(4919);
   });
 
+  describe('constructTxParams', function () {
+    it('should return a new txParams object with data if there data is given', function () {
+      expect(
+        util.constructTxParams({
+          data: 'someData',
+          sendToken: undefined,
+          to: 'mockTo',
+          amount: 'mockAmount',
+          from: 'mockFrom',
+          gas: 'mockGas',
+          gasPrice: 'mockGasPrice',
+        }),
+      ).toEqual({
+        data: '0xsomeData',
+        to: '0xmockto',
+        value: '0xmockAmount',
+        from: '0xmockfrom',
+        gas: '0xmockGas',
+        gasPrice: '0xmockGasPrice',
+      });
+      expect(
+        util.constructTxParams({
+          data: '0xsomeData',
+          sendToken: undefined,
+          to: '0xmockTo',
+          amount: 'mockAmount',
+          from: '0xmockFrom',
+          gas: 'mockGas',
+          gasPrice: 'mockGasPrice',
+        }),
+      ).toEqual({
+        data: '0xsomeData',
+        to: '0xmockto',
+        value: '0xmockAmount',
+        from: '0xmockfrom',
+        gas: '0xmockGas',
+        gasPrice: '0xmockGasPrice',
+      });
+    });
+
+    it('should return a new txParams object with value and to properties if there is no sendToken', function () {
+      expect(
+        util.constructTxParams({
+          sendToken: undefined,
+          to: 'mockTo',
+          amount: 'mockAmount',
+          from: 'mockFrom',
+          gas: 'mockGas',
+          gasPrice: 'mockGasPrice',
+        }),
+      ).toEqual({
+        data: undefined,
+        to: '0xmockto',
+        value: '0xmockAmount',
+        from: '0xmockfrom',
+        gas: '0xmockGas',
+        gasPrice: '0xmockGasPrice',
+      });
+    });
+
+    it('should return a new txParams object without a to property and a 0 value if there is a sendToken', function () {
+      expect(
+        util.constructTxParams({
+          sendToken: true,
+          to: 'mockTo',
+          amount: 'mockAmount',
+          from: 'mockFrom',
+          gas: 'mockGas',
+          gasPrice: 'mockGasPrice',
+        }),
+      ).toEqual({
+        data: undefined,
+        value: '0x0',
+        from: '0xmockfrom',
+        gas: '0xmockGas',
+        gasPrice: '0xmockGasPrice',
+      });
+    });
+  });
+
   it('normalizeTransaction', () => {
     const normalized = util.normalizeTransaction({
       data: 'data',
@@ -483,8 +563,7 @@ describe('util', () => {
     });
 
     it('should fetch first if response is faster than timeout', async () => {
-      const res = await util.timeoutFetch(SOME_API);
-      const parsed = await res.json();
+      const parsed = await util.timeoutFetch(SOME_API);
       expect(parsed).toEqual({});
     });
 

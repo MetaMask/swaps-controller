@@ -470,6 +470,7 @@ export class TransactionController extends BaseController<TransactionConfig, Tra
    */
   async approveTransaction(transactionID: string) {
     const { transactions } = this.state;
+    const releaseLock = await this.mutex.acquire();
     const network = this.context.NetworkController as NetworkController;
     /* istanbul ignore next */
     const currentNetworkID = network ? network.state.network : '1';
@@ -478,6 +479,7 @@ export class TransactionController extends BaseController<TransactionConfig, Tra
     const { from } = transactionMeta.transaction;
 
     if (!this.sign) {
+      releaseLock();
       this.failTransaction(transactionMeta, new Error('No sign method defined.'));
       return;
     }
@@ -502,6 +504,8 @@ export class TransactionController extends BaseController<TransactionConfig, Tra
       this.hub.emit(`${transactionMeta.id}:finished`, transactionMeta);
     } catch (error) {
       this.failTransaction(transactionMeta, error);
+    } finally {
+      releaseLock();
     }
   }
 
