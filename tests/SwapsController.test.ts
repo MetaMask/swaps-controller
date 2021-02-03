@@ -163,6 +163,7 @@ const FETCH_PARAMS = {
   sourceAmount: 10000000000000000,
   fromAddress: '0xb0da5965d43369968574d399dbe6374683773a65',
   balanceError: undefined,
+  walletAddress: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cw2',
   metaData: {
     sourceTokenInfo: {
       address: '0x6b175474e89094c44da98b954eedeac495271d0f',
@@ -316,7 +317,7 @@ describe('SwapsController', () => {
           expect(poll.calledTwice).toBe(true);
           swapsController.stopPollingAndResetState();
           poll.restore();
-          resolve();
+          resolve('');
         }, 20);
       }, 40);
     });
@@ -327,7 +328,7 @@ describe('SwapsController', () => {
       swapsController.state.tokens = null;
       await swapsController.fetchTokenWithCache();
       expect(swapsUtilFetchTokens.called).toBe(true);
-      resolve();
+      resolve('');
     });
   });
 
@@ -341,7 +342,7 @@ describe('SwapsController', () => {
         await swapsController.fetchTokenWithCache();
         expect(swapsUtilFetchTokens.called).toBe(true);
       }, 20);
-      resolve();
+      resolve('');
     });
   });
 
@@ -351,7 +352,7 @@ describe('SwapsController', () => {
       swapsController.state.tokensLastFetched = Date.now();
       await swapsController.fetchTokenWithCache();
       expect(swapsUtilFetchTokens.called).toBe(false);
-      resolve();
+      resolve('');
     });
   });
 
@@ -360,7 +361,7 @@ describe('SwapsController', () => {
       const poll = stub(swapsController, 'fetchAndSetQuotes');
       await swapsController.safeRefetchQuotes();
       expect(poll.called).toBe(true);
-      resolve();
+      resolve('');
     });
   });
 
@@ -368,7 +369,7 @@ describe('SwapsController', () => {
     swapsController.configure({ provider: MAINNET_PROVIDER });
     const fetchAndSetQuotes = stub(swapsController, 'fetchAndSetQuotes');
 
-    const awaitPollingInterval = () => new Promise((resolve) => setTimeout(() => resolve(), QUOTE_POLLING_INTERVAL));
+    const awaitPollingInterval = () => new Promise((resolve) => setTimeout(() => resolve(''), QUOTE_POLLING_INTERVAL));
 
     return new Promise(async (resolve) => {
       expect(fetchAndSetQuotes.called).toBe(false);
@@ -380,7 +381,7 @@ describe('SwapsController', () => {
       expect(fetchAndSetQuotes.calledThrice).toBe(true);
       await awaitPollingInterval();
       expect(swapsController.state.errorKey).toEqual(SwapsError.QUOTES_EXPIRED_ERROR);
-      resolve();
+      resolve('');
     });
   });
 
@@ -392,7 +393,7 @@ describe('SwapsController', () => {
       expect(swapsController.state.fetchParams).toEqual(FETCH_PARAMS);
       expect(swapsController.state.customGasPrice).toEqual('0x12');
       expect(pollForNewQuotes.called).toBe(true);
-      resolve();
+      resolve('');
     });
   });
 
@@ -410,7 +411,7 @@ describe('SwapsController', () => {
       await swapsController.fetchAndSetQuotes();
       expect(swapsController.state.isInFetch).toBeFalsy();
       expect(swapsController.state.errorKey).toEqual(SwapsError.ERROR_FETCHING_QUOTES);
-      resolve();
+      resolve('');
     });
   });
 });
