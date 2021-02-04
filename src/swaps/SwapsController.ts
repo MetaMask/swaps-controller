@@ -39,7 +39,6 @@ export interface SwapsConfig extends BaseConfig {
   fetchAggregatorMetadataThreshold: number;
   fetchTokensThreshold: number;
   fetchTopAssetsThreshold: number;
-  quotePollingInterval: number;
   provider: any;
 }
 
@@ -63,6 +62,7 @@ export interface SwapsState extends BaseState {
   pollingCyclesLeft: number;
   approvalTransaction: Transaction | null;
   quoteValues: { [key: string]: QuoteValues } | null;
+  quoteRefreshSeconds: number | null;
 }
 
 const QUOTE_POLLING_INTERVAL = 50 * 1000;
@@ -299,7 +299,6 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       fetchAggregatorMetadataThreshold: 1000 * 60 * 60 * 24 * 15,
       fetchTokensThreshold: 1000 * 60 * 60 * 24,
       fetchTopAssetsThreshold: 1000 * 60 * 30,
-      quotePollingInterval: QUOTE_POLLING_INTERVAL,
       provider: undefined,
     };
     this.defaultState = {
@@ -339,6 +338,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       isInPolling: false,
       isInFetch: false,
       pollingCyclesLeft: config?.pollCountLimit || 3,
+      quoteRefreshSeconds: null,
     };
 
     this.initialize();
@@ -362,9 +362,11 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       this.update({ isInPolling: true, pollingCyclesLeft: this.config.pollCountLimit - this.pollCount });
       this.handle && clearTimeout(this.handle);
       await this.fetchAndSetQuotes();
-      this.handle = setTimeout(() => {
-        this.pollForNewQuotes();
-      }, this.config.quotePollingInterval);
+      if (this.state.quoteRefreshSeconds) {
+        this.handle = setTimeout(() => {
+          this.pollForNewQuotes();
+        }, this.state.quoteRefreshSeconds * 1000);
+      }
     } else {
       this.stopPollingAndResetState(SwapsError.QUOTES_EXPIRED_ERROR);
     }
@@ -415,7 +417,6 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
         throw new Error(SwapsError.QUOTES_NOT_AVAILABLE_ERROR);
       }
 
-      const quotesLastFetched = Date.now();
       let approvalTransaction: {
         data?: string;
         from: string;
@@ -447,6 +448,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       const { topAggId, quoteValues } = await this.getBestQuoteAndQuotesValues(quotes, customGasPrice);
       const savings = await this.calculateSavings(quotes[topAggId], quoteValues);
 
+      const quotesLastFetched = Date.now();
       this.state.isInPolling &&
         this.update({
           quotes,
@@ -456,6 +458,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
           topAggSavings: savings,
           isInFetch: false,
           quoteValues,
+          quoteRefreshSeconds: quotes[topAggId]?.quoteRefreshSeconds,
         });
     } catch (e) {
       const error = Object.values(SwapsError).includes(e) ? e : SwapsError.ERROR_FETCHING_QUOTES;

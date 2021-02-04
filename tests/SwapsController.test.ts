@@ -246,7 +246,6 @@ describe('SwapsController', () => {
       new Promise((resolve) => resolve({ gas: '0x5208', gasPrice: '0x5208' })),
     );
     swapsController = new SwapsController({
-      quotePollingInterval: QUOTE_POLLING_INTERVAL,
       pollCountLimit: POLL_COUNT_LIMIT,
     });
     new ComposableController([swapsController]);
@@ -264,7 +263,6 @@ describe('SwapsController', () => {
       pollCountLimit: 3,
       metaSwapAddress: '0x881d40237659c251811cec9c364ef91dc08d300c',
       fetchTokensThreshold: 86400000,
-      quotePollingInterval: 10,
     });
   });
 
