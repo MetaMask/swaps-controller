@@ -104,7 +104,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     customGasPrice?: string,
   ): Promise<{ topAggId: string; quoteValues: { [key: string]: QuoteValues } }> {
     let topAggId = '';
-    let overallValueOfBestQuoteForSorting: BigNumber = new BigNumber(0);
+    let overallValueOfBestQuoteForSorting: BigNumber | null = null;
 
     const quoteValues: { [key: string]: QuoteValues } = {};
     const usedGasPrice = customGasPrice || (await this.getGasPrice());
@@ -180,7 +180,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
         metaMaskFeeInEth: metaMaskFeeInTokens.times(conversionRate).toFixed(18),
       };
 
-      if (overallValueOfQuote.gt(overallValueOfBestQuoteForSorting)) {
+      if (!overallValueOfBestQuoteForSorting || overallValueOfQuote.gt(overallValueOfBestQuoteForSorting)) {
         topAggId = aggregator;
         overallValueOfBestQuoteForSorting = overallValueOfQuote;
       }
