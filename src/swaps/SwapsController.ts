@@ -58,14 +58,22 @@ export interface SwapsState extends BaseState {
   topAssetsLastFetched: number;
   customGasPrice?: string;
   isInPolling: boolean;
-  isInFetch: boolean;
   pollingCyclesLeft: number;
   approvalTransaction: Transaction | null;
   quoteValues: { [key: string]: QuoteValues } | null;
   quoteRefreshSeconds: number | null;
 }
 
-const QUOTE_POLLING_INTERVAL = 50 * 1000;
+interface SwapsNextState {
+  quotes: { [key: string]: Quote };
+  quotesLastFetched: null | number;
+  approvalTransaction: Transaction | null;
+  topAggId: null | string;
+  topAggSavings: QuoteSavings | null;
+  quoteValues: { [key: string]: QuoteValues } | null;
+  quoteRefreshSeconds: number | null;
+}
+
 // The MAX_GAS_LIMIT is a number that is higher than the maximum gas costs we have observed on any aggregator
 const MAX_GAS_LIMIT = 2500000;
 
@@ -336,7 +344,6 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       topAggId: null,
       tokensLastFetched: 0,
       isInPolling: false,
-      isInFetch: false,
       pollingCyclesLeft: config?.pollCountLimit || 3,
       quoteRefreshSeconds: null,
     };
@@ -369,6 +376,25 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       }
     } else {
       this.stopPollingAndResetState(SwapsError.QUOTES_EXPIRED_ERROR);
+    }
+  }
+
+  async pollForNewQuotesWithThreshold(fetchThreshold = 0) {
+    this.pollCount += 1;
+    this.handle && clearTimeout(this.handle);
+    if (this.pollCount < this.config.pollCountLimit + 1) {
+      this.update({ isInPolling: true, pollingCyclesLeft: this.config.pollCountLimit - this.pollCount });
+      const { nextQuotesState, threshold } = await this.fetchQuotes();
+      if (threshold && nextQuotesState?.quoteRefreshSeconds) {
+        this.update({ ...this.state, ...nextQuotesState });
+        this.handle = setTimeout(async () => {
+          this.pollForNewQuotesWithThreshold(threshold);
+        }, (nextQuotesState.quoteRefreshSeconds * 1000) - threshold);
+      }
+    } else {
+      this.handle = setTimeout(() => {
+        this.stopPollingAndResetState(SwapsError.QUOTES_EXPIRED_ERROR);
+      }, fetchThreshold);
     }
   }
 
@@ -406,7 +432,6 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
 
   async fetchAndSetQuotes(): Promise<void> {
     const { fetchParams, customGasPrice } = this.state;
-    this.update({ isInFetch: true });
     try {
       /** We need to abort quotes fetch if stopPollingAndResetState is called while getting quotes */
       this.abortController = new AbortController();
@@ -456,13 +481,75 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
           approvalTransaction,
           topAggId: quotes[topAggId]?.aggregator,
           topAggSavings: savings,
-          isInFetch: false,
           quoteValues,
           quoteRefreshSeconds: quotes[topAggId]?.quoteRefreshSeconds,
         });
     } catch (e) {
       const error = Object.values(SwapsError).includes(e) ? e : SwapsError.ERROR_FETCHING_QUOTES;
       this.stopPollingAndResetState(error);
+    }
+  }
+
+  async fetchQuotes(): Promise<{ nextQuotesState: SwapsNextState | null; threshold: number| null }> {
+    const timeStarted = Date.now();
+    const { fetchParams, customGasPrice } = this.state;
+    try {
+      /** We need to abort quotes fetch if stopPollingAndResetState is called while getting quotes */
+      this.abortController = new AbortController();
+      const { signal } = this.abortController;
+      let quotes: { [key: string]: Quote } = await fetchTradesInfo(fetchParams, signal);
+
+      if (Object.values(quotes).length === 0) {
+        throw new Error(SwapsError.QUOTES_NOT_AVAILABLE_ERROR);
+      }
+
+      let approvalTransaction: {
+        data?: string;
+        from: string;
+        to?: string;
+        gas?: string;
+      } | null = null;
+
+      if (fetchParams.sourceToken !== ETH_SWAPS_TOKEN_ADDRESS) {
+        const allowance = await this.getERC20Allowance(fetchParams.sourceToken, fetchParams.walletAddress);
+
+        if (Number(allowance) === 0 && this.pollCount === 1) {
+          approvalTransaction = Object.values(quotes)[0].approvalNeeded;
+          if (!approvalTransaction) {
+            throw new Error(SwapsError.ERROR_FETCHING_QUOTES);
+          }
+          const { gas: approvalGas } = await this.timedoutGasReturn({
+            data: approvalTransaction.data,
+            from: approvalTransaction.from,
+            to: approvalTransaction.to,
+          });
+
+          approvalTransaction = {
+            ...approvalTransaction,
+            gas: approvalGas || DEFAULT_ERC20_APPROVE_GAS,
+          };
+        }
+      }
+      quotes = await this.getAllQuotesWithGasEstimates(quotes);
+      const { topAggId, quoteValues } = await this.getBestQuoteAndQuotesValues(quotes, customGasPrice);
+      const savings = await this.calculateSavings(quotes[topAggId], quoteValues);
+
+      const quotesLastFetched = Date.now();
+
+      const nextQuotesState: SwapsNextState = {
+        quotes,
+        quotesLastFetched,
+        approvalTransaction,
+        topAggId: quotes[topAggId]?.aggregator,
+        topAggSavings: savings,
+        quoteValues,
+        quoteRefreshSeconds: quotes[topAggId]?.quoteRefreshSeconds,
+      };
+      return { nextQuotesState, threshold: quotesLastFetched - timeStarted };
+    } catch (e) {
+      const error = Object.values(SwapsError).includes(e) ? e : SwapsError.ERROR_FETCHING_QUOTES;
+      this.stopPollingAndResetState(error);
+    return { nextQuotesState: null, threshold: null };
     }
   }
 
@@ -482,7 +569,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       fetchParams,
       fetchParamsMetaData,
     });
-    this.pollForNewQuotes();
+    this.pollForNewQuotesWithThreshold();
   }
 
   async fetchTokenWithCache() {
@@ -521,13 +608,6 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     }
   }
 
-  safeRefetchQuotes() {
-    const { fetchParams } = this.state;
-    if (!this.handle && fetchParams) {
-      this.fetchAndSetQuotes();
-    }
-  }
-
   /**
    * Stops the polling process
    *
@@ -539,7 +619,6 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     this.update({
       ...this.defaultState,
       isInPolling: false,
-      isInFetch: false,
       tokensLastFetched: this.state.tokensLastFetched,
       topAssetsLastFetched: this.state.topAssetsLastFetched,
       tokens: this.state.tokens,
