@@ -2,7 +2,6 @@ import BigNumber from 'bignumber.js';
 import { getOnce } from 'fetch-mock';
 import { APIType, SwapsToken } from '../src/swaps/SwapsInterfaces';
 import * as swapsUtil from '../src/swaps/SwapsUtil';
-import { ETH_SWAPS_TOKEN_OBJECT } from '../src/swaps/SwapsUtil';
 
 const API_TRADES = [
   {
@@ -134,22 +133,8 @@ describe('SwapsUtil', () => {
         sourceToken: '0x6b175474e89094c44da98b954eedeac495271d0f',
         destinationToken: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
         sourceAmount: 1000000000000000000,
-        fromAddress: '0xB0dA5965D43369968574D399dBe6374683773a65',
-        metaData: {
-          sourceTokenInfo: {
-            address: '0x6b175474e89094c44da98b954eedeac495271d0f',
-            symbol: 'DAI',
-            decimals: 18,
-            iconUrl: 'https://foo.bar/logo.png',
-          },
-          destinationTokenInfo: {
-            decimals: 18,
-            address: '',
-            symbol: '',
-          },
-          accountBalance: '0x0',
-        },
-      });
+        walletAddress: '0xB0dA5965D43369968574D399dBe6374683773a65',
+      }, null);
 
       expect(quotes).toEqual({
         paraswap: {
@@ -218,7 +203,7 @@ describe('SwapsUtil', () => {
         { overwriteRoutes: true, method: 'GET' },
       );
       const tokens = await swapsUtil.fetchTokens();
-      expect(tokens).toEqual(API_TOKENS.concat([ETH_SWAPS_TOKEN_OBJECT]));
+      expect(tokens).toEqual(API_TOKENS.concat([swapsUtil.ETH_SWAPS_TOKEN_OBJECT]));
     });
   });
 

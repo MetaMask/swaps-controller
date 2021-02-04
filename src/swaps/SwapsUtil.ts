@@ -58,7 +58,7 @@ export const getBaseApiURL = function (type: APIType): string {
 
 export async function fetchTradesInfo(
   { slippage, sourceToken, sourceAmount, destinationToken, walletAddress, exchangeList }: APIFetchQuotesParams,
-  abortSignal: AbortSignal,
+  abortSignal: AbortSignal| null,
 ): Promise<{ [key: string]: Quote }> {
   const urlParams: APIFetchQuotesParams = {
     destinationToken,

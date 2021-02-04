@@ -358,27 +358,6 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     }
   }
 
-  /**
-   * Starts a new polling process
-   *
-   */
-  async pollForNewQuotes() {
-    // We only want to do up to a maximum of three requests from polling.
-    this.pollCount += 1;
-    if (this.pollCount < this.config.pollCountLimit + 1) {
-      this.update({ isInPolling: true, pollingCyclesLeft: this.config.pollCountLimit - this.pollCount });
-      this.handle && clearTimeout(this.handle);
-      await this.fetchAndSetQuotes();
-      if (this.state.quoteRefreshSeconds) {
-        this.handle = setTimeout(() => {
-          this.pollForNewQuotes();
-        }, this.state.quoteRefreshSeconds * 1000);
-      }
-    } else {
-      this.stopPollingAndResetState(SwapsError.QUOTES_EXPIRED_ERROR);
-    }
-  }
-
   async pollForNewQuotesWithThreshold(fetchThreshold = 0) {
     this.pollCount += 1;
     this.handle && clearTimeout(this.handle);
@@ -428,66 +407,6 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       };
     });
     return newQuotes;
-  }
-
-  async fetchAndSetQuotes(): Promise<void> {
-    const { fetchParams, customGasPrice } = this.state;
-    try {
-      /** We need to abort quotes fetch if stopPollingAndResetState is called while getting quotes */
-      this.abortController = new AbortController();
-      const { signal } = this.abortController;
-      let quotes: { [key: string]: Quote } = await fetchTradesInfo(fetchParams, signal);
-
-      if (Object.values(quotes).length === 0) {
-        throw new Error(SwapsError.QUOTES_NOT_AVAILABLE_ERROR);
-      }
-
-      let approvalTransaction: {
-        data?: string;
-        from: string;
-        to?: string;
-        gas?: string;
-      } | null = null;
-
-      if (fetchParams.sourceToken !== ETH_SWAPS_TOKEN_ADDRESS) {
-        const allowance = await this.getERC20Allowance(fetchParams.sourceToken, fetchParams.walletAddress);
-
-        if (Number(allowance) === 0 && this.pollCount === 1) {
-          approvalTransaction = Object.values(quotes)[0].approvalNeeded;
-          if (!approvalTransaction) {
-            throw new Error(SwapsError.ERROR_FETCHING_QUOTES);
-          }
-          const { gas: approvalGas } = await this.timedoutGasReturn({
-            data: approvalTransaction.data,
-            from: approvalTransaction.from,
-            to: approvalTransaction.to,
-          });
-
-          approvalTransaction = {
-            ...approvalTransaction,
-            gas: approvalGas || DEFAULT_ERC20_APPROVE_GAS,
-          };
-        }
-      }
-      quotes = await this.getAllQuotesWithGasEstimates(quotes);
-      const { topAggId, quoteValues } = await this.getBestQuoteAndQuotesValues(quotes, customGasPrice);
-      const savings = await this.calculateSavings(quotes[topAggId], quoteValues);
-
-      const quotesLastFetched = Date.now();
-      this.state.isInPolling &&
-        this.update({
-          quotes,
-          quotesLastFetched,
-          approvalTransaction,
-          topAggId: quotes[topAggId]?.aggregator,
-          topAggSavings: savings,
-          quoteValues,
-          quoteRefreshSeconds: quotes[topAggId]?.quoteRefreshSeconds,
-        });
-    } catch (e) {
-      const error = Object.values(SwapsError).includes(e) ? e : SwapsError.ERROR_FETCHING_QUOTES;
-      this.stopPollingAndResetState(error);
-    }
   }
 
   async fetchQuotes(): Promise<{ nextQuotesState: SwapsNextState | null; threshold: number| null }> {
