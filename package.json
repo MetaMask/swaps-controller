@@ -1,6 +1,6 @@
 {
   "name": "@estebanmino/controllers",
-  "version": "3.2.36",
+  "version": "3.2.37",
   "description": "Collection of platform-agnostic modules for creating secure data models for cryptocurrency wallets",
   "license": "MIT",
   "files": [
