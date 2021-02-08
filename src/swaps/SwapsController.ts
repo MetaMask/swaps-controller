@@ -468,7 +468,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     } catch (e) {
       const error = Object.values(SwapsError).includes(e) ? e : SwapsError.ERROR_FETCHING_QUOTES;
       this.stopPollingAndResetState(error);
-    return { nextQuotesState: null, threshold: null };
+      return { nextQuotesState: null, threshold: null };
     }
   }
 
