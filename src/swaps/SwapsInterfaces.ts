@@ -145,7 +145,7 @@ export interface Quote {
   gasMultiplier: number;
   savings: QuoteSavings | null;
   gasEstimate: string | null;
-  gasEstimateWithRefund: number | null;
+  gasEstimateWithRefund: string | null;
 }
 
 /**
