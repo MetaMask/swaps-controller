@@ -124,26 +124,29 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
         averageGas,
         maxGas,
         destinationAmount = 0,
-        destinationToken,
+        fee: metaMaskFee,
         sourceAmount,
         sourceToken,
         trade,
-        gasEstimate,
         gasEstimateWithRefund,
-        fee: metaMaskFee,
+        gasMultiplier,
+        approvalNeeded,
       } = quote;
 
       // trade gas
-      const tradeGasLimit =
-        gasEstimateWithRefund && gasEstimateWithRefund !== 0
-          ? new BigNumber(gasEstimateWithRefund)
-          : new BigNumber(averageGas || MAX_GAS_LIMIT, 10);
-      const calculatedMaxGasLimit = new BigNumber(gasEstimate || averageGas).times(1.4, 10);
-      const tradeMaxGasLimit =
-        calculatedMaxGasLimit.toNumber() > maxGas ? calculatedMaxGasLimit : new BigNumber(maxGas);
+
+      let tradeGasLimit, tradeMaxGasLimit;
+      if (!approvalNeeded && gasEstimateWithRefund && gasEstimateWithRefund !== '0') {
+        tradeGasLimit = new BigNumber(gasEstimateWithRefund, 16);
+        tradeMaxGasLimit = new BigNumber(gasEstimateWithRefund, 16).times(1.5);
+      } else {
+        tradeGasLimit = new BigNumber(averageGas || MAX_GAS_LIMIT, 10).times(gasMultiplier);
+        tradeMaxGasLimit = new BigNumber(maxGas || MAX_GAS_LIMIT, 10).times(gasMultiplier);
+      }
 
       // + approval gas if required
       const approvalGas = this.state.approvalTransaction?.gas || '0x0';
+
       const totalGasLimit = tradeGasLimit.plus(approvalGas, 16);
       const maxTotalGasLimit = tradeMaxGasLimit.plus(approvalGas, 16);
       const totalGasInWei = totalGasLimit.times(usedGasPrice, 16);
@@ -165,7 +168,6 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       const decimalAdjustedDestinationAmount = calcTokenAmount(destinationAmount, destinationTokenInfo.decimals);
 
       // fees
-
       const tokenPercentageOfPreFeeDestAmount = new BigNumber(100, 10).minus(metaMaskFee, 10).div(100);
       const destinationAmountBeforeMetaMaskFee = decimalAdjustedDestinationAmount.div(
         tokenPercentageOfPreFeeDestAmount,
@@ -177,8 +179,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       const ethValueOfTokens = decimalAdjustedDestinationAmount.times(conversionRate, 10);
 
       // the more tokens the better
-      const overallValueOfQuote =
-        destinationToken === ETH_SWAPS_TOKEN_ADDRESS ? ethValueOfTokens.minus(ethFee, 10) : ethValueOfTokens;
+      const overallValueOfQuote = ethValueOfTokens.minus(ethFee, 10);
       quoteValues[aggregator] = {
         aggregator,
         ethFee: ethFee.toFixed(18),
@@ -403,7 +404,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
           trades[aggId].maxGas,
           trades[aggId].estimatedRefund,
           gas,
-        ).toNumber(),
+        ).toString(16),
       };
     });
     return newQuotes;
@@ -432,7 +433,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       if (fetchParams.sourceToken !== ETH_SWAPS_TOKEN_ADDRESS) {
         const allowance = await this.getERC20Allowance(fetchParams.sourceToken, fetchParams.walletAddress);
 
-        if (Number(allowance) === 0 && this.pollCount === 1) {
+        if (Number(allowance) < fetchParams.sourceAmount) {
           approvalTransaction = Object.values(quotes)[0].approvalNeeded;
           if (!approvalTransaction) {
             throw new Error(SwapsError.ERROR_FETCHING_QUOTES);
