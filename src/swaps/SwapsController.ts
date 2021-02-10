@@ -130,11 +130,13 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
         trade,
         gasEstimateWithRefund,
         gasMultiplier,
+        approvalNeeded,
       } = quote;
 
       // trade gas
+
       let tradeGasLimit, tradeMaxGasLimit;
-      if (gasEstimateWithRefund && gasEstimateWithRefund !== '0') {
+      if (!approvalNeeded && gasEstimateWithRefund && gasEstimateWithRefund !== '0') {
         tradeGasLimit = new BigNumber(gasEstimateWithRefund, 16);
         tradeMaxGasLimit = new BigNumber(gasEstimateWithRefund, 16).times(1.5);
       } else {
@@ -431,7 +433,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       if (fetchParams.sourceToken !== ETH_SWAPS_TOKEN_ADDRESS) {
         const allowance = await this.getERC20Allowance(fetchParams.sourceToken, fetchParams.walletAddress);
 
-        if (Number(allowance) === 0 && this.pollCount === 1) {
+        if (Number(allowance) < fetchParams.sourceAmount) {
           approvalTransaction = Object.values(quotes)[0].approvalNeeded;
           if (!approvalTransaction) {
             throw new Error(SwapsError.ERROR_FETCHING_QUOTES);
