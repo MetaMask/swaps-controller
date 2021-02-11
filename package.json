@@ -60,7 +60,7 @@
     "web3-provider-engine": "^16.0.1"
   },
   "devDependencies": {
-    "@metamask/eslint-config": "^4.1.0",
+    "@metamask/eslint-config": "^5.0.0",
     "@types/fetch-mock": "^7.3.1",
     "@types/jest": "^26.0.15",
     "@types/node": "^10.1.4",
