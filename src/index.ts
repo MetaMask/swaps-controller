@@ -1,5 +1,6 @@
 import 'isomorphic-fetch';
 import * as util from './util';
+import * as swapsUtils from './swaps/SwapsUtil';
 
 export * from './assets/AccountTrackerController';
 export * from './user/AddressBookController';
@@ -20,4 +21,5 @@ export * from './assets/TokenRatesController';
 export * from './transaction/TransactionController';
 export * from './message-manager/PersonalMessageManager';
 export * from './message-manager/TypedMessageManager';
-export { util };
+export * from './swaps/SwapsController';
+export { util, swapsUtils };

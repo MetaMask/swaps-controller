@@ -63,7 +63,7 @@ export class AssetsDetectionController extends BaseController<AssetsDetectionCon
     const { selectedAddress } = this.config;
     const api = this.getOwnerCollectiblesApi(selectedAddress);
     const assetsController = this.context.AssetsController as AssetsController;
-    let response: Response;
+    let response;
     try {
       /* istanbul ignore if */
       if (assetsController.openSeaApiKey) {
@@ -75,8 +75,7 @@ export class AssetsDetectionController extends BaseController<AssetsDetectionCon
       /* istanbul ignore next */
       return [];
     }
-    const collectiblesArray = await response.json();
-    const collectibles = collectiblesArray.assets;
+    const collectibles = response?.assets || [];
     return collectibles;
   }
 
