@@ -58,7 +58,7 @@ export const getBaseApiURL = function (type: APIType): string {
 
 export async function fetchTradesInfo(
   { slippage, sourceToken, sourceAmount, destinationToken, walletAddress, exchangeList }: APIFetchQuotesParams,
-  abortSignal: AbortSignal| null,
+  abortSignal: AbortSignal | null,
 ): Promise<{ [key: string]: Quote }> {
   const urlParams: APIFetchQuotesParams = {
     destinationToken,
@@ -137,7 +137,7 @@ export async function fetchTopAssets(): Promise<SwapsAsset[]> {
 export async function fetchSwapsFeatureLiveness(): Promise<boolean> {
   try {
     const status = await handleFetch(getBaseApiURL(APIType.FEATURE_FLAG), { method: 'GET' });
-    return status?.active;
+    return status;
   } catch (err) {
     return false;
   }

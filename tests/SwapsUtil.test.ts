@@ -128,13 +128,16 @@ describe('SwapsUtil', () => {
         { overwriteRoutes: true, method: 'GET' },
       );
 
-      const quotes = await swapsUtil.fetchTradesInfo({
-        slippage: 3,
-        sourceToken: '0x6b175474e89094c44da98b954eedeac495271d0f',
-        destinationToken: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
-        sourceAmount: 1000000000000000000,
-        walletAddress: '0xB0dA5965D43369968574D399dBe6374683773a65',
-      }, null);
+      const quotes = await swapsUtil.fetchTradesInfo(
+        {
+          slippage: 3,
+          sourceToken: '0x6b175474e89094c44da98b954eedeac495271d0f',
+          destinationToken: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+          sourceAmount: 1000000000000000000,
+          walletAddress: '0xB0dA5965D43369968574D399dBe6374683773a65',
+        },
+        null,
+      );
 
       expect(quotes).toEqual({
         paraswap: {
@@ -241,12 +244,16 @@ describe('SwapsUtil', () => {
       getOnce(
         `https://api.metaswap.codefi.network/featureFlag`,
         () => ({
-          body: JSON.stringify({ active: true }),
+          body: JSON.stringify({
+            active: true,
+            mobile_active: true,
+            extension_active: true,
+          }),
         }),
         { overwriteRoutes: true, method: 'GET' },
       );
       const featureLiveness = await swapsUtil.fetchSwapsFeatureLiveness();
-      expect(typeof featureLiveness).toBe('boolean');
+      expect(featureLiveness).toBeInstanceOf(Object);
     });
   });
 
