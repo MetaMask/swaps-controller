@@ -541,6 +541,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       isInPolling: false,
       tokensLastFetched: this.state.tokensLastFetched,
       topAssetsLastFetched: this.state.topAssetsLastFetched,
+      aggregatorMetadataLastFetched: this.state.aggregatorMetadataLastFetched,
       tokens: this.state.tokens,
       topAssets: this.state.topAssets,
       aggregatorMetadata: this.state.aggregatorMetadata,
