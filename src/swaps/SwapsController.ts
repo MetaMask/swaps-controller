@@ -4,27 +4,27 @@ import BaseController, { BaseConfig, BaseState } from '../BaseController';
 import { calcTokenAmount, estimateGas } from '../util';
 import { Transaction } from '../transaction/TransactionController';
 import {
+  calculateGasEstimateWithRefund,
+  fetchAggregatorMetadata,
+  fetchGasPrices,
+  fetchTokens,
+  fetchTopAssets,
+  fetchTradesInfo,
+  getMedianEthValueQuote,
+  SwapsError,
   DEFAULT_ERC20_APPROVE_GAS,
   ETH_SWAPS_TOKEN_ADDRESS,
-  fetchTokens,
-  fetchTradesInfo,
   SWAPS_CONTRACT_ADDRESS,
-  SwapsError,
-  getMedianEthValueQuote,
-  fetchGasPrices,
-  calculateGasEstimateWithRefund,
-  fetchTopAssets,
-  fetchAggregatorMetadata,
 } from './SwapsUtil';
 import {
+  APIAggregatorMetadata,
+  APIFetchQuotesMetadata,
+  APIFetchQuotesParams,
   Quote,
   QuoteSavings,
-  SwapsToken,
-  APIFetchQuotesParams,
-  APIFetchQuotesMetadata,
   QuoteValues,
   SwapsAsset,
-  APIAggregatorMetadata,
+  SwapsToken,
 } from './SwapsInterfaces';
 
 const { Mutex } = require('await-semaphore');
