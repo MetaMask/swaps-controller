@@ -369,7 +369,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
         this.update({ ...this.state, ...nextQuotesState });
         this.handle = setTimeout(async () => {
           this.pollForNewQuotesWithThreshold(threshold);
-        }, (nextQuotesState.quoteRefreshSeconds * 1000) - threshold);
+        }, nextQuotesState.quoteRefreshSeconds * 1000 - threshold);
       }
     } else {
       this.handle = setTimeout(() => {
@@ -410,7 +410,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     return newQuotes;
   }
 
-  async fetchQuotes(): Promise<{ nextQuotesState: SwapsNextState | null; threshold: number| null }> {
+  async fetchQuotes(): Promise<{ nextQuotesState: SwapsNextState | null; threshold: number | null }> {
     const timeStarted = Date.now();
     const { fetchParams, customGasPrice } = this.state;
     try {
@@ -517,7 +517,10 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
   }
 
   async fetchAggregatorMetadataWithCache() {
-    if (!this.state.aggregatorMetadata || this.config.fetchAggregatorMetadataThreshold < Date.now() - this.state.aggregatorMetadataLastFetched) {
+    if (
+      !this.state.aggregatorMetadata ||
+      this.config.fetchAggregatorMetadataThreshold < Date.now() - this.state.aggregatorMetadataLastFetched
+    ) {
       const releaseLock = await this.mutex.acquire();
       try {
         const newAggregatorMetada = await fetchAggregatorMetadata();
