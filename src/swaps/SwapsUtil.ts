@@ -86,14 +86,6 @@ export async function fetchTradesInfo(
         gas: BNToHex(quote.maxGas),
       });
 
-      let { approvalNeeded } = quote;
-
-      if (approvalNeeded) {
-        approvalNeeded = constructTxParams({
-          ...approvalNeeded,
-        });
-      }
-
       return {
         ...aggIdTradeMap,
         [quote.aggregator]: {
@@ -183,12 +175,7 @@ export function getMedian(values: BigNumber[]) {
   if (!Array.isArray(values) || values.length === 0) {
     throw new Error('Expected non-empty array param.');
   }
-  const sorted = [...values].sort((a, b) => {
-    if (a.eq(b)) {
-      return 0;
-    }
-    return a.lt(b) ? -1 : 1;
-  });
+  const sorted = [...values].sort((a, b) => a.comparedTo(b));
 
   if (sorted.length % 2 === 1) {
     // return middle value
@@ -214,10 +201,7 @@ export function getMedianEthValueQuote(quotes: QuoteValues[]) {
   quotes.sort((quoteA, quoteB) => {
     const overallValueOfQuoteA = new BigNumber(quoteA.overallValueOfQuote, 10);
     const overallValueOfQuoteB = new BigNumber(quoteB.overallValueOfQuote, 10);
-    if (overallValueOfQuoteA.eq(overallValueOfQuoteB)) {
-      return 0;
-    }
-    return overallValueOfQuoteA.lt(overallValueOfQuoteB) ? -1 : 1;
+    return overallValueOfQuoteA.comparedTo(overallValueOfQuoteB);
   });
 
   if (quotes.length % 2 === 1) {

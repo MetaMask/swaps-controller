@@ -97,7 +97,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
    */
   private async getGasPrice(): Promise<string> {
     const { ProposeGasPrice } = await fetchGasPrices();
-    return (parseFloat(ProposeGasPrice) * 1000000000).toString(16);
+    return new BigNumber(ProposeGasPrice).times(1000000000).toString(16);
   }
 
   /**
@@ -369,7 +369,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
         this.update({ ...this.state, ...nextQuotesState });
         this.handle = setTimeout(async () => {
           this.pollForNewQuotesWithThreshold(threshold);
-        }, nextQuotesState.quoteRefreshSeconds * 1000 - threshold);
+        }, (nextQuotesState.quoteRefreshSeconds * 1000) - threshold);
       }
     } else {
       this.handle = setTimeout(() => {
