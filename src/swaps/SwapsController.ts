@@ -4,27 +4,27 @@ import BaseController, { BaseConfig, BaseState } from '../BaseController';
 import { calcTokenAmount, estimateGas } from '../util';
 import { Transaction } from '../transaction/TransactionController';
 import {
+  calculateGasEstimateWithRefund,
+  fetchAggregatorMetadata,
+  fetchGasPrices,
+  fetchTokens,
+  fetchTopAssets,
+  fetchTradesInfo,
+  getMedianEthValueQuote,
+  SwapsError,
   DEFAULT_ERC20_APPROVE_GAS,
   ETH_SWAPS_TOKEN_ADDRESS,
-  fetchTokens,
-  fetchTradesInfo,
   SWAPS_CONTRACT_ADDRESS,
-  SwapsError,
-  getMedianEthValueQuote,
-  fetchGasPrices,
-  calculateGasEstimateWithRefund,
-  fetchTopAssets,
-  fetchAggregatorMetadata,
 } from './SwapsUtil';
 import {
+  APIAggregatorMetadata,
+  APIFetchQuotesMetadata,
+  APIFetchQuotesParams,
   Quote,
   QuoteSavings,
-  SwapsToken,
-  APIFetchQuotesParams,
-  APIFetchQuotesMetadata,
   QuoteValues,
   SwapsAsset,
-  APIAggregatorMetadata,
+  SwapsToken,
 } from './SwapsInterfaces';
 
 const { Mutex } = require('await-semaphore');
@@ -97,7 +97,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
    */
   private async getGasPrice(): Promise<string> {
     const { ProposeGasPrice } = await fetchGasPrices();
-    return (parseFloat(ProposeGasPrice) * 1000000000).toString(16);
+    return new BigNumber(ProposeGasPrice).times(1000000000).toString(16);
   }
 
   /**
@@ -410,7 +410,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     return newQuotes;
   }
 
-  async fetchQuotes(): Promise<{ nextQuotesState: SwapsNextState | null; threshold: number| null }> {
+  async fetchQuotes(): Promise<{ nextQuotesState: SwapsNextState | null; threshold: number | null }> {
     const timeStarted = Date.now();
     const { fetchParams, customGasPrice } = this.state;
     try {
@@ -517,7 +517,10 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
   }
 
   async fetchAggregatorMetadataWithCache() {
-    if (!this.state.aggregatorMetadata || this.config.fetchAggregatorMetadataThreshold < Date.now() - this.state.aggregatorMetadataLastFetched) {
+    if (
+      !this.state.aggregatorMetadata ||
+      this.config.fetchAggregatorMetadataThreshold < Date.now() - this.state.aggregatorMetadataLastFetched
+    ) {
       const releaseLock = await this.mutex.acquire();
       try {
         const newAggregatorMetada = await fetchAggregatorMetadata();
