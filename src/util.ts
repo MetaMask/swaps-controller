@@ -531,7 +531,7 @@ export function calcTokenAmount(value: number | BigNumber, decimals: number) {
  * @param args - Conveninent arguments to execute the query
  * @returns - Promise resolving to the respective result
  */
-export async function query(method: string, ethQuery: any, args: any[] = []): Promise<any> {
+export async function query(ethQuery: any, method: string, args: any[] = []): Promise<any> {
   return new Promise((resolve, reject) => {
     ethQuery[method](...args, (error: Error, result: any) => {
       /* istanbul ignore next */
@@ -553,11 +553,11 @@ export async function query(method: string, ethQuery: any, args: any[] = []): Pr
 export async function estimateGas(transaction: Transaction, ethQuery: any) {
   const estimatedTransaction = { ...transaction };
   const { value, data } = estimatedTransaction;
-  const { gasLimit } = await query('getBlockByNumber', ethQuery, ['latest', false]);
+  const { gasLimit } = await query(ethQuery, 'getBlockByNumber', ['latest', false]);
   estimatedTransaction.data = !data ? data : /* istanbul ignore next */ addHexPrefix(data);
   // 3. If this is a contract address, safely estimate gas using RPC
   estimatedTransaction.value = typeof value === 'undefined' ? '0x0' : /* istanbul ignore next */ value;
-  const gasHex = await query('estimateGas', ethQuery, [estimatedTransaction]);
+  const gasHex = await query(ethQuery, 'estimateGas', [estimatedTransaction]);
   return { blockGasLimit: gasLimit, gas: addHexPrefix(gasHex) };
 }
 

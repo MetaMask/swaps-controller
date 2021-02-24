@@ -27,7 +27,7 @@ import {
   APIAggregatorMetadata,
 } from './SwapsInterfaces';
 
-const { Mutex } = require('await-semaphore');
+const { Mutex } = require('async-mutex');
 const abiERC20 = require('human-standard-token-abi');
 const EthQuery = require('ethjs-query');
 const Web3 = require('web3');

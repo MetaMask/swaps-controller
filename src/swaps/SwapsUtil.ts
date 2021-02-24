@@ -1,5 +1,6 @@
 import BigNumber from 'bignumber.js';
-import { handleFetch, timeoutFetch, constructTxParams, BNToHex } from '../util';
+import { Transaction } from '../transaction/TransactionController';
+import { handleFetch, timeoutFetch, constructTxParams, BNToHex, calcTokenAmount } from '../util';
 import {
   APIAggregatorMetadata,
   SwapsAsset,
@@ -11,6 +12,40 @@ import {
 } from './SwapsInterfaces';
 
 export const ETH_SWAPS_TOKEN_ADDRESS = '0x0000000000000000000000000000000000000000';
+const TOKEN_TRANSFER_LOG_TOPIC_HASH =
+  '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
+
+  /**
+ * Metadata needed to fetch quotes
+ *
+ * @interface APIFetchQuotesMetadata
+ *
+ * @property blockHash - Hash of the block where this transaction was in
+ * @property blockNumber - Block number where this transaction was in
+ * @property transactionHash - Hash of the transaction
+ * @property transactionIndex - Integer of the transactions index position in the block
+ * @property from - Address of the sender
+ * @property to - Address of the receiver. null when its a contract creation transaction
+ * @property cumulativeGasUsed - The total amount of gas used when this transaction was executed in the block
+ * @property gasUsed - The amount of gas used by this specific transaction alone
+ * @property contractAddress - The contract address created, if the transaction was a contract creation, otherwise null
+ * @property logs - Array of log objects, which this transaction generate
+ * @property status - '0x0' indicates transaction failure , '0x1' indicates transaction succeeded.
+ *
+ */
+export interface TransactionReceipt {
+  blockHash: string;
+  blockNumber: number;
+  transactionHash: string;
+  transactionIndex: number;
+  from: string;
+  to: string;
+  cumulativeGasUsed: number;
+  gasUsed: number;
+  contractAddress: string;
+  logs: {data: string; topics: string[]; address: string}[];
+  status: string;
+}
 
 export const ETH_SWAPS_TOKEN_OBJECT: SwapsToken = {
   symbol: 'ETH',
@@ -171,6 +206,46 @@ export function calculateGasEstimateWithRefund(
   const estimatedGasBN = new BigNumber(estimatedGas || '0');
   const gasEstimateWithRefund = maxGasMinusRefund.lt(estimatedGasBN) ? maxGasMinusRefund : estimatedGasBN;
   return gasEstimateWithRefund;
+}
+
+export function getSwapsTokensReceived(
+  receipt: TransactionReceipt,
+  approvalReceipt: TransactionReceipt,
+  transaction: Transaction,
+  approvalTransaction: Transaction,
+  destinationToken: SwapsToken,
+  previousBalance: string,
+  postBalance: string
+): string | undefined {
+  if (destinationToken.address === ETH_SWAPS_TOKEN_ADDRESS) {
+    const approvalTransactionGasCost = new BigNumber(approvalTransaction?.gasPrice || '0x0').times(approvalReceipt?.gasUsed || '0x0');
+    const transactionGas = new BigNumber(transaction?.gasPrice || '0x0').times(receipt?.gasUsed || '0x0');
+    const totalGasCost = transactionGas.plus(approvalTransactionGasCost);
+
+    const previousBalanceMinusGas = new BigNumber(previousBalance).minus(totalGasCost);
+    const postBalanceMinusGas = new BigNumber(postBalance);
+
+    return calcTokenAmount(postBalanceMinusGas.minus(previousBalanceMinusGas), 18).toString(16);
+  }
+  if (!receipt?.logs || receipt.status === '0x0') {
+    return;
+  }
+
+  const tokenTransferLog = receipt.logs.find((receiptLog: {topics: string[]; address: string}) => {
+    const isTokenTransfer = receiptLog?.topics[0] === TOKEN_TRANSFER_LOG_TOPIC_HASH;
+    const isTransferFromGivenToken = receiptLog.address === destinationToken.address;
+    const isTransferFromGivenAddress = receiptLog?.topics[2]?.match(transaction.from.slice(2));
+    return (
+      isTokenTransfer &&
+      isTransferFromGivenToken &&
+      isTransferFromGivenAddress
+    );
+  });
+  if (!tokenTransferLog) {
+    return;
+  }
+  return calcTokenAmount(new BigNumber(tokenTransferLog.data), destinationToken.decimals).toString(10);
+
 }
 
 /**
