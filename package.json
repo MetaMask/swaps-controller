@@ -1,6 +1,6 @@
 {
   "name": "@estebanmino/controllers",
-  "version": "3.2.38",
+  "version": "3.3.8",
   "description": "Collection of platform-agnostic modules for creating secure data models for cryptocurrency wallets",
   "license": "MIT",
   "files": [
@@ -37,7 +37,7 @@
   "dependencies": {
     "@metamask/contract-metadata": "^1.22.0",
     "abort-controller": "^3.0.0",
-    "await-semaphore": "^0.1.3",
+    "async-mutex": "^0.3.1",
     "bignumber.js": "^9.0.1",
     "eth-ens-namehash": "^2.0.8",
     "eth-json-rpc-infura": "^5.1.0",
