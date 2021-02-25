@@ -363,8 +363,9 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     this.pollCount += 1;
     this.handle && clearTimeout(this.handle);
     if (this.pollCount < this.config.pollCountLimit + 1) {
+      !this.state.isInPolling && this.update({ isInPolling: true });
       const { nextQuotesState, threshold } = await this.fetchQuotes();
-      this.update({ isInPolling: true, pollingCyclesLeft: this.config.pollCountLimit - this.pollCount });
+      this.update({ pollingCyclesLeft: this.config.pollCountLimit - this.pollCount });
       if (threshold && nextQuotesState?.quoteRefreshSeconds) {
         this.update({ ...this.state, ...nextQuotesState });
         this.handle = setTimeout(async () => {
