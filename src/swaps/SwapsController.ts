@@ -51,7 +51,7 @@ export interface SwapsState extends BaseState {
   tokens: null | SwapsToken[];
   topAssets: null | SwapsAsset[];
   quotesLastFetched: null | number;
-  errorKey: null | SwapsError;
+  error: { key: null | SwapsError; description: null | string };
   topAggId: null | string;
   aggregatorMetadataLastFetched: number;
   tokensLastFetched: number;
@@ -341,7 +341,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       aggregatorMetadataLastFetched: 0,
       quotesLastFetched: 0,
       topAssetsLastFetched: 0,
-      errorKey: null,
+      error: { key: null, description: null },
       topAggId: null,
       tokensLastFetched: 0,
       isInPolling: false,
@@ -374,7 +374,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       }
     } else {
       this.handle = setTimeout(() => {
-        this.stopPollingAndResetState(SwapsError.QUOTES_EXPIRED_ERROR);
+        this.stopPollingAndResetState({ key: SwapsError.QUOTES_EXPIRED_ERROR, description: null });
       }, fetchThreshold);
     }
   }
@@ -468,8 +468,8 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       };
       return { nextQuotesState, threshold: quotesLastFetched - timeStarted };
     } catch (e) {
-      const error = Object.values(SwapsError).includes(e) ? e : SwapsError.ERROR_FETCHING_QUOTES;
-      this.stopPollingAndResetState(error);
+      const errorKey = Object.values(SwapsError).includes(e) ? e : SwapsError.ERROR_FETCHING_QUOTES;
+      this.stopPollingAndResetState({ key: errorKey, description: e });
       return { nextQuotesState: null, threshold: null };
     }
   }
@@ -536,7 +536,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
    * Stops the polling process
    *
    */
-  stopPollingAndResetState(error?: SwapsError) {
+  stopPollingAndResetState(error?: { key: SwapsError | null; description: string | null }) {
     this.abortController && this.abortController.abort();
     this.handle && clearTimeout(this.handle);
     this.pollCount = this.config.pollCountLimit + 1;
@@ -549,7 +549,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       tokens: this.state.tokens,
       topAssets: this.state.topAssets,
       aggregatorMetadata: this.state.aggregatorMetadata,
-      errorKey: error,
+      error,
     });
   }
 }
