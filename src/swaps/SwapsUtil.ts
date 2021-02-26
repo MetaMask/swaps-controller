@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 import { Transaction } from '../transaction/TransactionController';
-import { handleFetch, timeoutFetch, constructTxParams, BNToHex, calcTokenAmount } from '../util';
+import { handleFetch, timeoutFetch, constructTxParams, BNToHex } from '../util';
 import {
   APIAggregatorMetadata,
   SwapsAsset,
@@ -200,9 +200,21 @@ export function calculateGasEstimateWithRefund(
   return gasEstimateWithRefund;
 }
 
+/**
+ * Calculates token received from a transaction receipt together with an approval transaction receipt
+ *
+ * @param receipt - Swap transaction receipt
+ * @param approvalReceipt - Approval transaction receipt needed for swaps if any
+ * @param transaction - Swap transaction object
+ * @param approvalTransaction - Approval transaction object needed for swaps if any
+ * @param destinationToken - Destination token object
+ * @param previousBalance - Previous swap ETH balance
+ * @param postBalance - Post swap ETH balance
+ * @returns - Tokens received in hex minimal unit
+ */
 export function getSwapsTokensReceived(
   receipt: TransactionReceipt,
-  approvalReceipt: TransactionReceipt,
+  approvalReceipt: TransactionReceipt | null,
   transaction: Transaction,
   approvalTransaction: Transaction,
   destinationToken: SwapsToken,
@@ -217,7 +229,7 @@ export function getSwapsTokensReceived(
     const previousBalanceMinusGas = new BigNumber(previousBalance).minus(totalGasCost);
     const postBalanceMinusGas = new BigNumber(postBalance);
 
-    return calcTokenAmount(postBalanceMinusGas.minus(previousBalanceMinusGas), 18).toString(16);
+    return postBalanceMinusGas.minus(previousBalanceMinusGas).toString(16);
   }
   if (!receipt?.logs || receipt.status === '0x0') {
     return;
@@ -236,8 +248,7 @@ export function getSwapsTokensReceived(
   if (!tokenTransferLog) {
     return;
   }
-  return calcTokenAmount(new BigNumber(tokenTransferLog.data), destinationToken.decimals).toString(10);
-
+  return tokenTransferLog.data;
 }
 
 /**
