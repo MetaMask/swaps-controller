@@ -232,6 +232,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
 
   /**
    * Get current allowance for a wallet address to access ERC20 contract address funds
+   * it will throw after 10 secs
    *
    * @param contractAddress - Hex address of the ERC20 contract
    * @param walletAddress - Hex address of the wallet
@@ -239,7 +240,13 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
    */
   private async getERC20Allowance(contractAddress: string, walletAddress: string): Promise<number> {
     const contract = this.web3.eth.contract(abiERC20).at(contractAddress);
-    return new Promise<number>((resolve, reject) => {
+    const allowanceTimeout = new Promise<number>((_, reject) => {
+      setTimeout(() => {
+        reject(new Error('Allowance timeout'));
+      }, 10000);
+    });
+
+    const allowancePromise = new Promise<number>((resolve, reject) => {
       contract.allowance(walletAddress, SWAPS_CONTRACT_ADDRESS, (error: Error, result: number) => {
         /* istanbul ignore if */
         if (error) {
@@ -249,6 +256,8 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
         resolve(result);
       });
     });
+
+    return (Promise.race([allowanceTimeout, allowancePromise])) as Promise<number>;
   }
 
   private timedoutGasReturn(tradeTxParams: Transaction | null): Promise<{ gas: string | null }> {
