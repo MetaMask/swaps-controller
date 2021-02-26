@@ -681,7 +681,6 @@ export class TransactionController extends BaseController<TransactionConfig, Tra
           if (meta.status === 'submitted' && meta.networkID === currentNetworkID) {
             const txObj = await query(this.ethQuery, 'getTransactionByHash', [meta.transactionHash]);
           /* istanbul ignore else */
-            console.log('txObj', txObj);
             if (txObj && txObj.blockNumber) {
               transactions[index].status = 'confirmed';
               this.hub.emit(`${meta.id}:confirmed`, meta);
