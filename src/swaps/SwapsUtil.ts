@@ -364,3 +364,15 @@ function meansOfQuotesFeesAndValue(quotes: QuoteValues[]) {
     ethValueOfTokens: feeAndValueSumsAsBigNumbers.ethValueOfTokens.div(quotes.length, 10).toString(10),
   };
 }
+
+export function calculateGasLimits(approvalNeeded: boolean, gasEstimate: string | null, gasEstimateWithRefund: string | null, averageGas: number, maxGas: number, gasMultiplier: number) {
+  let tradeGasLimit, tradeMaxGasLimit;
+  if (!approvalNeeded && gasEstimate && gasEstimateWithRefund && gasEstimateWithRefund !== '0') {
+    tradeGasLimit = new BigNumber(gasEstimateWithRefund, 16).times(gasMultiplier);
+    tradeMaxGasLimit = new BigNumber(gasEstimate, 16).times(gasMultiplier);
+  } else {
+    tradeGasLimit = new BigNumber(averageGas || MAX_GAS_LIMIT, 10);
+    tradeMaxGasLimit = new BigNumber(maxGas || MAX_GAS_LIMIT, 10);
+  }
+  return { tradeGasLimit, tradeMaxGasLimit };
+}

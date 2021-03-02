@@ -15,6 +15,7 @@ import {
   DEFAULT_ERC20_APPROVE_GAS,
   ETH_SWAPS_TOKEN_ADDRESS,
   SWAPS_CONTRACT_ADDRESS,
+  calculateGasLimits,
 } from './SwapsUtil';
 import {
   APIAggregatorMetadata,
@@ -129,21 +130,14 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
         sourceAmount,
         sourceToken,
         trade,
+        gasEstimate,
         gasEstimateWithRefund,
         gasMultiplier,
         approvalNeeded,
       } = quote;
 
       // trade gas
-
-      let tradeGasLimit, tradeMaxGasLimit;
-      if (!approvalNeeded && gasEstimateWithRefund && gasEstimateWithRefund !== '0') {
-        tradeGasLimit = new BigNumber(gasEstimateWithRefund, 16);
-        tradeMaxGasLimit = new BigNumber(gasEstimateWithRefund, 16).times(1.5);
-      } else {
-        tradeGasLimit = new BigNumber(averageGas || MAX_GAS_LIMIT, 10).times(gasMultiplier);
-        tradeMaxGasLimit = new BigNumber(maxGas || MAX_GAS_LIMIT, 10).times(gasMultiplier);
-      }
+      const { tradeGasLimit, tradeMaxGasLimit } = calculateGasLimits(Boolean(approvalNeeded), gasEstimate, gasEstimateWithRefund, averageGas, maxGas, gasMultiplier);
 
       // + approval gas if required
       const approvalGas = this.state.approvalTransaction?.gas || '0x0';
