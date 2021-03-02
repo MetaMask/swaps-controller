@@ -76,9 +76,6 @@ interface SwapsNextState {
   quoteRefreshSeconds: number | null;
 }
 
-// The MAX_GAS_LIMIT is a number that is higher than the maximum gas costs we have observed on any aggregator
-const MAX_GAS_LIMIT = 2500000;
-
 export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
   private handle?: NodeJS.Timer;
 
@@ -130,14 +127,13 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
         sourceAmount,
         sourceToken,
         trade,
-        gasEstimate,
         gasEstimateWithRefund,
         gasMultiplier,
         approvalNeeded,
       } = quote;
 
       // trade gas
-      const { tradeGasLimit, tradeMaxGasLimit } = calculateGasLimits(Boolean(approvalNeeded), gasEstimate, gasEstimateWithRefund, averageGas, maxGas, gasMultiplier);
+      const { tradeGasLimit, tradeMaxGasLimit } = calculateGasLimits(Boolean(approvalNeeded), gasEstimateWithRefund, averageGas, maxGas, gasMultiplier);
 
       // + approval gas if required
       const approvalGas = this.state.approvalTransaction?.gas || '0x0';

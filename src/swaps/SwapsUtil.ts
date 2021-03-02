@@ -365,11 +365,11 @@ function meansOfQuotesFeesAndValue(quotes: QuoteValues[]) {
   };
 }
 
-export function calculateGasLimits(approvalNeeded: boolean, gasEstimate: string | null, gasEstimateWithRefund: string | null, averageGas: number, maxGas: number, gasMultiplier: number) {
+export function calculateGasLimits(approvalNeeded: boolean, gasEstimateWithRefund: string | null, averageGas: number, maxGas: number, gasMultiplier: number) {
   let tradeGasLimit, tradeMaxGasLimit;
-  if (!approvalNeeded && gasEstimate && gasEstimateWithRefund && gasEstimateWithRefund !== '0') {
-    tradeGasLimit = new BigNumber(gasEstimateWithRefund, 16).times(gasMultiplier);
-    tradeMaxGasLimit = new BigNumber(gasEstimate, 16).times(gasMultiplier);
+  if (!approvalNeeded && gasEstimateWithRefund && gasEstimateWithRefund !== '0') {
+    tradeGasLimit = new BigNumber(gasEstimateWithRefund, 16);
+    tradeMaxGasLimit = tradeGasLimit.times(gasMultiplier);
   } else {
     tradeGasLimit = new BigNumber(averageGas || MAX_GAS_LIMIT, 10);
     tradeMaxGasLimit = new BigNumber(maxGas || MAX_GAS_LIMIT, 10);
