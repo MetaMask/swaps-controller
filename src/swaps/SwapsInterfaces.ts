@@ -64,6 +64,7 @@ export interface APIFetchQuotesParams {
   exchangeList?: string[];
   balanceError?: boolean;
   timeout?: number;
+  clientId?: string;
 }
 
 /**

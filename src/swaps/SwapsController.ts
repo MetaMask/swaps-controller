@@ -33,6 +33,7 @@ const EthQuery = require('ethjs-query');
 const Web3 = require('web3');
 
 export interface SwapsConfig extends BaseConfig {
+  clientId?: string;
   maxGasLimit: number;
   pollCountLimit: number;
   metaSwapAddress: string;
@@ -318,6 +319,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       fetchTokensThreshold: 1000 * 60 * 60 * 24,
       fetchTopAssetsThreshold: 1000 * 60 * 30,
       provider: undefined,
+      clientId: undefined,
     };
     this.defaultState = {
       quotes: {},
@@ -427,7 +429,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       /** We need to abort quotes fetch if stopPollingAndResetState is called while getting quotes */
       this.abortController = new AbortController();
       const { signal } = this.abortController;
-      let quotes: { [key: string]: Quote } = await fetchTradesInfo(fetchParams, signal);
+      let quotes: { [key: string]: Quote } = await fetchTradesInfo(fetchParams, signal, this.config.clientId);
 
       if (Object.values(quotes).length === 0) {
         throw new Error(SwapsError.QUOTES_NOT_AVAILABLE_ERROR);

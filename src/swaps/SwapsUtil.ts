@@ -94,6 +94,7 @@ export const getBaseApiURL = function (type: APIType): string {
 export async function fetchTradesInfo(
   { slippage, sourceToken, sourceAmount, destinationToken, walletAddress, exchangeList }: APIFetchQuotesParams,
   abortSignal: AbortSignal | null,
+  clientId?: string,
 ): Promise<{ [key: string]: Quote }> {
   const urlParams: APIFetchQuotesParams = {
     destinationToken,
@@ -106,6 +107,10 @@ export async function fetchTradesInfo(
 
   if (exchangeList) {
     urlParams.exchangeList = exchangeList;
+  }
+
+  if (clientId) {
+    urlParams.clientId = clientId;
   }
 
   const tradeURL = `${getBaseApiURL(APIType.TRADES)}?${new URLSearchParams(urlParams as Record<any, any>).toString()}`;

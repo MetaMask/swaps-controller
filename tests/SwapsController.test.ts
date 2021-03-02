@@ -266,6 +266,7 @@ describe('SwapsController', () => {
       fetchTokensThreshold: 1000 * 60 * 60 * 24,
       fetchTopAssetsThreshold: 1000 * 60 * 30,
       provider: undefined,
+      clientId: undefined,
     });
   });
 
@@ -301,7 +302,7 @@ describe('SwapsController', () => {
       aggregatorMetadataLastFetched: 0,
       quotesLastFetched: 0,
       topAssetsLastFetched: 0,
-      errorKey: null,
+      error: { description: null, key: null },
       topAggId: null,
       tokensLastFetched: 0,
       isInPolling: false,
