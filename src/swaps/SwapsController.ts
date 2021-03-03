@@ -58,7 +58,6 @@ export interface SwapsState extends BaseState {
   aggregatorMetadataLastFetched: number;
   tokensLastFetched: number;
   topAssetsLastFetched: number;
-  customGasPrice?: string;
   isInPolling: boolean;
   pollingCyclesLeft: number;
   approvalTransaction: Transaction | null;
@@ -103,16 +102,15 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
    * Find best quote and quotes calculated values
    *
    * @param quotes - Array of quotes
-   * @param customGasPrice - If defined, custom gas price used
    * @returns - Promise resolving to the best quote object and values from quotes
    */
   private async getBestQuoteAndQuotesValues(
-    quotes: { [key: string]: Quote }, customGasPrice?: string): Promise<{ topAggId: string; quoteValues: { [key: string]: QuoteValues } }> {
+    quotes: { [key: string]: Quote }): Promise<{ topAggId: string; quoteValues: { [key: string]: QuoteValues } }> {
     let topAggId = '';
     let overallValueOfBestQuoteForSorting: BigNumber | null = null;
 
     const quoteValues: { [key: string]: QuoteValues } = {};
-    const usedGasPrice = customGasPrice || (await this.getGasPrice());
+    const usedGasPrice = await this.getGasPrice();
 
     const { destinationTokenInfo, destinationTokenConversionRate } = this.state.fetchParamsMetaData;
     Object.values(quotes).forEach((quote: Quote) => {
@@ -407,7 +405,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
 
   async fetchQuotes(): Promise<{ nextQuotesState: SwapsNextState | null; threshold: number | null }> {
     const timeStarted = Date.now();
-    const { fetchParams, customGasPrice } = this.state;
+    const { fetchParams } = this.state;
     try {
       /** We need to abort quotes fetch if stopPollingAndResetState is called while getting quotes */
       this.abortController = new AbortController();
@@ -446,7 +444,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
         }
       }
       quotes = await this.getAllQuotesWithGasEstimates(quotes);
-      const { topAggId, quoteValues } = await this.getBestQuoteAndQuotesValues(quotes, customGasPrice);
+      const { topAggId, quoteValues } = await this.getBestQuoteAndQuotesValues(quotes);
       const savings = await this.calculateSavings(quotes[topAggId], quoteValues);
 
       const quotesLastFetched = Date.now();
@@ -471,7 +469,6 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
   startFetchAndSetQuotes(
     fetchParams: APIFetchQuotesParams,
     fetchParamsMetaData: APIFetchQuotesMetadata,
-    customGasPrice?: string,
   ) {
     if (!fetchParams) {
       return null;
@@ -480,7 +477,6 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     this.pollCount = 0;
 
     this.update({
-      customGasPrice,
       fetchParams,
       fetchParamsMetaData,
     });
