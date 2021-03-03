@@ -15,6 +15,7 @@ import {
   DEFAULT_ERC20_APPROVE_GAS,
   ETH_SWAPS_TOKEN_ADDRESS,
   SWAPS_CONTRACT_ADDRESS,
+  calculateGasLimits,
 } from './SwapsUtil';
 import {
   APIAggregatorMetadata,
@@ -75,9 +76,6 @@ interface SwapsNextState {
   quoteRefreshSeconds: number | null;
 }
 
-// The MAX_GAS_LIMIT is a number that is higher than the maximum gas costs we have observed on any aggregator
-const MAX_GAS_LIMIT = 2500000;
-
 export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
   private handle?: NodeJS.Timer;
 
@@ -109,9 +107,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
    * @returns - Promise resolving to the best quote object and values from quotes
    */
   private async getBestQuoteAndQuotesValues(
-    quotes: { [key: string]: Quote },
-    customGasPrice?: string,
-  ): Promise<{ topAggId: string; quoteValues: { [key: string]: QuoteValues } }> {
+    quotes: { [key: string]: Quote }, customGasPrice?: string): Promise<{ topAggId: string; quoteValues: { [key: string]: QuoteValues } }> {
     let topAggId = '';
     let overallValueOfBestQuoteForSorting: BigNumber | null = null;
 
@@ -135,23 +131,10 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       } = quote;
 
       // trade gas
+      const { tradeGasLimit, tradeMaxGasLimit } = calculateGasLimits(Boolean(approvalNeeded), gasEstimateWithRefund, averageGas, maxGas, gasMultiplier);
 
-      let tradeGasLimit, tradeMaxGasLimit;
-      if (!approvalNeeded && gasEstimateWithRefund && gasEstimateWithRefund !== '0') {
-        tradeGasLimit = new BigNumber(gasEstimateWithRefund, 16);
-        tradeMaxGasLimit = new BigNumber(gasEstimateWithRefund, 16).times(1.5);
-      } else {
-        tradeGasLimit = new BigNumber(averageGas || MAX_GAS_LIMIT, 10).times(gasMultiplier);
-        tradeMaxGasLimit = new BigNumber(maxGas || MAX_GAS_LIMIT, 10).times(gasMultiplier);
-      }
-
-      // + approval gas if required
-      const approvalGas = this.state.approvalTransaction?.gas || '0x0';
-
-      const totalGasLimit = tradeGasLimit.plus(approvalGas, 16);
-      const maxTotalGasLimit = tradeMaxGasLimit.plus(approvalGas, 16);
-      const totalGasInWei = totalGasLimit.times(usedGasPrice, 16);
-      const maxTotalGasInWei = maxTotalGasLimit.times(usedGasPrice, 16);
+      const totalGasInWei = tradeGasLimit.times(usedGasPrice, 16);
+      const maxTotalGasInWei = tradeMaxGasLimit.times(usedGasPrice, 16);
 
       // totalGas + trade value
       // trade.value is a sum of different values depending on the transaction.

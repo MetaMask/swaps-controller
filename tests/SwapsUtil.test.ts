@@ -310,4 +310,23 @@ describe('SwapsUtil', () => {
       expect(medianValue.toString(10)).toBe(result);
     });
   });
+
+  describe('calculateGasLimits', () => {
+    const gasEstimateWithRefund = '0x3c';
+    const averageGas = 20;
+    const maxGas = 40;
+    const gasMultiplier = 1.2;
+    it('if approval is needed, maxGas is the limit and averageGas is the estimated fee', () => {
+      const { tradeGasLimit, tradeMaxGasLimit } = swapsUtil.calculateGasLimits(true, gasEstimateWithRefund, averageGas, maxGas, gasMultiplier);
+      expect(tradeGasLimit.toString()).toEqual(averageGas.toString());
+      expect(tradeMaxGasLimit.toString()).toEqual(maxGas.toString());
+    });
+    it('if no approval is needed, gas limit is gas limit minus refund and max gas is the gas estimated by multiplier', () => {
+      const { tradeGasLimit, tradeMaxGasLimit } = swapsUtil.calculateGasLimits(false, gasEstimateWithRefund, averageGas, maxGas, gasMultiplier);
+      const limit: BigNumber = new BigNumber(gasEstimateWithRefund);
+      expect(tradeGasLimit.toString(16)).toEqual(limit.toString(16));
+      expect(tradeMaxGasLimit.toString(16)).toEqual(limit.times(gasMultiplier).toString(16));
+    });
+
+  });
 });
