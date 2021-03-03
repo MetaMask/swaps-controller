@@ -107,9 +107,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
    * @returns - Promise resolving to the best quote object and values from quotes
    */
   private async getBestQuoteAndQuotesValues(
-    quotes: { [key: string]: Quote },
-    customGasPrice?: string,
-  ): Promise<{ topAggId: string; quoteValues: { [key: string]: QuoteValues } }> {
+    quotes: { [key: string]: Quote }, customGasPrice?: string): Promise<{ topAggId: string; quoteValues: { [key: string]: QuoteValues } }> {
     let topAggId = '';
     let overallValueOfBestQuoteForSorting: BigNumber | null = null;
 
@@ -135,13 +133,8 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       // trade gas
       const { tradeGasLimit, tradeMaxGasLimit } = calculateGasLimits(Boolean(approvalNeeded), gasEstimateWithRefund, averageGas, maxGas, gasMultiplier);
 
-      // + approval gas if required
-      const approvalGas = this.state.approvalTransaction?.gas || '0x0';
-
-      const totalGasLimit = tradeGasLimit.plus(approvalGas, 16);
-      const maxTotalGasLimit = tradeMaxGasLimit.plus(approvalGas, 16);
-      const totalGasInWei = totalGasLimit.times(usedGasPrice, 16);
-      const maxTotalGasInWei = maxTotalGasLimit.times(usedGasPrice, 16);
+      const totalGasInWei = tradeGasLimit.times(usedGasPrice, 16);
+      const maxTotalGasInWei = tradeMaxGasLimit.times(usedGasPrice, 16);
 
       // totalGas + trade value
       // trade.value is a sum of different values depending on the transaction.
