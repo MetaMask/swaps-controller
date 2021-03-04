@@ -98,94 +98,12 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
   }
 
   /**
-   * Find best quote and quotes calculated values
+   * Calculates a quote `QuotesValue`
    *
-   * @param quotes - Array of quotes
-   * @returns - Promise resolving to the best quote object and values from quotes
+   * @param quote - Specific quote object
+   * @param gasPrice - Gas price in hex format to calculate the `QuotesValue` with
    */
-  private async getBestQuoteAndQuotesValues(
-    quotes: { [key: string]: Quote }): Promise<{ topAggId: string; quoteValues: { [key: string]: QuoteValues } }> {
-    let topAggId = '';
-    let overallValueOfBestQuoteForSorting: BigNumber | null = null;
-
-    const quoteValues: { [key: string]: QuoteValues } = {};
-    const usedGasPrice = await this.getGasPrice();
-
-    const { destinationTokenInfo, destinationTokenConversionRate } = this.state.fetchParamsMetaData;
-    Object.values(quotes).forEach((quote: Quote) => {
-      const {
-        aggregator,
-        averageGas,
-        maxGas,
-        destinationAmount = 0,
-        fee: metaMaskFee,
-        sourceAmount,
-        sourceToken,
-        trade,
-        gasEstimateWithRefund,
-        gasMultiplier,
-        approvalNeeded,
-      } = quote;
-
-      // trade gas
-      const { tradeGasLimit, tradeMaxGasLimit } = calculateGasLimits(Boolean(approvalNeeded), gasEstimateWithRefund, averageGas, maxGas, gasMultiplier);
-
-      const totalGasInWei = tradeGasLimit.times(usedGasPrice, 16);
-      const maxTotalGasInWei = tradeMaxGasLimit.times(usedGasPrice, 16);
-
-      // totalGas + trade value
-      // trade.value is a sum of different values depending on the transaction.
-      // It always includes any external fees charged by the quote source. In
-      // addition, if the source asset is ETH, trade.value includes the amount
-      // of swapped ETH.
-      const totalInWei = totalGasInWei.plus(trade.value, 16);
-      const maxTotalInWei = maxTotalGasInWei.plus(trade.value, 16);
-
-      // if value in trade, ETH fee will be the gas, if not it will be the total wei
-      const weiFee = sourceToken === ETH_SWAPS_TOKEN_ADDRESS ? totalInWei.minus(sourceAmount, 10) : totalInWei; // sourceAmount is in wei : totalInWei;
-      const maxWeiFee = sourceToken === ETH_SWAPS_TOKEN_ADDRESS ? maxTotalInWei.minus(sourceAmount, 10) : maxTotalInWei; // sourceAmount is in wei : totalInWei;
-      const ethFee = calcTokenAmount(weiFee, 18);
-      const maxEthFee = calcTokenAmount(maxWeiFee, 18);
-      const decimalAdjustedDestinationAmount = calcTokenAmount(destinationAmount, destinationTokenInfo.decimals);
-
-      // fees
-      const tokenPercentageOfPreFeeDestAmount = new BigNumber(100, 10).minus(metaMaskFee, 10).div(100);
-      const destinationAmountBeforeMetaMaskFee = decimalAdjustedDestinationAmount.div(
-        tokenPercentageOfPreFeeDestAmount,
-      );
-      const metaMaskFeeInTokens = destinationAmountBeforeMetaMaskFee.minus(decimalAdjustedDestinationAmount);
-
-      const conversionRate = destinationTokenConversionRate || 1;
-
-      const ethValueOfTokens = decimalAdjustedDestinationAmount.times(conversionRate, 10);
-
-      // the more tokens the better
-      const overallValueOfQuote = ethValueOfTokens.minus(ethFee, 10);
-      quoteValues[aggregator] = {
-        aggregator,
-        ethFee: ethFee.toFixed(18),
-        maxEthFee: maxEthFee.toFixed(18),
-        ethValueOfTokens: ethValueOfTokens.toFixed(18),
-        overallValueOfQuote: overallValueOfQuote.toFixed(18),
-        metaMaskFeeInEth: metaMaskFeeInTokens.times(conversionRate).toFixed(18),
-      };
-
-      if (!overallValueOfBestQuoteForSorting || overallValueOfQuote.gt(overallValueOfBestQuoteForSorting)) {
-        topAggId = aggregator;
-        overallValueOfBestQuoteForSorting = overallValueOfQuote;
-      }
-    });
-
-    return { topAggId, quoteValues };
-  }
-
-  async updateSelectedQuoteWithGasPrice(customGasPrice: string): Promise<void> {
-    const { topAggId, quotes, quoteValues } = this.state;
-    if (!topAggId || !quoteValues) {
-      return;
-    }
-    const selectedQuote = quotes[topAggId];
-
+  private calculateQuoteValues(quote: Quote, gasPrice: string): QuoteValues {
     const { destinationTokenInfo, destinationTokenConversionRate } = this.state.fetchParamsMetaData;
     const {
       aggregator,
@@ -199,13 +117,13 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       gasEstimateWithRefund,
       gasMultiplier,
       approvalNeeded,
-    } = selectedQuote;
+    } = quote;
 
     // trade gas
     const { tradeGasLimit, tradeMaxGasLimit } = calculateGasLimits(Boolean(approvalNeeded), gasEstimateWithRefund, averageGas, maxGas, gasMultiplier);
 
-    const totalGasInWei = tradeGasLimit.times(customGasPrice, 16);
-    const maxTotalGasInWei = tradeMaxGasLimit.times(customGasPrice, 16);
+    const totalGasInWei = tradeGasLimit.times(gasPrice, 16);
+    const maxTotalGasInWei = tradeMaxGasLimit.times(gasPrice, 16);
 
     // totalGas + trade value
     // trade.value is a sum of different values depending on the transaction.
@@ -237,7 +155,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     // the more tokens the better
     const overallValueOfQuote = ethValueOfTokens.minus(ethFee, 10);
 
-    quoteValues[aggregator] = {
+    const quoteValues: QuoteValues = {
       aggregator,
       ethFee: ethFee.toFixed(18),
       maxEthFee: maxEthFee.toFixed(18),
@@ -246,6 +164,50 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       metaMaskFeeInEth: metaMaskFeeInTokens.times(conversionRate).toFixed(18),
     };
 
+    return quoteValues;
+  }
+
+  /**
+   * Find best quote and quotes calculated values
+   *
+   * @param quotes - Array of quotes
+   * @returns - Promise resolving to the best quote object and values from quotes
+   */
+  private async getBestQuoteAndQuotesValues(
+    quotes: { [key: string]: Quote }): Promise<{ topAggId: string; quoteValues: { [key: string]: QuoteValues } }> {
+    let topAggId = '';
+    let overallValueOfBestQuoteForSorting: BigNumber | null = null;
+
+    const quoteValues: { [key: string]: QuoteValues } = {};
+    const usedGasPrice = await this.getGasPrice();
+
+    Object.values(quotes).forEach((quote: Quote) => {
+      const quoteValue = this.calculateQuoteValues(quote, usedGasPrice);
+      quoteValues[quoteValue.aggregator] = quoteValue;
+
+      const bnOverallValueOfQuote = new BigNumber(quoteValue.overallValueOfQuote);
+      if (!overallValueOfBestQuoteForSorting || bnOverallValueOfQuote.gt(overallValueOfBestQuoteForSorting)) {
+        topAggId = quote.aggregator;
+        overallValueOfBestQuoteForSorting = bnOverallValueOfQuote;
+      }
+    });
+
+    return { topAggId, quoteValues };
+  }
+
+  /**
+   * Updates top quote with a custom gas price
+   *
+   * @param customGasPrice - Custom gas price in hex
+   */
+  updateSelectedQuoteWithGasPrice(customGasPrice: string): void {
+    const { topAggId, quotes, quoteValues } = this.state;
+    if (!topAggId || !quoteValues) {
+      return;
+    }
+    const selectedQuote = quotes[topAggId];
+    const quoteValue = this.calculateQuoteValues(selectedQuote, customGasPrice);
+    quoteValues[selectedQuote.aggregator] = quoteValue;
     this.update({ topAggId, quoteValues });
   }
 
