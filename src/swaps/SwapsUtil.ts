@@ -369,7 +369,7 @@ export function calculateGasLimits(approvalNeeded: boolean, gasEstimateWithRefun
   let tradeGasLimit, tradeMaxGasLimit;
   if (!approvalNeeded && gasEstimateWithRefund && gasEstimateWithRefund !== '0') {
     tradeGasLimit = new BigNumber(gasEstimateWithRefund, 16);
-    tradeMaxGasLimit = tradeGasLimit.times(gasMultiplier);
+    tradeMaxGasLimit = tradeGasLimit.times(gasMultiplier).integerValue();
   } else {
     tradeGasLimit = new BigNumber(averageGas || MAX_GAS_LIMIT, 10);
     tradeMaxGasLimit = new BigNumber(maxGas || MAX_GAS_LIMIT, 10);
