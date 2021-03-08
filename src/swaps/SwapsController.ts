@@ -62,6 +62,7 @@ export interface SwapsState extends BaseState {
   approvalTransaction: Transaction | null;
   quoteValues: { [key: string]: QuoteValues } | null;
   quoteRefreshSeconds: number | null;
+  usedGasPrice: string | null;
 }
 
 interface SwapsNextState {
@@ -108,7 +109,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
    * @param quote - Specific quote object
    * @param gasPrice - Gas price in hex format to calculate the `QuotesValue` with
    */
-  private calculateQuoteValues(quote: Quote, gasPrice: string): QuoteValues {
+  private calculateQuoteValues(quote: Quote, gasPrice: string, gasLimit: string | null): QuoteValues {
     const { destinationTokenInfo, destinationTokenConversionRate } = this.state.fetchParamsMetaData;
     const {
       aggregator,
@@ -125,7 +126,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     } = quote;
 
     // trade gas
-    const { tradeGasLimit, tradeMaxGasLimit } = calculateGasLimits(Boolean(approvalNeeded), gasEstimateWithRefund, averageGas, maxGas, gasMultiplier);
+    const { tradeGasLimit, tradeMaxGasLimit } = calculateGasLimits(Boolean(approvalNeeded), gasEstimateWithRefund, averageGas, maxGas, gasMultiplier, gasLimit);
 
     const totalGasInWei = tradeGasLimit.times(gasPrice, 16);
     const maxTotalGasInWei = tradeMaxGasLimit.times(gasPrice, 16);
@@ -172,6 +173,26 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     return quoteValues;
   }
 
+  private calculatesCustomLimitMaxEthFee(quote: Quote, gasPrice: string, gasLimit: string): string {
+    const {
+      averageGas,
+      maxGas,
+      sourceAmount,
+      sourceToken,
+      trade,
+      gasEstimateWithRefund,
+      gasMultiplier,
+      approvalNeeded,
+    } = quote;
+
+    const { tradeMaxGasLimit } = calculateGasLimits(Boolean(approvalNeeded), gasEstimateWithRefund, averageGas, maxGas, gasMultiplier, gasLimit);
+    const maxTotalGasInWei = tradeMaxGasLimit.times(gasPrice, 16);
+    const maxTotalInWei = maxTotalGasInWei.plus(trade.value, 16);
+    const maxWeiFee = sourceToken === ETH_SWAPS_TOKEN_ADDRESS ? maxTotalInWei.minus(sourceAmount, 10) : maxTotalInWei;
+    const maxEthFee = calcTokenAmount(maxWeiFee, 18).toFixed(18);
+    return maxEthFee;
+  }
+
   /**
    * Find best quote and quotes calculated values
    *
@@ -186,7 +207,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     const quoteValues: { [key: string]: QuoteValues } = {};
 
     Object.values(quotes).forEach((quote: Quote) => {
-      const quoteValue = this.calculateQuoteValues(quote, usedGasPrice);
+      const quoteValue = this.calculateQuoteValues(quote, usedGasPrice, null);
       quoteValues[quoteValue.aggregator] = quoteValue;
 
       const bnOverallValueOfQuote = new BigNumber(quoteValue.overallValueOfQuote);
@@ -200,16 +221,31 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
   }
 
   /**
-   * Updates top quote with a custom gas price
+   * Updates all quotes with a new custom gas price
    *
-   * @param customGasPrice - Custom gas price in hex
+   * @param customGasPrice - Custom gas price in hex format
    */
-  updateQuotesWithGasPrice(customGasPrice: string): void {
+   updateQuotesWithGasPrice(customGasPrice: string): void {
     const { quotes } = this.state;
     const { topAggId, quoteValues } = this.getBestQuoteAndQuotesValues(quotes, customGasPrice);
     this.update({ topAggId, quoteValues });
   }
 
+  /**
+   * Updates the selected quote maxEthFee param according to a custom gas limit
+   *
+   * @param customGasLimit - Custom gas limit in hex format
+   */
+  updateSelectedQuoteWithGasLimit(customGasLimit: string): void {
+    const { topAggId, quotes, quoteValues, usedGasPrice } = this.state;
+    if (!topAggId || !quoteValues || !usedGasPrice) {
+      return;
+    }
+    const selectedQuote = quotes[topAggId];
+    const maxEthFee = this.calculatesCustomLimitMaxEthFee(selectedQuote, usedGasPrice, customGasLimit);
+    quoteValues[selectedQuote.aggregator].maxEthFee = maxEthFee;
+    this.update({ topAggId, quoteValues });
+  }
   /**
    * Calculate savings from quotes
    *
@@ -488,11 +524,11 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
         quoteValues,
         quoteRefreshSeconds: quotes[topAggId]?.quoteRefreshSeconds,
       };
-      return { nextQuotesState, threshold: quotesLastFetched - timeStarted };
+      return { nextQuotesState, threshold: quotesLastFetched - timeStarted, usedGasPrice };
     } catch (e) {
       const errorKey = Object.values(SwapsError).includes(e) ? e : SwapsError.ERROR_FETCHING_QUOTES;
       this.stopPollingAndResetState({ key: errorKey, description: e });
-      return { nextQuotesState: null, threshold: null };
+      return { nextQuotesState: null, threshold: null, usedGasPrice: null };
     }
   }
 

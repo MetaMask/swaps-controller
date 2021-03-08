@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 import { Transaction } from '../transaction/TransactionController';
-import { handleFetch, timeoutFetch, constructTxParams, BNToHex, query } from '../util';
+import { handleFetch, timeoutFetch, constructTxParams, BNToHex } from '../util';
 import {
   APIAggregatorMetadata,
   SwapsAsset,
@@ -369,14 +369,14 @@ function meansOfQuotesFeesAndValue(quotes: QuoteValues[]) {
   };
 }
 
-export function calculateGasLimits(approvalNeeded: boolean, gasEstimateWithRefund: string | null, averageGas: number, maxGas: number, gasMultiplier: number) {
+export function calculateGasLimits(approvalNeeded: boolean, gasEstimateWithRefund: string | null, averageGas: number, maxGas: number, gasMultiplier: number, gasLimit: string | null) {
   let tradeGasLimit, tradeMaxGasLimit;
   if (!approvalNeeded && gasEstimateWithRefund && gasEstimateWithRefund !== '0') {
     tradeGasLimit = new BigNumber(gasEstimateWithRefund, 16);
-    tradeMaxGasLimit = tradeGasLimit.times(gasMultiplier).integerValue();
+    tradeMaxGasLimit = (gasLimit && new BigNumber(gasLimit, 16)) || tradeGasLimit.times(gasMultiplier).integerValue();
   } else {
     tradeGasLimit = new BigNumber(averageGas || MAX_GAS_LIMIT, 10);
-    tradeMaxGasLimit = new BigNumber(maxGas || MAX_GAS_LIMIT, 10);
+    tradeMaxGasLimit = new BigNumber(gasLimit || maxGas || MAX_GAS_LIMIT, 10);
   }
   return { tradeGasLimit, tradeMaxGasLimit };
 }
