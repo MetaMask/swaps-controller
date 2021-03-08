@@ -178,13 +178,12 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
    * @param quotes - Array of quotes
    * @returns - Promise resolving to the best quote object and values from quotes
    */
-  private async getBestQuoteAndQuotesValues(
-    quotes: { [key: string]: Quote }): Promise<{ topAggId: string; quoteValues: { [key: string]: QuoteValues } }> {
+  private getBestQuoteAndQuotesValues(
+    quotes: { [key: string]: Quote }, usedGasPrice: string): { topAggId: string; quoteValues: { [key: string]: QuoteValues } } {
     let topAggId = '';
     let overallValueOfBestQuoteForSorting: BigNumber | null = null;
 
     const quoteValues: { [key: string]: QuoteValues } = {};
-    const usedGasPrice = await this.getGasPrice();
 
     Object.values(quotes).forEach((quote: Quote) => {
       const quoteValue = this.calculateQuoteValues(quote, usedGasPrice);
@@ -205,14 +204,9 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
    *
    * @param customGasPrice - Custom gas price in hex
    */
-  updateSelectedQuoteWithGasPrice(customGasPrice: string): void {
-    const { topAggId, quotes, quoteValues } = this.state;
-    if (!topAggId || !quoteValues) {
-      return;
-    }
-    const selectedQuote = quotes[topAggId];
-    const quoteValue = this.calculateQuoteValues(selectedQuote, customGasPrice);
-    quoteValues[selectedQuote.aggregator] = quoteValue;
+  updateQuotesWithGasPrice(customGasPrice: string): void {
+    const { quotes } = this.state;
+    const { topAggId, quoteValues } = this.getBestQuoteAndQuotesValues(quotes, customGasPrice);
     this.update({ topAggId, quoteValues });
   }
 
@@ -480,7 +474,9 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
         }
       }
       quotes = await this.getAllQuotesWithGasEstimates(quotes);
-      const { topAggId, quoteValues } = await this.getBestQuoteAndQuotesValues(quotes);
+      const usedGasPrice = await this.getGasPrice();
+
+      const { topAggId, quoteValues } = this.getBestQuoteAndQuotesValues(quotes, usedGasPrice);
 
       const quotesLastFetched = Date.now();
 
