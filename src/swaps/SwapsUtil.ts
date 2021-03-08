@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 import { Transaction } from '../transaction/TransactionController';
-import { handleFetch, timeoutFetch, constructTxParams, BNToHex } from '../util';
+import { handleFetch, timeoutFetch, constructTxParams, BNToHex, query } from '../util';
 import {
   APIAggregatorMetadata,
   SwapsAsset,
@@ -184,14 +184,18 @@ export async function fetchTokenPrice(address: string): Promise<string> {
 }
 
 export async function fetchGasPrices(): Promise<{
-  SafeGasPrice: string;
-  ProposeGasPrice: string;
-  FastGasPrice: string;
+  safeGasPrice: string;
+  proposedGasPrice: string;
+  fastGasPrice: string;
 }> {
-  const prices = await handleFetch(getBaseApiURL(APIType.GAS_PRICES), {
-    method: 'GET',
-  });
-  return prices;
+    const { SafeGasPrice, ProposeGasPrice, FastGasPrice } = await handleFetch(getBaseApiURL(APIType.GAS_PRICES), {
+      method: 'GET',
+    });
+    return {
+      safeGasPrice: new BigNumber(SafeGasPrice).times(1000000000).toString(16),
+      proposedGasPrice: new BigNumber(ProposeGasPrice).times(1000000000).toString(16),
+      fastGasPrice: new BigNumber(FastGasPrice).times(1000000000).toString(16),
+    };
 }
 
 export function calculateGasEstimateWithRefund(

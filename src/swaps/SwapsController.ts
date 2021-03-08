@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import AbortController from 'abort-controller';
 import BaseController, { BaseConfig, BaseState } from '../BaseController';
-import { calcTokenAmount, estimateGas } from '../util';
+import { calcTokenAmount, estimateGas, query } from '../util';
 import { Transaction } from '../transaction/TransactionController';
 import {
   calculateGasEstimateWithRefund,
@@ -93,9 +93,14 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
    * @returns - Promise resolving to the current gas price
    */
   private async getGasPrice(): Promise<string> {
-    const { ProposeGasPrice } = await fetchGasPrices();
-    return new BigNumber(ProposeGasPrice).times(1000000000).toString(16);
+    try {
+      const { proposedGasPrice } = await fetchGasPrices();
+      return proposedGasPrice;
+    } catch (e) {
+      const gasPrice = await query(this.ethQuery, 'gasPrice');
+      return gasPrice;
   }
+}
 
   /**
    * Calculates a quote `QuotesValue`
