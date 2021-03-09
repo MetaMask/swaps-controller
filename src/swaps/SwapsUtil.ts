@@ -68,6 +68,8 @@ export enum SwapsError {
   QUOTES_NOT_AVAILABLE_ERROR = 'quotes-not-available',
   OFFLINE_FOR_MAINTENANCE = 'offline-for-maintenance',
   SWAPS_FETCH_ORDER_CONFLICT = 'swaps-fetch-order-conflict',
+  SWAPS_GAS_PRICE_ESTIMATION = 'swaps-gas-price-estimation',
+  SWAPS_ALLOWANCE_TIMEOUT = 'swaps-allowance-timeout',
 }
 
 // Functions
@@ -369,12 +371,12 @@ function meansOfQuotesFeesAndValue(quotes: QuoteValues[]) {
   };
 }
 
-export function calculateGasLimits(approvalNeeded: boolean, gasEstimateWithRefund: string | null, averageGas: number, maxGas: number, gasMultiplier: number, gasLimit: string | null) {
+export function calculateGasLimits(approvalNeeded: boolean, gasEstimateWithRefund: string | null, gasEstimate: string | null, averageGas: number, maxGas: number, gasMultiplier: number, gasLimit: string | null) {
   let tradeGasLimit, tradeMaxGasLimit;
   const customGasLimit = gasLimit && new BigNumber(gasLimit, 16);
-  if (!approvalNeeded && gasEstimateWithRefund && gasEstimateWithRefund !== '0') {
+  if (!approvalNeeded && gasEstimate && gasEstimateWithRefund && gasEstimateWithRefund !== '0') {
     tradeGasLimit = new BigNumber(gasEstimateWithRefund, 16);
-    tradeMaxGasLimit = customGasLimit || tradeGasLimit.times(gasMultiplier).integerValue();
+    tradeMaxGasLimit = customGasLimit || new BigNumber(gasEstimate).times(gasMultiplier).integerValue();
   } else {
     tradeGasLimit = new BigNumber(averageGas || MAX_GAS_LIMIT, 10);
     tradeMaxGasLimit = customGasLimit || new BigNumber(maxGas || MAX_GAS_LIMIT, 10);
