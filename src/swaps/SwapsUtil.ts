@@ -1,4 +1,5 @@
 import BigNumber from 'bignumber.js';
+import { addHexPrefix } from 'ethereumjs-util';
 import { Transaction } from '../transaction/TransactionController';
 import { handleFetch, timeoutFetch, constructTxParams, BNToHex } from '../util';
 import {
@@ -205,8 +206,9 @@ export function calculateGasEstimateWithRefund(
   estimatedRefund: number | null,
   estimatedGas: string | null,
 ): BigNumber {
+  const estimated = estimatedGas && addHexPrefix(estimatedGas);
   const maxGasMinusRefund = new BigNumber(maxGas || MAX_GAS_LIMIT, 10).minus(estimatedRefund || 0);
-  const estimatedGasBN = new BigNumber(estimatedGas || '0');
+  const estimatedGasBN = new BigNumber(estimated || '0x0');
   const gasEstimateWithRefund = maxGasMinusRefund.lt(estimatedGasBN) ? maxGasMinusRefund : estimatedGasBN;
   return gasEstimateWithRefund;
 }
