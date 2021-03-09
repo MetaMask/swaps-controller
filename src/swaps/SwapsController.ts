@@ -405,6 +405,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       isInPolling: false,
       pollingCyclesLeft: config?.pollCountLimit || 3,
       quoteRefreshSeconds: null,
+      usedGasPrice: null,
     };
 
     this.initialize();
@@ -422,10 +423,10 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     this.handle && clearTimeout(this.handle);
     if (this.pollCount < this.config.pollCountLimit + 1) {
       !this.state.isInPolling && this.update({ isInPolling: true });
-      const { nextQuotesState, threshold } = await this.fetchQuotes();
+      const { nextQuotesState, threshold, usedGasPrice } = await this.fetchQuotes();
       this.update({ pollingCyclesLeft: this.config.pollCountLimit - this.pollCount });
       if (threshold && nextQuotesState?.quoteRefreshSeconds) {
-        this.update({ ...this.state, ...nextQuotesState });
+        this.update({ ...this.state, ...nextQuotesState, usedGasPrice });
         this.handle = setTimeout(async () => {
           this.pollForNewQuotesWithThreshold(threshold);
         }, (nextQuotesState.quoteRefreshSeconds * 1000) - threshold);
@@ -469,7 +470,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     return newQuotes;
   }
 
-  async fetchQuotes(): Promise<{ nextQuotesState: SwapsNextState | null; threshold: number | null }> {
+  async fetchQuotes(): Promise<{ nextQuotesState: SwapsNextState | null; threshold: number | null; usedGasPrice: string | null }> {
     const timeStarted = Date.now();
     const { fetchParams } = this.state;
     try {

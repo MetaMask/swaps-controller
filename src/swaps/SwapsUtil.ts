@@ -371,12 +371,13 @@ function meansOfQuotesFeesAndValue(quotes: QuoteValues[]) {
 
 export function calculateGasLimits(approvalNeeded: boolean, gasEstimateWithRefund: string | null, averageGas: number, maxGas: number, gasMultiplier: number, gasLimit: string | null) {
   let tradeGasLimit, tradeMaxGasLimit;
+  const customGasLimit = gasLimit && new BigNumber(gasLimit, 16);
   if (!approvalNeeded && gasEstimateWithRefund && gasEstimateWithRefund !== '0') {
     tradeGasLimit = new BigNumber(gasEstimateWithRefund, 16);
-    tradeMaxGasLimit = (gasLimit && new BigNumber(gasLimit, 16)) || tradeGasLimit.times(gasMultiplier).integerValue();
+    tradeMaxGasLimit = customGasLimit || tradeGasLimit.times(gasMultiplier).integerValue();
   } else {
     tradeGasLimit = new BigNumber(averageGas || MAX_GAS_LIMIT, 10);
-    tradeMaxGasLimit = new BigNumber(gasLimit || maxGas || MAX_GAS_LIMIT, 10);
+    tradeMaxGasLimit = customGasLimit || new BigNumber(maxGas || MAX_GAS_LIMIT, 10);
   }
   return { tradeGasLimit, tradeMaxGasLimit };
 }
