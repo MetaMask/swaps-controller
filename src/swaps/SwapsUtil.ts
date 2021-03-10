@@ -1,4 +1,5 @@
 import BigNumber from 'bignumber.js';
+import { addHexPrefix } from 'ethereumjs-util';
 import { Transaction } from '../transaction/TransactionController';
 import { handleFetch, timeoutFetch, constructTxParams, BNToHex } from '../util';
 import {
@@ -68,6 +69,8 @@ export enum SwapsError {
   QUOTES_NOT_AVAILABLE_ERROR = 'quotes-not-available',
   OFFLINE_FOR_MAINTENANCE = 'offline-for-maintenance',
   SWAPS_FETCH_ORDER_CONFLICT = 'swaps-fetch-order-conflict',
+  SWAPS_GAS_PRICE_ESTIMATION = 'swaps-gas-price-estimation',
+  SWAPS_ALLOWANCE_TIMEOUT = 'swaps-allowance-timeout',
 }
 
 // Functions
@@ -184,14 +187,18 @@ export async function fetchTokenPrice(address: string): Promise<string> {
 }
 
 export async function fetchGasPrices(): Promise<{
-  SafeGasPrice: string;
-  ProposeGasPrice: string;
-  FastGasPrice: string;
+  safeGasPrice: string;
+  proposedGasPrice: string;
+  fastGasPrice: string;
 }> {
-  const prices = await handleFetch(getBaseApiURL(APIType.GAS_PRICES), {
-    method: 'GET',
-  });
-  return prices;
+    const { SafeGasPrice, ProposeGasPrice, FastGasPrice } = await handleFetch(getBaseApiURL(APIType.GAS_PRICES), {
+      method: 'GET',
+    });
+    return {
+      safeGasPrice: new BigNumber(SafeGasPrice).times(1000000000).toString(16),
+      proposedGasPrice: new BigNumber(ProposeGasPrice).times(1000000000).toString(16),
+      fastGasPrice: new BigNumber(FastGasPrice).times(1000000000).toString(16),
+    };
 }
 
 export function calculateGasEstimateWithRefund(
@@ -199,8 +206,9 @@ export function calculateGasEstimateWithRefund(
   estimatedRefund: number | null,
   estimatedGas: string | null,
 ): BigNumber {
+  const estimated = estimatedGas && addHexPrefix(estimatedGas);
   const maxGasMinusRefund = new BigNumber(maxGas || MAX_GAS_LIMIT, 10).minus(estimatedRefund || 0);
-  const estimatedGasBN = new BigNumber(estimatedGas || '0');
+  const estimatedGasBN = new BigNumber(estimated || '0x0');
   const gasEstimateWithRefund = maxGasMinusRefund.lt(estimatedGasBN) ? maxGasMinusRefund : estimatedGasBN;
   return gasEstimateWithRefund;
 }
@@ -365,14 +373,15 @@ function meansOfQuotesFeesAndValue(quotes: QuoteValues[]) {
   };
 }
 
-export function calculateGasLimits(approvalNeeded: boolean, gasEstimateWithRefund: string | null, averageGas: number, maxGas: number, gasMultiplier: number) {
+export function calculateGasLimits(approvalNeeded: boolean, gasEstimateWithRefund: string | null, gasEstimate: string | null, averageGas: number, maxGas: number, gasMultiplier: number, gasLimit: string | null) {
   let tradeGasLimit, tradeMaxGasLimit;
-  if (!approvalNeeded && gasEstimateWithRefund && gasEstimateWithRefund !== '0') {
+  const customGasLimit = gasLimit && new BigNumber(gasLimit, 16);
+  if (!approvalNeeded && gasEstimate && gasEstimateWithRefund && gasEstimateWithRefund !== '0') {
     tradeGasLimit = new BigNumber(gasEstimateWithRefund, 16);
-    tradeMaxGasLimit = tradeGasLimit.times(gasMultiplier).integerValue();
+    tradeMaxGasLimit = customGasLimit || new BigNumber(gasEstimate).times(gasMultiplier).integerValue();
   } else {
     tradeGasLimit = new BigNumber(averageGas || MAX_GAS_LIMIT, 10);
-    tradeMaxGasLimit = new BigNumber(maxGas || MAX_GAS_LIMIT, 10);
+    tradeMaxGasLimit = customGasLimit || new BigNumber(maxGas || MAX_GAS_LIMIT, 10);
   }
   return { tradeGasLimit, tradeMaxGasLimit };
 }

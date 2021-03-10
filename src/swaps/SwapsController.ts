@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import AbortController from 'abort-controller';
 import BaseController, { BaseConfig, BaseState } from '../BaseController';
-import { calcTokenAmount, estimateGas } from '../util';
+import { calcTokenAmount, estimateGas, query } from '../util';
 import { Transaction } from '../transaction/TransactionController';
 import {
   calculateGasEstimateWithRefund,
@@ -62,6 +62,7 @@ export interface SwapsState extends BaseState {
   approvalTransaction: Transaction | null;
   quoteValues: { [key: string]: QuoteValues } | null;
   quoteRefreshSeconds: number | null;
+  usedGasPrice: string | null;
 }
 
 interface SwapsNextState {
@@ -90,12 +91,23 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
   /**
    * Fetch current gas price
    *
-   * @returns - Promise resolving to the current gas price
+   * @returns - Promise resolving to the current gas price or throw an error
    */
   private async getGasPrice(): Promise<string> {
-    const { ProposeGasPrice } = await fetchGasPrices();
-    return new BigNumber(ProposeGasPrice).times(1000000000).toString(16);
-  }
+    try {
+      const { proposedGasPrice } = await fetchGasPrices();
+      return proposedGasPrice;
+    } catch (e) {
+      //
+    }
+    try {
+      const gasPrice = await query(this.ethQuery, 'gasPrice');
+      return gasPrice;
+    } catch (e) {
+      //
+    }
+    throw new Error(SwapsError.SWAPS_GAS_PRICE_ESTIMATION);
+}
 
   /**
    * Calculates a quote `QuotesValue`
@@ -103,7 +115,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
    * @param quote - Specific quote object
    * @param gasPrice - Gas price in hex format to calculate the `QuotesValue` with
    */
-  private calculateQuoteValues(quote: Quote, gasPrice: string): QuoteValues {
+  private calculateQuoteValues(quote: Quote, gasPrice: string, gasLimit: string | null): QuoteValues {
     const { destinationTokenInfo, destinationTokenConversionRate } = this.state.fetchParamsMetaData;
     const {
       aggregator,
@@ -115,12 +127,13 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       sourceToken,
       trade,
       gasEstimateWithRefund,
+      gasEstimate,
       gasMultiplier,
       approvalNeeded,
     } = quote;
 
     // trade gas
-    const { tradeGasLimit, tradeMaxGasLimit } = calculateGasLimits(Boolean(approvalNeeded), gasEstimateWithRefund, averageGas, maxGas, gasMultiplier);
+    const { tradeGasLimit, tradeMaxGasLimit } = calculateGasLimits(Boolean(approvalNeeded), gasEstimateWithRefund, gasEstimate, averageGas, maxGas, gasMultiplier, gasLimit);
 
     const totalGasInWei = tradeGasLimit.times(gasPrice, 16);
     const maxTotalGasInWei = tradeMaxGasLimit.times(gasPrice, 16);
@@ -167,22 +180,42 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     return quoteValues;
   }
 
+  private calculatesCustomLimitMaxEthFee(quote: Quote, gasPrice: string, gasLimit: string): string {
+    const {
+      averageGas,
+      maxGas,
+      sourceAmount,
+      sourceToken,
+      trade,
+      gasEstimateWithRefund,
+      gasEstimate,
+      gasMultiplier,
+      approvalNeeded,
+    } = quote;
+
+    const { tradeMaxGasLimit } = calculateGasLimits(Boolean(approvalNeeded), gasEstimateWithRefund, gasEstimate, averageGas, maxGas, gasMultiplier, gasLimit);
+    const maxTotalGasInWei = tradeMaxGasLimit.times(gasPrice, 16);
+    const maxTotalInWei = maxTotalGasInWei.plus(trade.value, 16);
+    const maxWeiFee = sourceToken === ETH_SWAPS_TOKEN_ADDRESS ? maxTotalInWei.minus(sourceAmount, 10) : maxTotalInWei;
+    const maxEthFee = calcTokenAmount(maxWeiFee, 18).toFixed(18);
+    return maxEthFee;
+  }
+
   /**
    * Find best quote and quotes calculated values
    *
    * @param quotes - Array of quotes
    * @returns - Promise resolving to the best quote object and values from quotes
    */
-  private async getBestQuoteAndQuotesValues(
-    quotes: { [key: string]: Quote }): Promise<{ topAggId: string; quoteValues: { [key: string]: QuoteValues } }> {
+  private getBestQuoteAndQuotesValues(
+    quotes: { [key: string]: Quote }, usedGasPrice: string): { topAggId: string; quoteValues: { [key: string]: QuoteValues } } {
     let topAggId = '';
     let overallValueOfBestQuoteForSorting: BigNumber | null = null;
 
     const quoteValues: { [key: string]: QuoteValues } = {};
-    const usedGasPrice = await this.getGasPrice();
 
     Object.values(quotes).forEach((quote: Quote) => {
-      const quoteValue = this.calculateQuoteValues(quote, usedGasPrice);
+      const quoteValue = this.calculateQuoteValues(quote, usedGasPrice, null);
       quoteValues[quoteValue.aggregator] = quoteValue;
 
       const bnOverallValueOfQuote = new BigNumber(quoteValue.overallValueOfQuote);
@@ -194,54 +227,6 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
 
     return { topAggId, quoteValues };
   }
-
-  /**
-   * Updates top quote with a custom gas price
-   *
-   * @param customGasPrice - Custom gas price in hex
-   */
-  updateSelectedQuoteWithGasPrice(customGasPrice: string): void {
-    const { topAggId, quotes, quoteValues } = this.state;
-    if (!topAggId || !quoteValues) {
-      return;
-    }
-    const selectedQuote = quotes[topAggId];
-    const quoteValue = this.calculateQuoteValues(selectedQuote, customGasPrice);
-    quoteValues[selectedQuote.aggregator] = quoteValue;
-    this.update({ topAggId, quoteValues });
-  }
-
-  /**
-   * Calculate savings from quotes
-   *
-   * @param quotes - Quotes to do the calculation
-   * @param values - Swaps ETH values, all quotes fees and all quotes trade values
-   * @returns - Promise resolving to an object containing best aggregator id and respective savings
-   */
-  // private async calculateSavings(quote: Quote, quoteValues: { [key: string]: QuoteValues }): Promise<QuoteSavings> {
-  //   const {
-  //     ethFee: medianEthFee,
-  //     metaMaskFeeInEth: medianMetaMaskFee,
-  //     ethValueOfTokens: medianEthValueOfTokens,
-  //   } = getMedianEthValueQuote(Object.values(quoteValues));
-
-  //   const bestTradeFee = quoteValues[quote.aggregator];
-  //   // Performance savings are calculated as:
-  //   //   (ethValueOfTokens for the best trade) - (ethValueOfTokens for the media trade)
-  //   const performance = new BigNumber(bestTradeFee.ethValueOfTokens, 10).minus(medianEthValueOfTokens, 10);
-
-  //   // Fee savings are calculated as:
-  //   //   (fee for the median trade) - (fee for the best trade)
-  //   const fee = new BigNumber(medianEthFee).minus(bestTradeFee.ethFee, 10);
-
-  //   const metaMaskFee = bestTradeFee.metaMaskFeeInEth;
-
-  //   // Total savings are calculated as:
-  //   //   performance savings + fee savings - metamask fee
-  //   const total = performance.plus(fee).minus(metaMaskFee);
-
-  //   return { performance, total, fee, medianMetaMaskFee: new BigNumber(medianMetaMaskFee) };
-  // }
 
   /**
    * Get current allowance for a wallet address to access ERC20 contract address funds
@@ -303,6 +288,121 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
         resolve({ gas: null });
       }
     });
+  }
+
+  private async pollForNewQuotesWithThreshold(fetchThreshold = 0) {
+    this.pollCount += 1;
+    this.handle && clearTimeout(this.handle);
+    if (this.pollCount < this.config.pollCountLimit + 1) {
+      !this.state.isInPolling && this.update({ isInPolling: true });
+      const { nextQuotesState, threshold, usedGasPrice } = await this.fetchQuotes();
+      this.update({ pollingCyclesLeft: this.config.pollCountLimit - this.pollCount });
+      if (threshold && nextQuotesState?.quoteRefreshSeconds) {
+        this.update({ ...this.state, ...nextQuotesState, usedGasPrice });
+        this.handle = setTimeout(async () => {
+          this.pollForNewQuotesWithThreshold(threshold);
+        }, (nextQuotesState.quoteRefreshSeconds * 1000) - threshold);
+      }
+    } else {
+      this.handle = setTimeout(() => {
+        this.stopPollingAndResetState({ key: SwapsError.QUOTES_EXPIRED_ERROR, description: null });
+      }, fetchThreshold);
+    }
+  }
+
+  private async getAllQuotesWithGasEstimates(trades: { [key: string]: Quote }): Promise<{ [key: string]: Quote }> {
+    const quoteGasData = await Promise.all(
+      Object.values(trades).map((trade) => {
+        return new Promise<{ gas: string | null; aggId: string }>(async (resolve, reject) => {
+          try {
+            const { gas } = await this.timedoutGasReturn(trade.trade);
+            resolve({
+              gas,
+              aggId: trade.aggregator,
+            });
+          } catch (e) {
+            reject(e);
+          }
+        });
+      }),
+    );
+
+    const newQuotes: { [key: string]: Quote } = {};
+    quoteGasData.forEach(({ gas, aggId }) => {
+      newQuotes[aggId] = {
+        ...trades[aggId],
+        gasEstimate: gas,
+        gasEstimateWithRefund: calculateGasEstimateWithRefund(
+          trades[aggId].maxGas,
+          trades[aggId].estimatedRefund,
+          gas,
+        ).toString(16),
+      };
+    });
+    return newQuotes;
+  }
+
+  private async fetchQuotes(): Promise<{ nextQuotesState: SwapsNextState | null; threshold: number | null; usedGasPrice: string | null }> {
+    const timeStarted = Date.now();
+    const { fetchParams } = this.state;
+    try {
+      /** We need to abort quotes fetch if stopPollingAndResetState is called while getting quotes */
+      this.abortController = new AbortController();
+      const { signal } = this.abortController;
+      let quotes: { [key: string]: Quote } = await fetchTradesInfo(fetchParams, signal, this.config.clientId);
+
+      if (Object.values(quotes).length === 0) {
+        throw new Error(SwapsError.QUOTES_NOT_AVAILABLE_ERROR);
+      }
+
+      let approvalTransaction: {
+        data?: string;
+        from: string;
+        to?: string;
+        gas?: string;
+      } | null = null;
+
+      if (fetchParams.sourceToken !== ETH_SWAPS_TOKEN_ADDRESS) {
+        const allowance = await this.getERC20Allowance(fetchParams.sourceToken, fetchParams.walletAddress);
+
+        if (Number(allowance) < fetchParams.sourceAmount) {
+          approvalTransaction = Object.values(quotes)[0].approvalNeeded;
+          if (!approvalTransaction) {
+            throw new Error(SwapsError.ERROR_FETCHING_QUOTES);
+          }
+          const { gas: approvalGas } = await this.timedoutGasReturn({
+            data: approvalTransaction.data,
+            from: approvalTransaction.from,
+            to: approvalTransaction.to,
+          });
+
+          approvalTransaction = {
+            ...approvalTransaction,
+            gas: approvalGas || DEFAULT_ERC20_APPROVE_GAS,
+          };
+        }
+      }
+      quotes = await this.getAllQuotesWithGasEstimates(quotes);
+      const usedGasPrice = await this.getGasPrice();
+
+      const { topAggId, quoteValues } = this.getBestQuoteAndQuotesValues(quotes, usedGasPrice);
+
+      const quotesLastFetched = Date.now();
+
+      const nextQuotesState: SwapsNextState = {
+        quotes,
+        quotesLastFetched,
+        approvalTransaction,
+        topAggId: quotes[topAggId]?.aggregator,
+        quoteValues,
+        quoteRefreshSeconds: quotes[topAggId]?.quoteRefreshSeconds,
+      };
+      return { nextQuotesState, threshold: quotesLastFetched - timeStarted, usedGasPrice };
+    } catch (e) {
+      const errorKey = Object.values(SwapsError).includes(e) ? e : SwapsError.ERROR_FETCHING_QUOTES;
+      this.stopPollingAndResetState({ key: errorKey, description: e });
+      return { nextQuotesState: null, threshold: null, usedGasPrice: null };
+    }
   }
 
   /**
@@ -370,6 +470,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       isInPolling: false,
       pollingCyclesLeft: config?.pollCountLimit || 3,
       quoteRefreshSeconds: null,
+      usedGasPrice: null,
     };
 
     this.initialize();
@@ -382,117 +483,31 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     }
   }
 
-  async pollForNewQuotesWithThreshold(fetchThreshold = 0) {
-    this.pollCount += 1;
-    this.handle && clearTimeout(this.handle);
-    if (this.pollCount < this.config.pollCountLimit + 1) {
-      !this.state.isInPolling && this.update({ isInPolling: true });
-      const { nextQuotesState, threshold } = await this.fetchQuotes();
-      this.update({ pollingCyclesLeft: this.config.pollCountLimit - this.pollCount });
-      if (threshold && nextQuotesState?.quoteRefreshSeconds) {
-        this.update({ ...this.state, ...nextQuotesState });
-        this.handle = setTimeout(async () => {
-          this.pollForNewQuotesWithThreshold(threshold);
-        }, (nextQuotesState.quoteRefreshSeconds * 1000) - threshold);
-      }
-    } else {
-      this.handle = setTimeout(() => {
-        this.stopPollingAndResetState({ key: SwapsError.QUOTES_EXPIRED_ERROR, description: null });
-      }, fetchThreshold);
-    }
+  /**
+   * Updates all quotes with a new custom gas price
+   *
+   * @param customGasPrice - Custom gas price in hex format
+   */
+   updateQuotesWithGasPrice(customGasPrice: string): void {
+    const { quotes } = this.state;
+    const { topAggId, quoteValues } = this.getBestQuoteAndQuotesValues(quotes, customGasPrice);
+    this.update({ topAggId, quoteValues });
   }
 
-  async getAllQuotesWithGasEstimates(trades: { [key: string]: Quote }): Promise<{ [key: string]: Quote }> {
-    const quoteGasData = await Promise.all(
-      Object.values(trades).map((trade) => {
-        return new Promise<{ gas: string | null; aggId: string }>(async (resolve, reject) => {
-          try {
-            const { gas } = await this.timedoutGasReturn(trade.trade);
-            resolve({
-              gas,
-              aggId: trade.aggregator,
-            });
-          } catch (e) {
-            reject(e);
-          }
-        });
-      }),
-    );
-
-    const newQuotes: { [key: string]: Quote } = {};
-    quoteGasData.forEach(({ gas, aggId }) => {
-      newQuotes[aggId] = {
-        ...trades[aggId],
-        gasEstimate: gas,
-        gasEstimateWithRefund: calculateGasEstimateWithRefund(
-          trades[aggId].maxGas,
-          trades[aggId].estimatedRefund,
-          gas,
-        ).toString(16),
-      };
-    });
-    return newQuotes;
-  }
-
-  async fetchQuotes(): Promise<{ nextQuotesState: SwapsNextState | null; threshold: number | null }> {
-    const timeStarted = Date.now();
-    const { fetchParams } = this.state;
-    try {
-      /** We need to abort quotes fetch if stopPollingAndResetState is called while getting quotes */
-      this.abortController = new AbortController();
-      const { signal } = this.abortController;
-      let quotes: { [key: string]: Quote } = await fetchTradesInfo(fetchParams, signal, this.config.clientId);
-
-      if (Object.values(quotes).length === 0) {
-        throw new Error(SwapsError.QUOTES_NOT_AVAILABLE_ERROR);
-      }
-
-      let approvalTransaction: {
-        data?: string;
-        from: string;
-        to?: string;
-        gas?: string;
-      } | null = null;
-
-      if (fetchParams.sourceToken !== ETH_SWAPS_TOKEN_ADDRESS) {
-        const allowance = await this.getERC20Allowance(fetchParams.sourceToken, fetchParams.walletAddress);
-
-        if (Number(allowance) < fetchParams.sourceAmount) {
-          approvalTransaction = Object.values(quotes)[0].approvalNeeded;
-          if (!approvalTransaction) {
-            throw new Error(SwapsError.ERROR_FETCHING_QUOTES);
-          }
-          const { gas: approvalGas } = await this.timedoutGasReturn({
-            data: approvalTransaction.data,
-            from: approvalTransaction.from,
-            to: approvalTransaction.to,
-          });
-
-          approvalTransaction = {
-            ...approvalTransaction,
-            gas: approvalGas || DEFAULT_ERC20_APPROVE_GAS,
-          };
-        }
-      }
-      quotes = await this.getAllQuotesWithGasEstimates(quotes);
-      const { topAggId, quoteValues } = await this.getBestQuoteAndQuotesValues(quotes);
-
-      const quotesLastFetched = Date.now();
-
-      const nextQuotesState: SwapsNextState = {
-        quotes,
-        quotesLastFetched,
-        approvalTransaction,
-        topAggId: quotes[topAggId]?.aggregator,
-        quoteValues,
-        quoteRefreshSeconds: quotes[topAggId]?.quoteRefreshSeconds,
-      };
-      return { nextQuotesState, threshold: quotesLastFetched - timeStarted };
-    } catch (e) {
-      const errorKey = Object.values(SwapsError).includes(e) ? e : SwapsError.ERROR_FETCHING_QUOTES;
-      this.stopPollingAndResetState({ key: errorKey, description: e });
-      return { nextQuotesState: null, threshold: null };
+  /**
+   * Updates the selected quote maxEthFee param according to a custom gas limit
+   *
+   * @param customGasLimit - Custom gas limit in hex format
+   */
+  updateSelectedQuoteWithGasLimit(customGasLimit: string): void {
+    const { topAggId, quotes, quoteValues, usedGasPrice } = this.state;
+    if (!topAggId || !quoteValues || !usedGasPrice) {
+      return;
     }
+    const selectedQuote = quotes[topAggId];
+    const maxEthFee = this.calculatesCustomLimitMaxEthFee(selectedQuote, usedGasPrice, customGasLimit);
+    quoteValues[selectedQuote.aggregator].maxEthFee = maxEthFee;
+    this.update({ topAggId, quoteValues });
   }
 
   startFetchAndSetQuotes(

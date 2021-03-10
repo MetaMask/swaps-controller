@@ -274,18 +274,23 @@ describe('SwapsUtil', () => {
   });
 
   describe('calculateGasEstimateWithRefund', () => {
-    test.each`
-      maxGas       | estimatedRefund | estimatedGas | expected
-      ${0}         | ${0}            | ${0}         | ${'0'}
-      ${undefined} | ${2_000_000}    | ${500_000}   | ${'500000'}
-      ${3}         | ${2}            | ${1}         | ${'1'}
-      ${3}         | ${3}            | ${1}         | ${'0'}
-      ${10}        | ${5}            | ${6}         | ${'5'}
-    `('should return expected value', ({ maxGas, estimatedRefund, estimatedGas, expected }) => {
-      const estimated = swapsUtil.calculateGasEstimateWithRefund(maxGas, estimatedRefund, estimatedGas);
-      expect(estimated).toBeInstanceOf(BigNumber);
-      expect(estimated.toString(10)).toBe(expected);
+    it('estimated with refund is more than estimated gas, return estimatedGas', () => {
+      const maxGas = 500;
+      const estimatedRefund = 10;
+      const estimatedGas = 'c8'; // 200
+      const expected = '200';
+      const estimatedWithRefund = swapsUtil.calculateGasEstimateWithRefund(maxGas, estimatedRefund, estimatedGas);
+      expect(estimatedWithRefund.toString(10)).toEqual(expected);
     });
+    it('estimated with refund is more than estimated gas, return estimated with refund', () => {
+      const maxGas = 500;
+      const estimatedRefund = 10;
+      const estimatedGas = '1f4'; // 500
+      const expected = '490';
+      const estimatedWithRefund = swapsUtil.calculateGasEstimateWithRefund(maxGas, estimatedRefund, estimatedGas);
+      expect(estimatedWithRefund.toString(10)).toEqual(expected);
+    });
+
   });
 
   describe('getMedian', () => {
@@ -313,20 +318,32 @@ describe('SwapsUtil', () => {
 
   describe('calculateGasLimits', () => {
     const gasEstimateWithRefund = '0x3c';
+    const gasEstimate = '0x46';
     const averageGas = 20;
     const maxGas = 40;
+    const customGasLimit = '0x17';
     const gasMultiplier = 1.2;
     it('if approval is needed, maxGas is the limit and averageGas is the estimated fee', () => {
-      const { tradeGasLimit, tradeMaxGasLimit } = swapsUtil.calculateGasLimits(true, gasEstimateWithRefund, averageGas, maxGas, gasMultiplier);
+      const { tradeGasLimit, tradeMaxGasLimit } = swapsUtil.calculateGasLimits(true, gasEstimateWithRefund, gasEstimate, averageGas, maxGas, gasMultiplier, null);
       expect(tradeGasLimit.toString()).toEqual(averageGas.toString());
       expect(tradeMaxGasLimit.toString()).toEqual(maxGas.toString());
     });
     it('if no approval is needed, gas limit is gas limit minus refund and max gas is the gas estimated by multiplier', () => {
-      const { tradeGasLimit, tradeMaxGasLimit } = swapsUtil.calculateGasLimits(false, gasEstimateWithRefund, averageGas, maxGas, gasMultiplier);
+      const { tradeGasLimit, tradeMaxGasLimit } = swapsUtil.calculateGasLimits(false, gasEstimateWithRefund, gasEstimate, averageGas, maxGas, gasMultiplier, null);
       const limit: BigNumber = new BigNumber(gasEstimateWithRefund);
       expect(tradeGasLimit.toString(16)).toEqual(limit.toString(16));
-      expect(tradeMaxGasLimit.toString(16)).toEqual(limit.times(gasMultiplier).toString(16));
+      expect(tradeMaxGasLimit.toString(16)).toEqual(new BigNumber(gasEstimate).times(gasMultiplier).toString(16));
     });
-
+    it('if approval is needed and custom gas limit, max gas is custom gas limit and averageGas is the estimated fee', () => {
+      const { tradeGasLimit, tradeMaxGasLimit } = swapsUtil.calculateGasLimits(true, gasEstimateWithRefund, gasEstimate, averageGas, maxGas, gasMultiplier, customGasLimit);
+      expect(tradeGasLimit.toString()).toEqual(averageGas.toString());
+      expect(tradeMaxGasLimit.toString(16)).toEqual(new BigNumber(customGasLimit).toString(16));
+    });
+    it('if no approval is needed and custom gas limit, gas limit is gas limit minus refund and max gas is the custom gas limit', () => {
+      const { tradeGasLimit, tradeMaxGasLimit } = swapsUtil.calculateGasLimits(false, gasEstimateWithRefund, gasEstimate, averageGas, maxGas, gasMultiplier, customGasLimit);
+      const limit: BigNumber = new BigNumber(gasEstimateWithRefund);
+      expect(tradeGasLimit.toString(16)).toEqual(limit.toString(16));
+      expect(tradeMaxGasLimit.toString(16)).toEqual(new BigNumber(customGasLimit).toString(16));
+    });
   });
 });
