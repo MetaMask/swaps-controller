@@ -533,6 +533,8 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       try {
         const newTokens = await fetchTokens();
         this.update({ tokens: newTokens, tokensLastFetched: Date.now() });
+      } catch {
+        this.update({ tokensLastFetched: 0 });
       } finally {
         releaseLock();
       }
@@ -545,6 +547,8 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       try {
         const newTopAssets = await fetchTopAssets();
         this.update({ topAssets: newTopAssets, topAssetsLastFetched: Date.now() });
+      } catch {
+        this.update({ topAssetsLastFetched: 0 });
       } finally {
         releaseLock();
       }
@@ -560,6 +564,8 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       try {
         const newAggregatorMetada = await fetchAggregatorMetadata();
         this.update({ aggregatorMetadata: newAggregatorMetada, aggregatorMetadataLastFetched: Date.now() });
+      } catch {
+        this.update({ aggregatorMetadataLastFetched: 0 });
       } finally {
         releaseLock();
       }
