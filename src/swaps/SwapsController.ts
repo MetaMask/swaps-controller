@@ -41,7 +41,7 @@ export interface SwapsConfig extends BaseConfig {
   fetchTokensThreshold: number;
   fetchTopAssetsThreshold: number;
   provider: any;
-  chainId: string;
+  chainId: string | number;
 }
 
 export interface SwapsState extends BaseState {

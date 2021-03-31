@@ -413,4 +413,13 @@ describe('SwapsController', () => {
   //     resolve('');
   //   });
   // });
+
+  it('should update provider', () => {
+    swapsController.configure({ chainId: '23' });
+    expect(swapsController.config.chainId).toBe('23');
+    swapsController.configure({ chainId: '24' });
+    expect(swapsController.config.chainId).toBe('24');
+    swapsController.configure({ chainId: 0x123 });
+    expect(swapsController.config.chainId).toBe(0x123);
+  });
 });
