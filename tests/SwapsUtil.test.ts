@@ -290,7 +290,6 @@ describe('SwapsUtil', () => {
       const estimatedWithRefund = swapsUtil.calculateGasEstimateWithRefund(maxGas, estimatedRefund, estimatedGas);
       expect(estimatedWithRefund.toString(10)).toEqual(expected);
     });
-
   });
 
   describe('getMedian', () => {
@@ -324,23 +323,55 @@ describe('SwapsUtil', () => {
     const customGasLimit = '0x17';
     const gasMultiplier = 1.2;
     it('if approval is needed, maxGas is the limit and averageGas is the estimated fee', () => {
-      const { tradeGasLimit, tradeMaxGasLimit } = swapsUtil.calculateGasLimits(true, gasEstimateWithRefund, gasEstimate, averageGas, maxGas, gasMultiplier, null);
+      const { tradeGasLimit, tradeMaxGasLimit } = swapsUtil.calculateGasLimits(
+        true,
+        gasEstimateWithRefund,
+        gasEstimate,
+        averageGas,
+        maxGas,
+        gasMultiplier,
+        null,
+      );
       expect(tradeGasLimit.toString()).toEqual(averageGas.toString());
       expect(tradeMaxGasLimit.toString()).toEqual(maxGas.toString());
     });
     it('if no approval is needed, gas limit is gas limit minus refund and max gas is the gas estimated by multiplier', () => {
-      const { tradeGasLimit, tradeMaxGasLimit } = swapsUtil.calculateGasLimits(false, gasEstimateWithRefund, gasEstimate, averageGas, maxGas, gasMultiplier, null);
+      const { tradeGasLimit, tradeMaxGasLimit } = swapsUtil.calculateGasLimits(
+        false,
+        gasEstimateWithRefund,
+        gasEstimate,
+        averageGas,
+        maxGas,
+        gasMultiplier,
+        null,
+      );
       const limit: BigNumber = new BigNumber(gasEstimateWithRefund);
       expect(tradeGasLimit.toString(16)).toEqual(limit.toString(16));
       expect(tradeMaxGasLimit.toString(16)).toEqual(new BigNumber(gasEstimate).times(gasMultiplier).toString(16));
     });
     it('if approval is needed and custom gas limit, max gas is custom gas limit and averageGas is the estimated fee', () => {
-      const { tradeGasLimit, tradeMaxGasLimit } = swapsUtil.calculateGasLimits(true, gasEstimateWithRefund, gasEstimate, averageGas, maxGas, gasMultiplier, customGasLimit);
+      const { tradeGasLimit, tradeMaxGasLimit } = swapsUtil.calculateGasLimits(
+        true,
+        gasEstimateWithRefund,
+        gasEstimate,
+        averageGas,
+        maxGas,
+        gasMultiplier,
+        customGasLimit,
+      );
       expect(tradeGasLimit.toString()).toEqual(averageGas.toString());
       expect(tradeMaxGasLimit.toString(16)).toEqual(new BigNumber(customGasLimit).toString(16));
     });
     it('if no approval is needed and custom gas limit, gas limit is gas limit minus refund and max gas is the custom gas limit', () => {
-      const { tradeGasLimit, tradeMaxGasLimit } = swapsUtil.calculateGasLimits(false, gasEstimateWithRefund, gasEstimate, averageGas, maxGas, gasMultiplier, customGasLimit);
+      const { tradeGasLimit, tradeMaxGasLimit } = swapsUtil.calculateGasLimits(
+        false,
+        gasEstimateWithRefund,
+        gasEstimate,
+        averageGas,
+        maxGas,
+        gasMultiplier,
+        customGasLimit,
+      );
       const limit: BigNumber = new BigNumber(gasEstimateWithRefund);
       expect(tradeGasLimit.toString(16)).toEqual(limit.toString(16));
       expect(tradeMaxGasLimit.toString(16)).toEqual(new BigNumber(customGasLimit).toString(16));

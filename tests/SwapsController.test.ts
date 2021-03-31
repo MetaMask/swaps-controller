@@ -259,6 +259,7 @@ describe('SwapsController', () => {
 
   it('should set default config', () => {
     expect(swapsController.config).toEqual({
+      chainId: '1',
       maxGasLimit: 2500000,
       pollCountLimit: 3,
       metaSwapAddress: swapsUtil.SWAPS_CONTRACT_ADDRESS,
@@ -308,6 +309,7 @@ describe('SwapsController', () => {
       isInPolling: false,
       pollingCyclesLeft: 3,
       quoteRefreshSeconds: null,
+      usedGasPrice: null,
     });
   });
 

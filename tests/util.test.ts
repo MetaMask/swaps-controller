@@ -739,4 +739,19 @@ describe('util', () => {
       }
     });
   });
+
+  describe('toChainIdkey', () => {
+    it.each`
+      chainId   | expected
+      ${1}      | ${'1'}
+      ${'1337'} | ${'1337'}
+      ${0x38}   | ${'56'}
+      ${56}     | ${'56'}
+      ${'56'}   | ${'56'}
+      ${'0x38'} | ${'56'}
+      ${'0x1'}  | ${'1'}
+    `('returns $expected with argument $chainId', ({ chainId, expected }) => {
+      expect(util.toChainIdKey(chainId)).toBe(expected);
+    });
+  });
 });

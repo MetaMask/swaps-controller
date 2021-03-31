@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import AbortController from 'abort-controller';
 import BaseController, { BaseConfig, BaseState } from '../BaseController';
-import { calcTokenAmount, estimateGas, query } from '../util';
+import { calcTokenAmount, estimateGas, query, toChainIdKey } from '../util';
 import { Transaction } from '../transaction/TransactionController';
 import {
   calculateGasEstimateWithRefund,
@@ -41,6 +41,7 @@ export interface SwapsConfig extends BaseConfig {
   fetchTokensThreshold: number;
   fetchTopAssetsThreshold: number;
   provider: any;
+  chainId: string;
 }
 
 export interface SwapsState extends BaseState {
@@ -107,7 +108,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       //
     }
     throw new Error(SwapsError.SWAPS_GAS_PRICE_ESTIMATION);
-}
+  }
 
   /**
    * Calculates a quote `QuotesValue`
@@ -133,7 +134,15 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     } = quote;
 
     // trade gas
-    const { tradeGasLimit, tradeMaxGasLimit } = calculateGasLimits(Boolean(approvalNeeded), gasEstimateWithRefund, gasEstimate, averageGas, maxGas, gasMultiplier, gasLimit);
+    const { tradeGasLimit, tradeMaxGasLimit } = calculateGasLimits(
+      Boolean(approvalNeeded),
+      gasEstimateWithRefund,
+      gasEstimate,
+      averageGas,
+      maxGas,
+      gasMultiplier,
+      gasLimit,
+    );
 
     const totalGasInWei = tradeGasLimit.times(gasPrice, 16);
     const maxTotalGasInWei = tradeMaxGasLimit.times(gasPrice, 16);
@@ -156,9 +165,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
 
     // fees
     const tokenPercentageOfPreFeeDestAmount = new BigNumber(100, 10).minus(metaMaskFee, 10).div(100);
-    const destinationAmountBeforeMetaMaskFee = decimalAdjustedDestinationAmount.div(
-      tokenPercentageOfPreFeeDestAmount,
-    );
+    const destinationAmountBeforeMetaMaskFee = decimalAdjustedDestinationAmount.div(tokenPercentageOfPreFeeDestAmount);
     const metaMaskFeeInTokens = destinationAmountBeforeMetaMaskFee.minus(decimalAdjustedDestinationAmount);
 
     const conversionRate = destinationTokenConversionRate || 1;
@@ -193,7 +200,15 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       approvalNeeded,
     } = quote;
 
-    const { tradeMaxGasLimit } = calculateGasLimits(Boolean(approvalNeeded), gasEstimateWithRefund, gasEstimate, averageGas, maxGas, gasMultiplier, gasLimit);
+    const { tradeMaxGasLimit } = calculateGasLimits(
+      Boolean(approvalNeeded),
+      gasEstimateWithRefund,
+      gasEstimate,
+      averageGas,
+      maxGas,
+      gasMultiplier,
+      gasLimit,
+    );
     const maxTotalGasInWei = tradeMaxGasLimit.times(gasPrice, 16);
     const maxTotalInWei = maxTotalGasInWei.plus(trade.value, 16);
     const maxWeiFee = sourceToken === ETH_SWAPS_TOKEN_ADDRESS ? maxTotalInWei.minus(sourceAmount, 10) : maxTotalInWei;
@@ -208,7 +223,9 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
    * @returns - Promise resolving to the best quote object and values from quotes
    */
   private getBestQuoteAndQuotesValues(
-    quotes: { [key: string]: Quote }, usedGasPrice: string): { topAggId: string; quoteValues: { [key: string]: QuoteValues } } {
+    quotes: { [key: string]: Quote },
+    usedGasPrice: string,
+  ): { topAggId: string; quoteValues: { [key: string]: QuoteValues } } {
     let topAggId = '';
     let overallValueOfBestQuoteForSorting: BigNumber | null = null;
 
@@ -255,7 +272,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       });
     });
 
-    return (Promise.race([allowanceTimeout, allowancePromise])) as Promise<number>;
+    return Promise.race([allowanceTimeout, allowancePromise]) as Promise<number>;
   }
 
   private timedoutGasReturn(tradeTxParams: Transaction | null): Promise<{ gas: string | null }> {
@@ -342,7 +359,11 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     return newQuotes;
   }
 
-  private async fetchQuotes(): Promise<{ nextQuotesState: SwapsNextState | null; threshold: number | null; usedGasPrice: string | null }> {
+  private async fetchQuotes(): Promise<{
+    nextQuotesState: SwapsNextState | null;
+    threshold: number | null;
+    usedGasPrice: string | null;
+  }> {
     const timeStarted = Date.now();
     const { fetchParams } = this.state;
     try {
@@ -431,6 +452,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       fetchTokensThreshold: 1000 * 60 * 60 * 24,
       fetchTopAssetsThreshold: 1000 * 60 * 30,
       provider: undefined,
+      chainId: toChainIdKey('1'),
       clientId: undefined,
     };
     this.defaultState = {
@@ -488,7 +510,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
    *
    * @param customGasPrice - Custom gas price in hex format
    */
-   updateQuotesWithGasPrice(customGasPrice: string): void {
+  updateQuotesWithGasPrice(customGasPrice: string): void {
     const { quotes } = this.state;
     const { topAggId, quoteValues } = this.getBestQuoteAndQuotesValues(quotes, customGasPrice);
     this.update({ topAggId, quoteValues });
@@ -510,10 +532,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     this.update({ topAggId, quoteValues });
   }
 
-  startFetchAndSetQuotes(
-    fetchParams: APIFetchQuotesParams,
-    fetchParamsMetaData: APIFetchQuotesMetadata,
-  ) {
+  startFetchAndSetQuotes(fetchParams: APIFetchQuotesParams, fetchParamsMetaData: APIFetchQuotesMetadata) {
     if (!fetchParams) {
       return null;
     }
