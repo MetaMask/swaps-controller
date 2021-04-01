@@ -201,3 +201,16 @@ export interface TransactionReceipt {
   logs: { data: string; topics: string[]; address: string }[];
   status: string;
 }
+
+export interface ChainData {
+  aggregatorMetadata: null | { [key: string]: APIAggregatorMetadata };
+  tokens: null | SwapsToken[];
+  topAssets: null | SwapsAsset[];
+  aggregatorMetadataLastFetched: number;
+  tokensLastFetched: number;
+  topAssetsLastFetched: number;
+}
+
+export interface ChainCache {
+  [key: string]: ChainData;
+}

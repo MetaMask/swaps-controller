@@ -601,11 +601,7 @@ export function toChainIdKey(chainId?: string | number): string {
   }
 
   if (typeof chainId === 'string') {
-    if (chainId.slice(0, 2) === '0x') {
-      return String(Number(chainId));
-    }
-
-    return chainId;
+    return String(Number(chainId));
   }
 
   return '1';

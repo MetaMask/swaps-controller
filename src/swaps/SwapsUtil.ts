@@ -13,9 +13,9 @@ import {
   TransactionReceipt,
 } from './SwapsInterfaces';
 
-const ETH_CHAIN_ID = '0x1';
-const BSC_CHAIN_ID = '0x38';
-const SWAPS_TESTNET_CHAIN_ID = '0x539';
+export const ETH_CHAIN_ID = '0x1';
+export const BSC_CHAIN_ID = '0x38';
+export const SWAPS_TESTNET_CHAIN_ID = '0x539';
 
 // TODO: remove when references from clients are cleared
 export const SWAPS_CONTRACT_ADDRESS = '0x881d40237659c251811cec9c364ef91dc08d300c';

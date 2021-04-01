@@ -750,6 +750,10 @@ describe('util', () => {
       ${'56'}   | ${'56'}
       ${'0x38'} | ${'56'}
       ${'0x1'}  | ${'1'}
+      ${'1'}    | ${'1'}
+      ${'0001'} | ${'1'}
+      ${'0020'} | ${'20'}
+      ${0o20}   | ${'16'}
     `('returns $expected with argument $chainId', ({ chainId, expected }) => {
       expect(util.toChainIdKey(chainId)).toBe(expected);
     });
