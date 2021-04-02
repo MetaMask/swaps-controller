@@ -616,17 +616,17 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
 
   async fetchTokenWithCache() {
     const { chainId, fetchTokensThreshold } = this.config;
-    const { tokens, tokensLastFetched, chainCache } = this.state;
+    const { tokens, tokensLastFetched } = this.state;
 
     if (!tokens || fetchTokensThreshold < Date.now() - tokensLastFetched) {
       const releaseLock = await this.mutex.acquire();
       try {
         const newTokens = await fetchTokens(chainId);
         const data = { tokens: newTokens, tokensLastFetched: Date.now() };
-        this.update({ ...data, chainCache: updateChainCache(chainCache, chainId, data) });
+        this.update({ ...data, chainCache: updateChainCache(this.state.chainCache, chainId, data) });
       } catch {
         const data = { tokensLastFetched: 0 };
-        this.update({ ...data, chainCache: updateChainCache(chainCache, chainId, data) });
+        this.update({ ...data, chainCache: updateChainCache(this.state.chainCache, chainId, data) });
       } finally {
         releaseLock();
       }
@@ -635,17 +635,17 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
 
   async fetchTopAssetsWithCache() {
     const { chainId, fetchTopAssetsThreshold } = this.config;
-    const { topAssets, topAssetsLastFetched, chainCache } = this.state;
+    const { topAssets, topAssetsLastFetched } = this.state;
 
     if (!topAssets || fetchTopAssetsThreshold < Date.now() - topAssetsLastFetched) {
       const releaseLock = await this.mutex.acquire();
       try {
         const newTopAssets = await fetchTopAssets(chainId);
         const data = { topAssets: newTopAssets, topAssetsLastFetched: Date.now() };
-        this.update({ ...data, chainCache: updateChainCache(chainCache, chainId, data) });
+        this.update({ ...data, chainCache: updateChainCache(this.state.chainCache, chainId, data) });
       } catch {
         const data = { topAssetsLastFetched: 0 };
-        this.update({ ...data, chainCache: updateChainCache(chainCache, chainId, data) });
+        this.update({ ...data, chainCache: updateChainCache(this.state.chainCache, chainId, data) });
       } finally {
         releaseLock();
       }
@@ -654,17 +654,17 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
 
   async fetchAggregatorMetadataWithCache() {
     const { chainId, fetchAggregatorMetadataThreshold } = this.config;
-    const { aggregatorMetadata, aggregatorMetadataLastFetched, chainCache } = this.state;
+    const { aggregatorMetadata, aggregatorMetadataLastFetched } = this.state;
 
     if (!aggregatorMetadata || fetchAggregatorMetadataThreshold < Date.now() - aggregatorMetadataLastFetched) {
       const releaseLock = await this.mutex.acquire();
       try {
         const newAggregatorMetada = await fetchAggregatorMetadata(chainId);
         const data = { aggregatorMetadata: newAggregatorMetada, aggregatorMetadataLastFetched: Date.now() };
-        this.update({ ...data, chainCache: updateChainCache(chainCache, chainId, data) });
+        this.update({ ...data, chainCache: updateChainCache(this.state.chainCache, chainId, data) });
       } catch {
         const data = { aggregatorMetadataLastFetched: 0 };
-        this.update({ ...data, chainCache: updateChainCache(chainCache, chainId, data) });
+        this.update({ ...data, chainCache: updateChainCache(this.state.chainCache, chainId, data) });
       } finally {
         releaseLock();
       }
