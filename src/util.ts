@@ -583,26 +583,3 @@ export default {
   calcTokenAmount,
   estimateGas,
 };
-
-/**
- * Normalizes a chainId value (number, hex, string) to be used as key
- * in the controllers
- *
- * @param chainId chainId value to be normalized
- * @returns normalized decimal string value for chainId
- */
-export function toChainIdKey(chainId?: string | number): string {
-  if (chainId === undefined) {
-    return '1';
-  }
-
-  if (Number.isInteger(chainId)) {
-    return String(chainId);
-  }
-
-  if (typeof chainId === 'string') {
-    return String(Number(chainId));
-  }
-
-  return '1';
-}

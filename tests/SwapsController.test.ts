@@ -1,7 +1,6 @@
 import { SinonStub, stub } from 'sinon';
 import ComposableController from '../src/ComposableController';
 import SwapsController, { INITIAL_CHAIN_DATA } from '../src/swaps/SwapsController';
-import { toChainIdKey } from '../src/util';
 // import { SwapsError } from '../src/swaps/SwapsUtil';
 
 // const HttpProvider = require('ethjs-provider-http');
@@ -432,31 +431,31 @@ describe('SwapsController', () => {
     swapsController.configure({ chainId: '24' });
     expect(swapsController.config.chainId).toBe('24');
 
-    swapsController.configure({ chainId: 0x123 });
-    expect(swapsController.config.chainId).toBe(0x123);
+    swapsController.configure({ chainId: '291' });
+    expect(swapsController.config.chainId).toBe('291');
   });
 
   it('should create default cache for supported chainIds', () => {
     swapsController.configure({ supportedChainIds: ['23', '24', '291'] });
     swapsController.configure({ chainId: '23' });
-    expect(swapsController.state.chainCache[toChainIdKey('23')]).toStrictEqual(INITIAL_CHAIN_DATA);
+    expect(swapsController.state.chainCache['23']).toStrictEqual(INITIAL_CHAIN_DATA);
 
     swapsController.configure({ chainId: '24' });
-    expect(swapsController.state.chainCache[toChainIdKey('24')]).toStrictEqual(INITIAL_CHAIN_DATA);
+    expect(swapsController.state.chainCache['24']).toStrictEqual(INITIAL_CHAIN_DATA);
 
-    swapsController.configure({ chainId: 0x123 });
-    expect(swapsController.state.chainCache[toChainIdKey('0x123')]).toStrictEqual(INITIAL_CHAIN_DATA);
+    swapsController.configure({ chainId: '291' });
+    expect(swapsController.state.chainCache['291']).toStrictEqual(INITIAL_CHAIN_DATA);
   });
 
   it('should not create default cache for supported chainIds', () => {
     swapsController.configure({ chainId: '23' });
-    expect(swapsController.state.chainCache[toChainIdKey('23')]).toBeUndefined();
+    expect(swapsController.state.chainCache['23']).toBeUndefined();
 
     swapsController.configure({ chainId: '24' });
-    expect(swapsController.state.chainCache[toChainIdKey('24')]).toBeUndefined();
+    expect(swapsController.state.chainCache['24']).toBeUndefined();
 
-    swapsController.configure({ chainId: 0x123 });
-    expect(swapsController.state.chainCache[toChainIdKey('0x123')]).toBeUndefined();
+    swapsController.configure({ chainId: '291' });
+    expect(swapsController.state.chainCache['291']).toBeUndefined();
   });
 
   it('should load existing cache for chainId', () => {
@@ -481,19 +480,19 @@ describe('SwapsController', () => {
 
     swapsController.update({
       chainCache: {
-        [toChainIdKey('23')]: chainData23,
-        [toChainIdKey('24')]: chainData24,
-        [toChainIdKey(0x123)]: chainData0x123,
+        '23': chainData23,
+        '24': chainData24,
+        '291': chainData0x123,
       },
     });
 
     swapsController.configure({ chainId: '23' });
-    expect(swapsController.state.chainCache[toChainIdKey('23')]).toStrictEqual(chainData23);
+    expect(swapsController.state.chainCache['23']).toStrictEqual(chainData23);
 
     swapsController.configure({ chainId: '24' });
-    expect(swapsController.state.chainCache[toChainIdKey('24')]).toStrictEqual(chainData24);
+    expect(swapsController.state.chainCache['24']).toStrictEqual(chainData24);
 
-    swapsController.configure({ chainId: 0x123 });
-    expect(swapsController.state.chainCache[toChainIdKey('0x123')]).toStrictEqual(chainData0x123);
+    swapsController.configure({ chainId: '291' });
+    expect(swapsController.state.chainCache['291']).toStrictEqual(chainData0x123);
   });
 });

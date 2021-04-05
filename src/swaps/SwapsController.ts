@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import AbortController from 'abort-controller';
 import BaseController, { BaseConfig, BaseState } from '../BaseController';
-import { calcTokenAmount, estimateGas, query, toChainIdKey } from '../util';
+import { calcTokenAmount, estimateGas, query } from '../util';
 import { Transaction } from '../transaction/TransactionController';
 import {
   calculateGasEstimateWithRefund,
@@ -46,7 +46,7 @@ export interface SwapsConfig extends BaseConfig {
   fetchTokensThreshold: number;
   fetchTopAssetsThreshold: number;
   provider: any;
-  chainId: string | number;
+  chainId: string;
   supportedChainIds: string[];
 }
 
@@ -99,15 +99,11 @@ export const INITIAL_CHAIN_DATA: ChainData = {
  * @param data Data to be updated
  * @returns chainCache with updated data
  */
-function updateChainCache(
-  chainCache: ChainCache,
-  chainId: string | number | undefined,
-  data: Partial<ChainData>,
-): ChainCache {
+function updateChainCache(chainCache: ChainCache, chainId: string, data: Partial<ChainData>): ChainCache {
   return {
     ...chainCache,
-    [toChainIdKey(chainId)]: {
-      ...chainCache?.[toChainIdKey(chainId)],
+    [chainId]: {
+      ...chainCache?.[chainId],
       ...data,
     },
   };
@@ -414,7 +410,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       /** We need to abort quotes fetch if stopPollingAndResetState is called while getting quotes */
       this.abortController = new AbortController();
       const { signal } = this.abortController;
-      let quotes: { [key: string]: Quote } = await fetchTradesInfo(fetchParams, signal, clientId, chainId);
+      let quotes: { [key: string]: Quote } = await fetchTradesInfo(fetchParams, signal, chainId, clientId);
 
       if (Object.values(quotes).length === 0) {
         throw new Error(SwapsError.QUOTES_NOT_AVAILABLE_ERROR);
@@ -495,8 +491,8 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       fetchTokensThreshold: 1000 * 60 * 60 * 24,
       fetchTopAssetsThreshold: 1000 * 60 * 30,
       provider: undefined,
-      chainId: toChainIdKey('1'),
-      supportedChainIds: [toChainIdKey(ETH_CHAIN_ID), toChainIdKey(BSC_CHAIN_ID), toChainIdKey(SWAPS_TESTNET_CHAIN_ID)],
+      chainId: '1',
+      supportedChainIds: [ETH_CHAIN_ID, BSC_CHAIN_ID, SWAPS_TESTNET_CHAIN_ID],
       clientId: undefined,
     };
     this.defaultState = {
@@ -538,7 +534,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       quoteRefreshSeconds: null,
       usedGasPrice: null,
       chainCache: {
-        [toChainIdKey('1')]: INITIAL_CHAIN_DATA,
+        '1': INITIAL_CHAIN_DATA,
       },
     };
 
@@ -552,22 +548,21 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     }
   }
 
-  set chainId(chainId: string | number) {
-    const chainIdkey = toChainIdKey(chainId);
-    if (!this.config.supportedChainIds.includes(chainIdkey)) {
+  set chainId(chainId: string) {
+    if (!this.config.supportedChainIds.includes(chainId)) {
       return;
     }
 
     const { chainCache } = this.state;
-    if (chainCache?.[chainIdkey] === undefined) {
+    if (chainCache?.[chainId] === undefined) {
       this.update({
         ...INITIAL_CHAIN_DATA,
-        chainCache: updateChainCache(chainCache, chainIdkey, INITIAL_CHAIN_DATA),
+        chainCache: updateChainCache(chainCache, chainId, INITIAL_CHAIN_DATA),
       });
       return;
     }
 
-    const cachedData = chainCache?.[chainIdkey] || INITIAL_CHAIN_DATA;
+    const cachedData = chainCache?.[chainId] || INITIAL_CHAIN_DATA;
     this.update({
       ...cachedData,
     });

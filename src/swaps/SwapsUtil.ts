@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { addHexPrefix } from 'ethereumjs-util';
 import { Transaction } from '../transaction/TransactionController';
-import { handleFetch, timeoutFetch, constructTxParams, BNToHex, toChainIdKey } from '../util';
+import { handleFetch, timeoutFetch, constructTxParams, BNToHex } from '../util';
 import {
   APIAggregatorMetadata,
   SwapsAsset,
@@ -13,9 +13,9 @@ import {
   TransactionReceipt,
 } from './SwapsInterfaces';
 
-export const ETH_CHAIN_ID = '0x1';
-export const BSC_CHAIN_ID = '0x38';
-export const SWAPS_TESTNET_CHAIN_ID = '0x539';
+export const ETH_CHAIN_ID = '1';
+export const BSC_CHAIN_ID = '56';
+export const SWAPS_TESTNET_CHAIN_ID = '1337';
 
 // TODO: remove when references from clients are cleared
 export const SWAPS_CONTRACT_ADDRESS = '0x881d40237659c251811cec9c364ef91dc08d300c';
@@ -23,10 +23,10 @@ export const SWAPS_CONTRACT_ADDRESS = '0x881d40237659c251811cec9c364ef91dc08d300
 export const ETH_SWAPS_CONTRACT_ADDRESS = '0x881d40237659c251811cec9c364ef91dc08d300c';
 export const BSC_SWAPS_CONTRACT_ADDRESS = '0x1a1ec25dc08e98e5e93f1104b5e5cdd298707d31';
 
-export const SWAPS_CONTRACT_ADDRESSES = {
-  [toChainIdKey(ETH_CHAIN_ID)]: ETH_SWAPS_CONTRACT_ADDRESS,
-  [toChainIdKey(SWAPS_TESTNET_CHAIN_ID)]: ETH_SWAPS_CONTRACT_ADDRESS,
-  [toChainIdKey(BSC_CHAIN_ID)]: BSC_SWAPS_CONTRACT_ADDRESS,
+export const SWAPS_CONTRACT_ADDRESSES: { [key: string]: string } = {
+  [ETH_CHAIN_ID]: ETH_SWAPS_CONTRACT_ADDRESS,
+  [SWAPS_TESTNET_CHAIN_ID]: ETH_SWAPS_CONTRACT_ADDRESS,
+  [BSC_CHAIN_ID]: BSC_SWAPS_CONTRACT_ADDRESS,
 };
 
 // TODO: remove when refereces from clients are cleared
@@ -49,16 +49,16 @@ export const BSC_SWAPS_TOKEN_OBJECT: SwapsToken = {
   decimals: 18,
 };
 
-const SWAPS_NATIVE_TOKEN_OBJECTS = {
-  [toChainIdKey(ETH_CHAIN_ID)]: ETH_SWAPS_TOKEN_OBJECT,
-  [toChainIdKey(SWAPS_TESTNET_CHAIN_ID)]: ETH_SWAPS_TOKEN_OBJECT,
-  [toChainIdKey(BSC_CHAIN_ID)]: BSC_SWAPS_TOKEN_OBJECT,
+const SWAPS_NATIVE_TOKEN_OBJECTS: { [key: string]: SwapsToken } = {
+  [ETH_CHAIN_ID]: ETH_SWAPS_TOKEN_OBJECT,
+  [SWAPS_TESTNET_CHAIN_ID]: ETH_SWAPS_TOKEN_OBJECT,
+  [BSC_CHAIN_ID]: BSC_SWAPS_TOKEN_OBJECT,
 };
 
-const API_BASE_HOST_URL = {
-  [toChainIdKey(ETH_CHAIN_ID)]: 'https://api.metaswap.codefi.network',
-  [toChainIdKey(SWAPS_TESTNET_CHAIN_ID)]: 'https://metaswap-api.airswap-dev.codefi.network',
-  [toChainIdKey(BSC_CHAIN_ID)]: 'https://bsc-api.metaswap.codefi.network',
+const API_BASE_HOST_URL: { [key: string]: string } = {
+  [ETH_CHAIN_ID]: 'https://api.metaswap.codefi.network',
+  [SWAPS_TESTNET_CHAIN_ID]: 'https://metaswap-api.airswap-dev.codefi.network',
+  [BSC_CHAIN_ID]: 'https://bsc-api.metaswap.codefi.network',
 };
 
 export const DEFAULT_ERC20_APPROVE_GAS = '0x1d4c0';
@@ -79,18 +79,16 @@ export enum SwapsError {
 
 // Functions
 
-export function getNativeSwapsToken(chainId?: string | number): SwapsToken {
-  const key = toChainIdKey(chainId);
-  return SWAPS_NATIVE_TOKEN_OBJECTS[key];
+export function getNativeSwapsToken(chainId: string): SwapsToken {
+  return SWAPS_NATIVE_TOKEN_OBJECTS[chainId];
 }
 
-export function getSwapsContractAddress(chainId?: string | number): string {
-  const key = toChainIdKey(chainId);
-  return SWAPS_CONTRACT_ADDRESSES[key];
+export function getSwapsContractAddress(chainId: string): string {
+  return SWAPS_CONTRACT_ADDRESSES[chainId];
 }
 
-export const getBaseApiURL = function (type: APIType, chainId?: string | number): string {
-  const hostURL = API_BASE_HOST_URL[toChainIdKey(chainId)];
+export const getBaseApiURL = function (type: APIType, chainId: string): string {
+  const hostURL = API_BASE_HOST_URL[chainId];
   switch (type) {
     case APIType.TRADES:
       return `${hostURL}/trades`;
@@ -112,8 +110,8 @@ export const getBaseApiURL = function (type: APIType, chainId?: string | number)
 export async function fetchTradesInfo(
   { slippage, sourceToken, sourceAmount, destinationToken, walletAddress, exchangeList }: APIFetchQuotesParams,
   abortSignal: AbortSignal | null,
+  chainId: string,
   clientId?: string,
-  chainId?: string | number,
 ): Promise<{ [key: string]: Quote }> {
   const urlParams: APIFetchQuotesParams = {
     destinationToken,
@@ -164,7 +162,7 @@ export async function fetchTradesInfo(
   return newQuotes;
 }
 
-export async function fetchTokens(chainId?: string | number): Promise<SwapsToken[]> {
+export async function fetchTokens(chainId: string): Promise<SwapsToken[]> {
   const tokenUrl = getBaseApiURL(APIType.TOKENS, chainId);
   const tokens: SwapsToken[] = await handleFetch(tokenUrl, { method: 'GET' });
   const filteredTokens = tokens.filter((token) => {
@@ -174,7 +172,7 @@ export async function fetchTokens(chainId?: string | number): Promise<SwapsToken
   return filteredTokens;
 }
 
-export async function fetchAggregatorMetadata(chainId?: string | number) {
+export async function fetchAggregatorMetadata(chainId: string) {
   const aggregatorMetadataUrl = getBaseApiURL(APIType.AGGREGATOR_METADATA, chainId);
   const aggregators: { [key: string]: APIAggregatorMetadata } = await handleFetch(aggregatorMetadataUrl, {
     method: 'GET',
@@ -182,13 +180,13 @@ export async function fetchAggregatorMetadata(chainId?: string | number) {
   return aggregators;
 }
 
-export async function fetchTopAssets(chainId?: string | number): Promise<SwapsAsset[]> {
+export async function fetchTopAssets(chainId: string): Promise<SwapsAsset[]> {
   const topAssetsUrl = getBaseApiURL(APIType.TOP_ASSETS, chainId);
   const response: SwapsAsset[] = await handleFetch(topAssetsUrl, { method: 'GET' });
   return response;
 }
 
-export async function fetchSwapsFeatureLiveness(chainId?: string | number): Promise<boolean> {
+export async function fetchSwapsFeatureLiveness(chainId: string): Promise<boolean> {
   try {
     const status = await handleFetch(getBaseApiURL(APIType.FEATURE_FLAG, chainId), { method: 'GET' });
     return status;
@@ -207,7 +205,7 @@ export async function fetchTokenPrice(address: string): Promise<string> {
 }
 
 export async function fetchGasPrices(
-  chainId?: string | number,
+  chainId: string,
 ): Promise<{
   safeGasPrice: string;
   proposedGasPrice: string;
