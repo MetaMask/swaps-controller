@@ -139,11 +139,7 @@ export async function fetchTradesInfo(
 
   const tradesResponse = (await timeoutFetch(tradeURL, { method: 'GET', signal: abortSignal }, 15000)) as Quote[];
   const newQuotes = tradesResponse.reduce((aggIdTradeMap: { [key: string]: Quote }, quote: Quote) => {
-    if (
-      !quote.error &&
-      quote.trade &&
-      quote.trade?.to?.toLowerCase() === getSwapsContractAddress(chainId).toLowerCase()
-    ) {
+    if (!quote.error && quote.trade && quote.trade?.to?.toLowerCase() === getSwapsContractAddress(chainId)) {
       const constructedTrade = constructTxParams({
         to: quote.trade.to,
         from: quote.trade.from,
