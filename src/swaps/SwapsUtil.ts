@@ -17,9 +17,6 @@ export const ETH_CHAIN_ID = '1';
 export const BSC_CHAIN_ID = '56';
 export const SWAPS_TESTNET_CHAIN_ID = '1337';
 
-// TODO: remove when references from clients are cleared
-export const SWAPS_CONTRACT_ADDRESS = '0x881d40237659c251811cec9c364ef91dc08d300c';
-
 export const ETH_SWAPS_CONTRACT_ADDRESS = '0x881d40237659c251811cec9c364ef91dc08d300c';
 export const BSC_SWAPS_CONTRACT_ADDRESS = '0x1a1ec25dc08e98e5e93f1104b5e5cdd298707d31';
 
@@ -28,9 +25,6 @@ export const SWAPS_CONTRACT_ADDRESSES: { [key: string]: string } = {
   [SWAPS_TESTNET_CHAIN_ID]: ETH_SWAPS_CONTRACT_ADDRESS,
   [BSC_CHAIN_ID]: BSC_SWAPS_CONTRACT_ADDRESS,
 };
-
-// TODO: remove when refereces from clients are cleared
-export const ETH_SWAPS_TOKEN_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 export const NATIVE_SWAPS_TOKEN_ADDRESS = '0x0000000000000000000000000000000000000000';
 const TOKEN_TRANSFER_LOG_TOPIC_HASH = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
