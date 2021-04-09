@@ -424,6 +424,24 @@ describe('SwapsController', () => {
   //   });
   // });
 
+  it('should update cache configuration', () => {
+    expect(swapsController.config).toMatchObject({
+      fetchAggregatorMetadataThreshold: 1000 * 60 * 60 * 24 * 15,
+      fetchTokensThreshold: 1000 * 60 * 60 * 24,
+      fetchTopAssetsThreshold: 1000 * 60 * 30,
+    });
+    swapsController.configure({
+      fetchAggregatorMetadataThreshold: 0,
+      fetchTokensThreshold: 0,
+      fetchTopAssetsThreshold: 0,
+    });
+    expect(swapsController.config).toMatchObject({
+      fetchAggregatorMetadataThreshold: 0,
+      fetchTokensThreshold: 0,
+      fetchTopAssetsThreshold: 0,
+    });
+  });
+
   it('should update chainId configuration', () => {
     swapsController.configure({ chainId: '23' });
     expect(swapsController.config.chainId).toBe('23');
