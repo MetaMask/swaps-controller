@@ -169,3 +169,48 @@ export interface QuoteValues {
   overallValueOfQuote: string;
   metaMaskFeeInEth: string;
 }
+
+/**
+ * Metadata needed to fetch quotes
+ *
+ * @interface TransactionReceipt
+ *
+ * @property blockHash - Hash of the block where this transaction was in
+ * @property blockNumber - Block number where this transaction was in
+ * @property transactionHash - Hash of the transaction
+ * @property transactionIndex - Integer of the transactions index position in the block
+ * @property from - Address of the sender
+ * @property to - Address of the receiver. null when its a contract creation transaction
+ * @property cumulativeGasUsed - The total amount of gas used when this transaction was executed in the block
+ * @property gasUsed - The amount of gas used by this specific transaction alone
+ * @property contractAddress - The contract address created, if the transaction was a contract creation, otherwise null
+ * @property logs - Array of log objects, which this transaction generate
+ * @property status - '0x0' indicates transaction failure , '0x1' indicates transaction succeeded.
+ *
+ */
+export interface TransactionReceipt {
+  blockHash: string;
+  blockNumber: number;
+  transactionHash: string;
+  transactionIndex: number;
+  from: string;
+  to: string;
+  cumulativeGasUsed: number;
+  gasUsed: number;
+  contractAddress: string;
+  logs: { data: string; topics: string[]; address: string }[];
+  status: string;
+}
+
+export interface ChainData {
+  aggregatorMetadata: null | { [key: string]: APIAggregatorMetadata };
+  tokens: null | SwapsToken[];
+  topAssets: null | SwapsAsset[];
+  aggregatorMetadataLastFetched: number;
+  tokensLastFetched: number;
+  topAssetsLastFetched: number;
+}
+
+export interface ChainCache {
+  [key: string]: ChainData;
+}

@@ -10,57 +10,55 @@ import {
   Quote,
   APIFetchQuotesParams,
   QuoteValues,
+  TransactionReceipt,
 } from './SwapsInterfaces';
 
-export const ETH_SWAPS_TOKEN_ADDRESS = '0x0000000000000000000000000000000000000000';
-const TOKEN_TRANSFER_LOG_TOPIC_HASH =
-  '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
+export const ETH_CHAIN_ID = '1';
+export const BSC_CHAIN_ID = '56';
+export const SWAPS_TESTNET_CHAIN_ID = '1337';
 
-  /**
- * Metadata needed to fetch quotes
- *
- * @interface APIFetchQuotesMetadata
- *
- * @property blockHash - Hash of the block where this transaction was in
- * @property blockNumber - Block number where this transaction was in
- * @property transactionHash - Hash of the transaction
- * @property transactionIndex - Integer of the transactions index position in the block
- * @property from - Address of the sender
- * @property to - Address of the receiver. null when its a contract creation transaction
- * @property cumulativeGasUsed - The total amount of gas used when this transaction was executed in the block
- * @property gasUsed - The amount of gas used by this specific transaction alone
- * @property contractAddress - The contract address created, if the transaction was a contract creation, otherwise null
- * @property logs - Array of log objects, which this transaction generate
- * @property status - '0x0' indicates transaction failure , '0x1' indicates transaction succeeded.
- *
- */
-export interface TransactionReceipt {
-  blockHash: string;
-  blockNumber: number;
-  transactionHash: string;
-  transactionIndex: number;
-  from: string;
-  to: string;
-  cumulativeGasUsed: number;
-  gasUsed: number;
-  contractAddress: string;
-  logs: {data: string; topics: string[]; address: string}[];
-  status: string;
-}
+export const ETH_SWAPS_CONTRACT_ADDRESS = '0x881d40237659c251811cec9c364ef91dc08d300c';
+export const BSC_SWAPS_CONTRACT_ADDRESS = '0x1a1ec25dc08e98e5e93f1104b5e5cdd298707d31';
+
+export const SWAPS_CONTRACT_ADDRESSES: { [key: string]: string } = {
+  [ETH_CHAIN_ID]: ETH_SWAPS_CONTRACT_ADDRESS,
+  [SWAPS_TESTNET_CHAIN_ID]: ETH_SWAPS_CONTRACT_ADDRESS,
+  [BSC_CHAIN_ID]: BSC_SWAPS_CONTRACT_ADDRESS,
+};
+
+export const NATIVE_SWAPS_TOKEN_ADDRESS = '0x0000000000000000000000000000000000000000';
+const TOKEN_TRANSFER_LOG_TOPIC_HASH = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
 
 export const ETH_SWAPS_TOKEN_OBJECT: SwapsToken = {
   symbol: 'ETH',
   name: 'Ether',
-  address: ETH_SWAPS_TOKEN_ADDRESS,
+  address: NATIVE_SWAPS_TOKEN_ADDRESS,
   decimals: 18,
+};
+
+export const BSC_SWAPS_TOKEN_OBJECT: SwapsToken = {
+  symbol: 'BNB',
+  name: 'Binance Coin',
+  address: NATIVE_SWAPS_TOKEN_ADDRESS,
+  decimals: 18,
+};
+
+const SWAPS_NATIVE_TOKEN_OBJECTS: { [key: string]: SwapsToken } = {
+  [ETH_CHAIN_ID]: ETH_SWAPS_TOKEN_OBJECT,
+  [SWAPS_TESTNET_CHAIN_ID]: ETH_SWAPS_TOKEN_OBJECT,
+  [BSC_CHAIN_ID]: BSC_SWAPS_TOKEN_OBJECT,
+};
+
+const API_BASE_HOST_URL: { [key: string]: string } = {
+  [ETH_CHAIN_ID]: 'https://api.metaswap.codefi.network',
+  [SWAPS_TESTNET_CHAIN_ID]: 'https://metaswap-api.airswap-dev.codefi.network',
+  [BSC_CHAIN_ID]: 'https://bsc-api.metaswap.codefi.network',
 };
 
 export const DEFAULT_ERC20_APPROVE_GAS = '0x1d4c0';
 
 // The MAX_GAS_LIMIT is a number that is higher than the maximum gas costs we have observed on any aggregator
 const MAX_GAS_LIMIT = 2500000;
-
-export const SWAPS_CONTRACT_ADDRESS = '0x881d40237659c251811cec9c364ef91dc08d300c';
 
 export enum SwapsError {
   QUOTES_EXPIRED_ERROR = 'quotes-expired',
@@ -75,20 +73,29 @@ export enum SwapsError {
 
 // Functions
 
-export const getBaseApiURL = function (type: APIType): string {
+export function getNativeSwapsToken(chainId: string): SwapsToken {
+  return SWAPS_NATIVE_TOKEN_OBJECTS[chainId];
+}
+
+export function getSwapsContractAddress(chainId: string): string {
+  return SWAPS_CONTRACT_ADDRESSES[chainId];
+}
+
+export const getBaseApiURL = function (type: APIType, chainId: string): string {
+  const hostURL = API_BASE_HOST_URL[chainId];
   switch (type) {
     case APIType.TRADES:
-      return 'https://api.metaswap.codefi.network/trades';
+      return `${hostURL}/trades`;
     case APIType.TOKENS:
-      return 'https://api.metaswap.codefi.network/tokens';
+      return `${hostURL}/tokens`;
     case APIType.TOP_ASSETS:
-      return 'https://api.metaswap.codefi.network/topAssets';
+      return `${hostURL}/topAssets`;
     case APIType.FEATURE_FLAG:
-      return 'https://api.metaswap.codefi.network/featureFlag';
+      return `${hostURL}/featureFlag`;
     case APIType.AGGREGATOR_METADATA:
-      return 'https://api.metaswap.codefi.network/aggregatorMetadata';
+      return `${hostURL}/aggregatorMetadata`;
     case APIType.GAS_PRICES:
-      return 'https://api.metaswap.codefi.network/gasPrices';
+      return `${hostURL}/gasPrices`;
     default:
       throw new Error('getBaseApiURL requires an api call type');
   }
@@ -97,6 +104,7 @@ export const getBaseApiURL = function (type: APIType): string {
 export async function fetchTradesInfo(
   { slippage, sourceToken, sourceAmount, destinationToken, walletAddress, exchangeList }: APIFetchQuotesParams,
   abortSignal: AbortSignal | null,
+  chainId: string,
   clientId?: string,
 ): Promise<{ [key: string]: Quote }> {
   const urlParams: APIFetchQuotesParams = {
@@ -116,11 +124,14 @@ export async function fetchTradesInfo(
     urlParams.clientId = clientId;
   }
 
-  const tradeURL = `${getBaseApiURL(APIType.TRADES)}?${new URLSearchParams(urlParams as Record<any, any>).toString()}`;
+  // eslint-disable-next-line node/no-unsupported-features/node-builtins
+  const tradeURL = `${getBaseApiURL(APIType.TRADES, chainId)}?${new URLSearchParams(
+    urlParams as Record<any, any>,
+  ).toString()}`;
 
   const tradesResponse = (await timeoutFetch(tradeURL, { method: 'GET', signal: abortSignal }, 15000)) as Quote[];
   const newQuotes = tradesResponse.reduce((aggIdTradeMap: { [key: string]: Quote }, quote: Quote) => {
-    if (!quote.error && quote.trade && quote.trade?.to?.toLowerCase() === SWAPS_CONTRACT_ADDRESS) {
+    if (!quote.error && quote.trade && quote.trade?.to?.toLowerCase() === getSwapsContractAddress(chainId)) {
       const constructedTrade = constructTxParams({
         to: quote.trade.to,
         from: quote.trade.from,
@@ -145,39 +156,40 @@ export async function fetchTradesInfo(
   return newQuotes;
 }
 
-export async function fetchTokens(): Promise<SwapsToken[]> {
-  const tokenUrl = getBaseApiURL(APIType.TOKENS);
+export async function fetchTokens(chainId: string): Promise<SwapsToken[]> {
+  const tokenUrl = getBaseApiURL(APIType.TOKENS, chainId);
   const tokens: SwapsToken[] = await handleFetch(tokenUrl, { method: 'GET' });
   const filteredTokens = tokens.filter((token) => {
-    return token.address !== ETH_SWAPS_TOKEN_ADDRESS;
+    return token.address !== NATIVE_SWAPS_TOKEN_ADDRESS;
   });
-  filteredTokens.push(ETH_SWAPS_TOKEN_OBJECT);
+  filteredTokens.push(getNativeSwapsToken(chainId));
   return filteredTokens;
 }
 
-export async function fetchAggregatorMetadata() {
-  const aggregatorMetadataUrl = getBaseApiURL(APIType.AGGREGATOR_METADATA);
+export async function fetchAggregatorMetadata(chainId: string) {
+  const aggregatorMetadataUrl = getBaseApiURL(APIType.AGGREGATOR_METADATA, chainId);
   const aggregators: { [key: string]: APIAggregatorMetadata } = await handleFetch(aggregatorMetadataUrl, {
     method: 'GET',
   });
   return aggregators;
 }
 
-export async function fetchTopAssets(): Promise<SwapsAsset[]> {
-  const topAssetsUrl = getBaseApiURL(APIType.TOP_ASSETS);
+export async function fetchTopAssets(chainId: string): Promise<SwapsAsset[]> {
+  const topAssetsUrl = getBaseApiURL(APIType.TOP_ASSETS, chainId);
   const response: SwapsAsset[] = await handleFetch(topAssetsUrl, { method: 'GET' });
   return response;
 }
 
-export async function fetchSwapsFeatureLiveness(): Promise<boolean> {
+export async function fetchSwapsFeatureLiveness(chainId: string): Promise<boolean> {
   try {
-    const status = await handleFetch(getBaseApiURL(APIType.FEATURE_FLAG), { method: 'GET' });
+    const status = await handleFetch(getBaseApiURL(APIType.FEATURE_FLAG, chainId), { method: 'GET' });
     return status;
   } catch (err) {
     return false;
   }
 }
 
+// TODO: not being used, consider removing it
 export async function fetchTokenPrice(address: string): Promise<string> {
   const query = `contract_addresses=${address}&vs_currencies=eth`;
   const prices = await handleFetch(`https://api.coingecko.com/api/v3/simple/token_price/ethereum?${query}`, {
@@ -186,19 +198,24 @@ export async function fetchTokenPrice(address: string): Promise<string> {
   return prices && prices[address]?.eth;
 }
 
-export async function fetchGasPrices(): Promise<{
+export async function fetchGasPrices(
+  chainId: string,
+): Promise<{
   safeGasPrice: string;
   proposedGasPrice: string;
   fastGasPrice: string;
 }> {
-    const { SafeGasPrice, ProposeGasPrice, FastGasPrice } = await handleFetch(getBaseApiURL(APIType.GAS_PRICES), {
+  const { SafeGasPrice, ProposeGasPrice, FastGasPrice } = await handleFetch(
+    getBaseApiURL(APIType.GAS_PRICES, chainId),
+    {
       method: 'GET',
-    });
-    return {
-      safeGasPrice: new BigNumber(SafeGasPrice).times(1000000000).toString(16),
-      proposedGasPrice: new BigNumber(ProposeGasPrice).times(1000000000).toString(16),
-      fastGasPrice: new BigNumber(FastGasPrice).times(1000000000).toString(16),
-    };
+    },
+  );
+  return {
+    safeGasPrice: new BigNumber(SafeGasPrice).times(1000000000).toString(16),
+    proposedGasPrice: new BigNumber(ProposeGasPrice).times(1000000000).toString(16),
+    fastGasPrice: new BigNumber(FastGasPrice).times(1000000000).toString(16),
+  };
 }
 
 export function calculateGasEstimateWithRefund(
@@ -232,10 +249,12 @@ export function getSwapsTokensReceived(
   approvalTransaction: Transaction,
   destinationToken: SwapsToken,
   previousBalance: string,
-  postBalance: string
+  postBalance: string,
 ): string | undefined {
-  if (destinationToken.address === ETH_SWAPS_TOKEN_ADDRESS) {
-    const approvalTransactionGasCost = new BigNumber(approvalTransaction?.gasPrice || '0x0').times(approvalReceipt?.gasUsed || '0x0');
+  if (destinationToken.address === NATIVE_SWAPS_TOKEN_ADDRESS) {
+    const approvalTransactionGasCost = new BigNumber(approvalTransaction?.gasPrice || '0x0').times(
+      approvalReceipt?.gasUsed || '0x0',
+    );
     const transactionGas = new BigNumber(transaction?.gasPrice || '0x0').times(receipt?.gasUsed || '0x0');
     const totalGasCost = transactionGas.plus(approvalTransactionGasCost);
 
@@ -248,15 +267,11 @@ export function getSwapsTokensReceived(
     return;
   }
 
-  const tokenTransferLog = receipt.logs.find((receiptLog: {topics: string[]; address: string}) => {
+  const tokenTransferLog = receipt.logs.find((receiptLog: { topics: string[]; address: string }) => {
     const isTokenTransfer = receiptLog?.topics[0] === TOKEN_TRANSFER_LOG_TOPIC_HASH;
     const isTransferFromGivenToken = receiptLog.address === destinationToken.address;
     const isTransferFromGivenAddress = receiptLog?.topics[2]?.match(transaction.from.slice(2));
-    return (
-      isTokenTransfer &&
-      isTransferFromGivenToken &&
-      isTransferFromGivenAddress
-    );
+    return isTokenTransfer && isTransferFromGivenToken && isTransferFromGivenAddress;
   });
   if (!tokenTransferLog) {
     return;
@@ -373,7 +388,15 @@ function meansOfQuotesFeesAndValue(quotes: QuoteValues[]) {
   };
 }
 
-export function calculateGasLimits(approvalNeeded: boolean, gasEstimateWithRefund: string | null, gasEstimate: string | null, averageGas: number, maxGas: number, gasMultiplier: number, gasLimit: string | null) {
+export function calculateGasLimits(
+  approvalNeeded: boolean,
+  gasEstimateWithRefund: string | null,
+  gasEstimate: string | null,
+  averageGas: number,
+  maxGas: number,
+  gasMultiplier: number,
+  gasLimit: string | null,
+) {
   let tradeGasLimit, tradeMaxGasLimit;
   const customGasLimit = gasLimit && new BigNumber(gasLimit, 16);
   if (!approvalNeeded && gasEstimate && gasEstimateWithRefund && gasEstimateWithRefund !== '0') {
