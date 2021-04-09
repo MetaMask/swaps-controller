@@ -93,13 +93,13 @@ export const INITIAL_CHAIN_DATA: ChainData = {
 };
 
 /**
- * Updates chainCache for a chainId with data
+ * Gets a new chainCache for a chainId with updated data
  * @param chainCache Current chainCache from state
  * @param chainId Current chainId from the config
  * @param data Data to be updated
  * @returns chainCache with updated data
  */
-function updateChainCache(chainCache: ChainCache, chainId: string, data: Partial<ChainData>): ChainCache {
+function getNewChainCache(chainCache: ChainCache, chainId: string, data: Partial<ChainData>): ChainCache {
   return {
     ...chainCache,
     [chainId]: {
@@ -557,7 +557,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     if (chainCache?.[chainId] === undefined) {
       this.update({
         ...INITIAL_CHAIN_DATA,
-        chainCache: updateChainCache(chainCache, chainId, INITIAL_CHAIN_DATA),
+        chainCache: getNewChainCache(chainCache, chainId, INITIAL_CHAIN_DATA),
       });
       return;
     }
@@ -618,10 +618,10 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       try {
         const newTokens = await fetchTokens(chainId);
         const data = { tokens: newTokens, tokensLastFetched: Date.now() };
-        this.update({ ...data, chainCache: updateChainCache(this.state.chainCache, chainId, data) });
+        this.update({ ...data, chainCache: getNewChainCache(this.state.chainCache, chainId, data) });
       } catch {
         const data = { tokensLastFetched: 0 };
-        this.update({ ...data, chainCache: updateChainCache(this.state.chainCache, chainId, data) });
+        this.update({ ...data, chainCache: getNewChainCache(this.state.chainCache, chainId, data) });
       } finally {
         releaseLock();
       }
@@ -637,10 +637,10 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       try {
         const newTopAssets = await fetchTopAssets(chainId);
         const data = { topAssets: newTopAssets, topAssetsLastFetched: Date.now() };
-        this.update({ ...data, chainCache: updateChainCache(this.state.chainCache, chainId, data) });
+        this.update({ ...data, chainCache: getNewChainCache(this.state.chainCache, chainId, data) });
       } catch {
         const data = { topAssetsLastFetched: 0 };
-        this.update({ ...data, chainCache: updateChainCache(this.state.chainCache, chainId, data) });
+        this.update({ ...data, chainCache: getNewChainCache(this.state.chainCache, chainId, data) });
       } finally {
         releaseLock();
       }
@@ -656,10 +656,10 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       try {
         const newAggregatorMetada = await fetchAggregatorMetadata(chainId);
         const data = { aggregatorMetadata: newAggregatorMetada, aggregatorMetadataLastFetched: Date.now() };
-        this.update({ ...data, chainCache: updateChainCache(this.state.chainCache, chainId, data) });
+        this.update({ ...data, chainCache: getNewChainCache(this.state.chainCache, chainId, data) });
       } catch {
         const data = { aggregatorMetadataLastFetched: 0 };
-        this.update({ ...data, chainCache: updateChainCache(this.state.chainCache, chainId, data) });
+        this.update({ ...data, chainCache: getNewChainCache(this.state.chainCache, chainId, data) });
       } finally {
         releaseLock();
       }
