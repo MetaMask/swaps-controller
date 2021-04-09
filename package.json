@@ -1,6 +1,6 @@
 {
-  "name": "@estebanmino/controllers",
-  "version": "3.3.16",
+  "name": "@metamask/swaps-controller",
+  "version": "2.0.0",
   "description": "Collection of platform-agnostic modules for creating secure data models for cryptocurrency wallets",
   "license": "MIT",
   "files": [
