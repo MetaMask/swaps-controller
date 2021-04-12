@@ -292,7 +292,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     const contract = this.web3.eth.contract(abiERC20).at(contractAddress);
     const allowanceTimeout = new Promise<number>((_, reject) => {
       setTimeout(() => {
-        reject(new Error('Allowance timeout'));
+        reject(new Error(SwapsError.SWAPS_ALLOWANCE_TIMEOUT));
       }, 10000);
     });
 
