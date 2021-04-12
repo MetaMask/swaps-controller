@@ -69,6 +69,7 @@ export enum SwapsError {
   SWAPS_FETCH_ORDER_CONFLICT = 'swaps-fetch-order-conflict',
   SWAPS_GAS_PRICE_ESTIMATION = 'swaps-gas-price-estimation',
   SWAPS_ALLOWANCE_TIMEOUT = 'swaps-allowance-timeout',
+  SWAPS_ALLOWANCE_ERROR = 'swaps-allowance-error',
 }
 
 // Functions

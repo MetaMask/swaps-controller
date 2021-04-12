@@ -429,7 +429,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
         if (Number(allowance) < fetchParams.sourceAmount) {
           approvalTransaction = Object.values(quotes)[0].approvalNeeded;
           if (!approvalTransaction) {
-            throw new Error(SwapsError.ERROR_FETCHING_QUOTES);
+            throw new Error(SwapsError.SWAPS_ALLOWANCE_ERROR);
           }
           const { gas: approvalGas } = await this.timedoutGasReturn({
             data: approvalTransaction.data,
