@@ -460,7 +460,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       };
       return { nextQuotesState, threshold: quotesLastFetched - timeStarted, usedGasPrice };
     } catch (e) {
-      const errorKey = Object.values(SwapsError).includes(e) ? e : SwapsError.ERROR_FETCHING_QUOTES;
+      const errorKey = Object.values(SwapsError).includes(e.message) ? e : SwapsError.ERROR_FETCHING_QUOTES;
       this.stopPollingAndResetState({ key: errorKey, description: e });
       return { nextQuotesState: null, threshold: null, usedGasPrice: null };
     }
