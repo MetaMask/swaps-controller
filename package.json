@@ -35,7 +35,7 @@
     "url": "https://github.com/MetaMask/controllers/issues"
   },
   "dependencies": {
-    "@metamask/contract-metadata": "^1.22.0",
+    "@metamask/contract-metadata": "^1.25.0",
     "abort-controller": "^3.0.0",
     "async-mutex": "^0.3.1",
     "bignumber.js": "^9.0.1",
