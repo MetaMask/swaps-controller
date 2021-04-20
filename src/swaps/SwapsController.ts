@@ -292,7 +292,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     const contract = this.web3.eth.contract(abiERC20).at(contractAddress);
     const allowanceTimeout = new Promise<number>((_, reject) => {
       setTimeout(() => {
-        reject(new Error('Allowance timeout'));
+        reject(new Error(SwapsError.SWAPS_ALLOWANCE_TIMEOUT));
       }, 10000);
     });
 
@@ -429,7 +429,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
         if (Number(allowance) < fetchParams.sourceAmount) {
           approvalTransaction = Object.values(quotes)[0].approvalNeeded;
           if (!approvalTransaction) {
-            throw new Error(SwapsError.ERROR_FETCHING_QUOTES);
+            throw new Error(SwapsError.SWAPS_ALLOWANCE_ERROR);
           }
           const { gas: approvalGas } = await this.timedoutGasReturn({
             data: approvalTransaction.data,
@@ -460,7 +460,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       };
       return { nextQuotesState, threshold: quotesLastFetched - timeStarted, usedGasPrice };
     } catch (e) {
-      const errorKey = Object.values(SwapsError).includes(e) ? e : SwapsError.ERROR_FETCHING_QUOTES;
+      const errorKey = Object.values(SwapsError).includes(e.message) ? e.message : SwapsError.ERROR_FETCHING_QUOTES;
       this.stopPollingAndResetState({ key: errorKey, description: e });
       return { nextQuotesState: null, threshold: null, usedGasPrice: null };
     }
