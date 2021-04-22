@@ -1,5 +1,3 @@
-// eslint-disable-next-line node/prefer-global/url-search-params
-import { URLSearchParams } from 'url';
 import { Transaction, util } from '@metamask/controllers';
 import { AbortSignal } from 'abort-controller';
 import BigNumber from 'bignumber.js';
@@ -146,7 +144,6 @@ export async function fetchTradesInfo(
     urlParams.clientId = clientId;
   }
 
-  // eslint-disable-next-line node/no-unsupported-features/node-builtins
   const tradeURL = `${getBaseApiURL(
     APIType.TRADES,
     chainId,
