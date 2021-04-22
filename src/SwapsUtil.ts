@@ -1,7 +1,9 @@
+// eslint-disable-next-line node/prefer-global/url-search-params
+import { URLSearchParams } from 'url';
+import { Transaction, util } from '@metamask/controllers';
+import { AbortSignal } from 'abort-controller';
 import BigNumber from 'bignumber.js';
 import { addHexPrefix } from 'ethereumjs-util';
-import { Transaction } from '../transaction/TransactionController';
-import { handleFetch, timeoutFetch, constructTxParams, BNToHex } from '../util';
 import {
   APIAggregatorMetadata,
   SwapsAsset,
@@ -13,12 +15,22 @@ import {
   TransactionReceipt,
 } from './SwapsInterfaces';
 
+const {
+  handleFetch,
+  timeoutFetch,
+  BNToHex,
+  query,
+  normalizeTransaction,
+} = util;
+
 export const ETH_CHAIN_ID = '1';
 export const BSC_CHAIN_ID = '56';
 export const SWAPS_TESTNET_CHAIN_ID = '1337';
 
-export const ETH_SWAPS_CONTRACT_ADDRESS = '0x881d40237659c251811cec9c364ef91dc08d300c';
-export const BSC_SWAPS_CONTRACT_ADDRESS = '0x1a1ec25dc08e98e5e93f1104b5e5cdd298707d31';
+export const ETH_SWAPS_CONTRACT_ADDRESS =
+  '0x881d40237659c251811cec9c364ef91dc08d300c';
+export const BSC_SWAPS_CONTRACT_ADDRESS =
+  '0x1a1ec25dc08e98e5e93f1104b5e5cdd298707d31';
 
 export const SWAPS_CONTRACT_ADDRESSES: { [key: string]: string } = {
   [ETH_CHAIN_ID]: ETH_SWAPS_CONTRACT_ADDRESS,
@@ -26,8 +38,10 @@ export const SWAPS_CONTRACT_ADDRESSES: { [key: string]: string } = {
   [BSC_CHAIN_ID]: BSC_SWAPS_CONTRACT_ADDRESS,
 };
 
-export const NATIVE_SWAPS_TOKEN_ADDRESS = '0x0000000000000000000000000000000000000000';
-const TOKEN_TRANSFER_LOG_TOPIC_HASH = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
+export const NATIVE_SWAPS_TOKEN_ADDRESS =
+  '0x0000000000000000000000000000000000000000';
+const TOKEN_TRANSFER_LOG_TOPIC_HASH =
+  '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
 
 export const ETH_SWAPS_TOKEN_OBJECT: SwapsToken = {
   symbol: 'ETH',
@@ -103,7 +117,14 @@ export const getBaseApiURL = function (type: APIType, chainId: string): string {
 };
 
 export async function fetchTradesInfo(
-  { slippage, sourceToken, sourceAmount, destinationToken, walletAddress, exchangeList }: APIFetchQuotesParams,
+  {
+    slippage,
+    sourceToken,
+    sourceAmount,
+    destinationToken,
+    walletAddress,
+    exchangeList,
+  }: APIFetchQuotesParams,
   abortSignal: AbortSignal | null,
   chainId: string,
   clientId?: string,
@@ -126,33 +147,46 @@ export async function fetchTradesInfo(
   }
 
   // eslint-disable-next-line node/no-unsupported-features/node-builtins
-  const tradeURL = `${getBaseApiURL(APIType.TRADES, chainId)}?${new URLSearchParams(
-    urlParams as Record<any, any>,
-  ).toString()}`;
+  const tradeURL = `${getBaseApiURL(
+    APIType.TRADES,
+    chainId,
+  )}?${new URLSearchParams(urlParams as Record<any, any>).toString()}`;
 
-  const tradesResponse = (await timeoutFetch(tradeURL, { method: 'GET', signal: abortSignal }, 15000)) as Quote[];
-  const newQuotes = tradesResponse.reduce((aggIdTradeMap: { [key: string]: Quote }, quote: Quote) => {
-    if (!quote.error && quote.trade && quote.trade?.to?.toLowerCase() === getSwapsContractAddress(chainId)) {
-      const constructedTrade = constructTxParams({
-        to: quote.trade.to,
-        from: quote.trade.from,
-        data: quote.trade.data,
-        amount: BNToHex(new BigNumber(quote.trade.value)),
-        gas: BNToHex(quote.maxGas),
-      });
+  const tradesResponse = await timeoutFetch(
+    tradeURL,
+    { method: 'GET', signal: abortSignal },
+    15000,
+  );
+  const trades = (await tradesResponse.json()) as Quote[];
+  const newQuotes = trades.reduce(
+    (aggIdTradeMap: { [key: string]: Quote }, quote: Quote) => {
+      if (
+        !quote.error &&
+        quote.trade &&
+        quote.trade?.to?.toLowerCase() === getSwapsContractAddress(chainId)
+      ) {
+        const constructedTrade = constructTxParams({
+          to: quote.trade.to,
+          from: quote.trade.from,
+          data: quote.trade.data,
+          amount: BNToHex(new BigNumber(quote.trade.value)),
+          gas: BNToHex(quote.maxGas),
+        });
 
-      return {
-        ...aggIdTradeMap,
-        [quote.aggregator]: {
-          ...quote,
-          slippage,
-          trade: constructedTrade,
-        },
-      };
-    }
+        return {
+          ...aggIdTradeMap,
+          [quote.aggregator]: {
+            ...quote,
+            slippage,
+            trade: constructedTrade,
+          },
+        };
+      }
 
-    return aggIdTradeMap;
-  }, {});
+      return aggIdTradeMap;
+    },
+    {},
+  );
 
   return newQuotes;
 }
@@ -168,8 +202,13 @@ export async function fetchTokens(chainId: string): Promise<SwapsToken[]> {
 }
 
 export async function fetchAggregatorMetadata(chainId: string) {
-  const aggregatorMetadataUrl = getBaseApiURL(APIType.AGGREGATOR_METADATA, chainId);
-  const aggregators: { [key: string]: APIAggregatorMetadata } = await handleFetch(aggregatorMetadataUrl, {
+  const aggregatorMetadataUrl = getBaseApiURL(
+    APIType.AGGREGATOR_METADATA,
+    chainId,
+  );
+  const aggregators: {
+    [key: string]: APIAggregatorMetadata;
+  } = await handleFetch(aggregatorMetadataUrl, {
     method: 'GET',
   });
   return aggregators;
@@ -177,26 +216,24 @@ export async function fetchAggregatorMetadata(chainId: string) {
 
 export async function fetchTopAssets(chainId: string): Promise<SwapsAsset[]> {
   const topAssetsUrl = getBaseApiURL(APIType.TOP_ASSETS, chainId);
-  const response: SwapsAsset[] = await handleFetch(topAssetsUrl, { method: 'GET' });
+  const response: SwapsAsset[] = await handleFetch(topAssetsUrl, {
+    method: 'GET',
+  });
   return response;
 }
 
-export async function fetchSwapsFeatureLiveness(chainId: string): Promise<boolean> {
+export async function fetchSwapsFeatureLiveness(
+  chainId: string,
+): Promise<boolean> {
   try {
-    const status = await handleFetch(getBaseApiURL(APIType.FEATURE_FLAG, chainId), { method: 'GET' });
+    const status = await handleFetch(
+      getBaseApiURL(APIType.FEATURE_FLAG, chainId),
+      { method: 'GET' },
+    );
     return status;
   } catch (err) {
     return false;
   }
-}
-
-// TODO: not being used, consider removing it
-export async function fetchTokenPrice(address: string): Promise<string> {
-  const query = `contract_addresses=${address}&vs_currencies=eth`;
-  const prices = await handleFetch(`https://api.coingecko.com/api/v3/simple/token_price/ethereum?${query}`, {
-    method: 'GET',
-  });
-  return prices && prices[address]?.eth;
 }
 
 export async function fetchGasPrices(
@@ -214,7 +251,9 @@ export async function fetchGasPrices(
   );
   return {
     safeGasPrice: new BigNumber(SafeGasPrice).times(1000000000).toString(16),
-    proposedGasPrice: new BigNumber(ProposeGasPrice).times(1000000000).toString(16),
+    proposedGasPrice: new BigNumber(ProposeGasPrice)
+      .times(1000000000)
+      .toString(16),
     fastGasPrice: new BigNumber(FastGasPrice).times(1000000000).toString(16),
   };
 }
@@ -225,9 +264,13 @@ export function calculateGasEstimateWithRefund(
   estimatedGas: string | null,
 ): BigNumber {
   const estimated = estimatedGas && addHexPrefix(estimatedGas);
-  const maxGasMinusRefund = new BigNumber(maxGas || MAX_GAS_LIMIT, 10).minus(estimatedRefund || 0);
+  const maxGasMinusRefund = new BigNumber(maxGas || MAX_GAS_LIMIT, 10).minus(
+    estimatedRefund || 0,
+  );
   const estimatedGasBN = new BigNumber(estimated || '0x0');
-  const gasEstimateWithRefund = maxGasMinusRefund.lt(estimatedGasBN) ? maxGasMinusRefund : estimatedGasBN;
+  const gasEstimateWithRefund = maxGasMinusRefund.lt(estimatedGasBN)
+    ? maxGasMinusRefund
+    : estimatedGasBN;
   return gasEstimateWithRefund;
 }
 
@@ -253,13 +296,17 @@ export function getSwapsTokensReceived(
   postBalance: string,
 ): string | undefined {
   if (destinationToken.address === NATIVE_SWAPS_TOKEN_ADDRESS) {
-    const approvalTransactionGasCost = new BigNumber(approvalTransaction?.gasPrice || '0x0').times(
-      approvalReceipt?.gasUsed || '0x0',
+    const approvalTransactionGasCost = new BigNumber(
+      approvalTransaction?.gasPrice || '0x0',
+    ).times(approvalReceipt?.gasUsed || '0x0');
+    const transactionGas = new BigNumber(transaction?.gasPrice || '0x0').times(
+      receipt?.gasUsed || '0x0',
     );
-    const transactionGas = new BigNumber(transaction?.gasPrice || '0x0').times(receipt?.gasUsed || '0x0');
     const totalGasCost = transactionGas.plus(approvalTransactionGasCost);
 
-    const previousBalanceMinusGas = new BigNumber(previousBalance).minus(totalGasCost);
+    const previousBalanceMinusGas = new BigNumber(previousBalance).minus(
+      totalGasCost,
+    );
     const postBalanceMinusGas = new BigNumber(postBalance);
 
     return postBalanceMinusGas.minus(previousBalanceMinusGas).toString(16);
@@ -268,12 +315,22 @@ export function getSwapsTokensReceived(
     return;
   }
 
-  const tokenTransferLog = receipt.logs.find((receiptLog: { topics: string[]; address: string }) => {
-    const isTokenTransfer = receiptLog?.topics[0] === TOKEN_TRANSFER_LOG_TOPIC_HASH;
-    const isTransferFromGivenToken = receiptLog.address === destinationToken.address;
-    const isTransferFromGivenAddress = receiptLog?.topics[2]?.match(transaction.from.slice(2));
-    return isTokenTransfer && isTransferFromGivenToken && isTransferFromGivenAddress;
-  });
+  const tokenTransferLog = receipt.logs.find(
+    (receiptLog: { topics: string[]; address: string }) => {
+      const isTokenTransfer =
+        receiptLog?.topics[0] === TOKEN_TRANSFER_LOG_TOPIC_HASH;
+      const isTransferFromGivenToken =
+        receiptLog.address === destinationToken.address;
+      const isTransferFromGivenAddress = receiptLog?.topics[2]?.match(
+        transaction.from.slice(2),
+      );
+      return (
+        isTokenTransfer &&
+        isTransferFromGivenToken &&
+        isTransferFromGivenAddress
+      );
+    },
+  );
   if (!tokenTransferLog) {
     return;
   }
@@ -321,8 +378,11 @@ export function getMedianEthValueQuote(quotes: QuoteValues[]) {
 
   if (quotes.length % 2 === 1) {
     // return middle values
-    const medianOverallValue = quotes[(quotes.length - 1) / 2].overallValueOfQuote;
-    const quotesMatchingMedianQuoteValue = quotes.filter((quote) => medianOverallValue === quote.overallValueOfQuote);
+    const medianOverallValue =
+      quotes[(quotes.length - 1) / 2].overallValueOfQuote;
+    const quotesMatchingMedianQuoteValue = quotes.filter(
+      (quote) => medianOverallValue === quote.overallValueOfQuote,
+    );
     return meansOfQuotesFeesAndValue(quotesMatchingMedianQuoteValue);
   }
 
@@ -340,19 +400,29 @@ export function getMedianEthValueQuote(quotes: QuoteValues[]) {
     (quote) => overallValueAtLowerIndex === quote.overallValueOfQuote,
   );
 
-  const feesAndValueAtUpperIndex = meansOfQuotesFeesAndValue(quotesMatchingUpperIndexValue);
-  const feesAndValueAtLowerIndex = meansOfQuotesFeesAndValue(quotesMatchingLowerIndexValue);
+  const feesAndValueAtUpperIndex = meansOfQuotesFeesAndValue(
+    quotesMatchingUpperIndexValue,
+  );
+  const feesAndValueAtLowerIndex = meansOfQuotesFeesAndValue(
+    quotesMatchingLowerIndexValue,
+  );
 
   return {
     ethFee: new BigNumber(feesAndValueAtUpperIndex.ethFee, 10)
       .plus(feesAndValueAtLowerIndex.ethFee, 10)
       .dividedBy(2)
       .toString(10),
-    metaMaskFeeInEth: new BigNumber(feesAndValueAtUpperIndex.metaMaskFeeInEth, 10)
+    metaMaskFeeInEth: new BigNumber(
+      feesAndValueAtUpperIndex.metaMaskFeeInEth,
+      10,
+    )
       .plus(feesAndValueAtLowerIndex.metaMaskFeeInEth, 10)
       .dividedBy(2)
       .toString(10),
-    ethValueOfTokens: new BigNumber(feesAndValueAtUpperIndex.ethValueOfTokens, 10)
+    ethValueOfTokens: new BigNumber(
+      feesAndValueAtUpperIndex.ethValueOfTokens,
+      10,
+    )
       .plus(feesAndValueAtLowerIndex.ethValueOfTokens, 10)
       .dividedBy(2)
       .toString(10),
@@ -372,8 +442,14 @@ function meansOfQuotesFeesAndValue(quotes: QuoteValues[]) {
   const feeAndValueSumsAsBigNumbers = quotes.reduce(
     (feeAndValueSums, quote) => ({
       ethFee: feeAndValueSums.ethFee.plus(quote.ethFee, 10),
-      metaMaskFeeInEth: feeAndValueSums.metaMaskFeeInEth.plus(quote.metaMaskFeeInEth, 10),
-      ethValueOfTokens: feeAndValueSums.ethValueOfTokens.plus(quote.ethValueOfTokens, 10),
+      metaMaskFeeInEth: feeAndValueSums.metaMaskFeeInEth.plus(
+        quote.metaMaskFeeInEth,
+        10,
+      ),
+      ethValueOfTokens: feeAndValueSums.ethValueOfTokens.plus(
+        quote.ethValueOfTokens,
+        10,
+      ),
     }),
     {
       ethFee: new BigNumber(0, 10),
@@ -383,9 +459,15 @@ function meansOfQuotesFeesAndValue(quotes: QuoteValues[]) {
   );
 
   return {
-    ethFee: feeAndValueSumsAsBigNumbers.ethFee.div(quotes.length, 10).toString(10),
-    metaMaskFeeInEth: feeAndValueSumsAsBigNumbers.metaMaskFeeInEth.div(quotes.length, 10).toString(10),
-    ethValueOfTokens: feeAndValueSumsAsBigNumbers.ethValueOfTokens.div(quotes.length, 10).toString(10),
+    ethFee: feeAndValueSumsAsBigNumbers.ethFee
+      .div(quotes.length, 10)
+      .toString(10),
+    metaMaskFeeInEth: feeAndValueSumsAsBigNumbers.metaMaskFeeInEth
+      .div(quotes.length, 10)
+      .toString(10),
+    ethValueOfTokens: feeAndValueSumsAsBigNumbers.ethValueOfTokens
+      .div(quotes.length, 10)
+      .toString(10),
   };
 }
 
@@ -400,12 +482,93 @@ export function calculateGasLimits(
 ) {
   let tradeGasLimit, tradeMaxGasLimit;
   const customGasLimit = gasLimit && new BigNumber(gasLimit, 16);
-  if (!approvalNeeded && gasEstimate && gasEstimateWithRefund && gasEstimateWithRefund !== '0') {
+  if (
+    !approvalNeeded &&
+    gasEstimate &&
+    gasEstimateWithRefund &&
+    gasEstimateWithRefund !== '0'
+  ) {
     tradeGasLimit = new BigNumber(gasEstimateWithRefund, 16);
-    tradeMaxGasLimit = customGasLimit || new BigNumber(gasEstimate).times(gasMultiplier).integerValue();
+    tradeMaxGasLimit =
+      customGasLimit ||
+      new BigNumber(gasEstimate).times(gasMultiplier).integerValue();
   } else {
     tradeGasLimit = new BigNumber(averageGas || MAX_GAS_LIMIT, 10);
-    tradeMaxGasLimit = customGasLimit || new BigNumber(maxGas || MAX_GAS_LIMIT, 10);
+    tradeMaxGasLimit =
+      customGasLimit || new BigNumber(maxGas || MAX_GAS_LIMIT, 10);
   }
   return { tradeGasLimit, tradeMaxGasLimit };
+}
+
+export function calcTokenAmount(value: number | BigNumber, decimals: number) {
+  const multiplier = Math.pow(10, Number(decimals || 0));
+  return new BigNumber(value).div(multiplier);
+}
+
+/**
+ * Estimates required gas for a given transaction
+ *
+ * @param transaction - Transaction object to estimate gas for
+ * @returns - Promise resolving to an object containing gas and gasPrice
+ */
+export async function estimateGas(transaction: Transaction, ethQuery: any) {
+  const estimatedTransaction = { ...transaction };
+  const { value, data } = estimatedTransaction;
+  const { gasLimit } = await query(ethQuery, 'getBlockByNumber', [
+    'latest',
+    false,
+  ]);
+  estimatedTransaction.data = !data
+    ? data
+    : /* istanbul ignore next */ addHexPrefix(data);
+  // 3. If this is a contract address, safely estimate gas using RPC
+  estimatedTransaction.value =
+    typeof value === 'undefined' ? '0x0' : /* istanbul ignore next */ value;
+  const gasHex = await query(ethQuery, 'estimateGas', [estimatedTransaction]);
+  return { blockGasLimit: gasLimit, gas: addHexPrefix(gasHex) };
+}
+
+/**
+ * Given the standard set of information about a transaction, returns a transaction properly formatted for
+ * publishing via JSON RPC and web3
+ *
+ * @param {boolean} [sendToken] - Indicates whether or not the transaciton is a token transaction
+ * @param {string} data - A hex string containing the data to include in the transaction
+ * @param {string} to - A hex address of the tx recipient address
+ * @param {string} amount - A hex amount, in case of a token tranaction will be set to Tx value
+ * @param {string} from - A hex address of the tx sender address
+ * @param {string} gas - A hex representation of the gas value for the transaction
+ * @param {string} gasPrice - A hex representation of the gas price for the transaction
+ * @returns {object} An object ready for submission to the blockchain, with all values appropriately hex prefixed
+ */
+export function constructTxParams({
+  sendToken,
+  data,
+  to,
+  amount,
+  from,
+  gas,
+  gasPrice,
+}: {
+  sendToken?: boolean;
+  data?: string;
+  to?: string;
+  from: string;
+  gas?: string;
+  gasPrice?: string;
+  amount?: string;
+}): any {
+  const txParams: Transaction = {
+    data,
+    from,
+    value: '0',
+    gas,
+    gasPrice,
+  };
+
+  if (!sendToken) {
+    txParams.value = amount;
+    txParams.to = to;
+  }
+  return normalizeTransaction(txParams);
 }

@@ -1,11 +1,9 @@
+import { ComposableController } from '@metamask/controllers';
 import { SinonStub, stub } from 'sinon';
-import ComposableController from '../src/ComposableController';
-import SwapsController, { INITIAL_CHAIN_DATA } from '../src/swaps/SwapsController';
-// import { SwapsError } from '../src/swaps/SwapsUtil';
+import SwapsController, { INITIAL_CHAIN_DATA } from './SwapsController';
+import * as swapsUtil from './SwapsUtil';
 
 // const HttpProvider = require('ethjs-provider-http');
-const swapsUtil = require('../src/swaps/SwapsUtil');
-const util = require('../src/util');
 
 // const MAINNET_PROVIDER = new HttpProvider('https://mainnet.infura.io/v3/341eacb578dd44a1a049cbc5f6fd4035');
 
@@ -59,7 +57,11 @@ const API_TRADES = {
     aggType: 'AGG',
     fee: 0.875,
     gasMultiplier: 1.5,
-    priceSlippage: { ratio: 1, calculationError: 'No trade data to calculate price slippage', bucket: 'low' },
+    priceSlippage: {
+      ratio: 1,
+      calculationError: 'No trade data to calculate price slippage',
+      bucket: 'low',
+    },
   },
   paraswap: {
     trade: {
@@ -90,7 +92,11 @@ const API_TRADES = {
     aggType: 'AGG',
     fee: 0.875,
     gasMultiplier: 1.5,
-    priceSlippage: { ratio: 1.0095049985488103, calculationError: '', bucket: 'low' },
+    priceSlippage: {
+      ratio: 1.0095049985488103,
+      calculationError: '',
+      bucket: 'low',
+    },
   },
   oneInch: {
     trade: {
@@ -121,7 +127,11 @@ const API_TRADES = {
     aggType: 'AGG',
     fee: 0.875,
     gasMultiplier: 1.5,
-    priceSlippage: { ratio: 1.0058310785411322, calculationError: '', bucket: 'low' },
+    priceSlippage: {
+      ratio: 1.0058310785411322,
+      calculationError: '',
+      bucket: 'low',
+    },
   },
   pmm: {
     trade: {
@@ -152,7 +162,11 @@ const API_TRADES = {
     aggType: 'RFQ',
     fee: 0.875,
     gasMultiplier: 1.5,
-    priceSlippage: { ratio: 1.0091369358715276, calculationError: '', bucket: 'low' },
+    priceSlippage: {
+      ratio: 1.0091369358715276,
+      calculationError: '',
+      bucket: 'low',
+    },
   },
 };
 
@@ -197,7 +211,11 @@ jest.mock('eth-query', () =>
       gasPrice: (callback: any) => {
         callback(undefined, '0x0');
       },
-      getBlockByNumber: (_blocknumber: any, _fetchTxs: boolean, callback: any) => {
+      getBlockByNumber: (
+        _blocknumber: any,
+        _fetchTxs: boolean,
+        callback: any,
+      ) => {
         callback(undefined, { gasLimit: '0x0' });
       },
       getCode: (_to: any, callback: any) => {
@@ -224,7 +242,8 @@ jest.mock('web3', () =>
           return {
             at: () => {
               return {
-                allowance: (_: string, __: string, callback: any) => callback(undefined, 1),
+                allowance: (_: string, __: string, callback: any) =>
+                  callback(undefined, 1),
               };
             },
           };
@@ -240,10 +259,14 @@ describe('SwapsController', () => {
   let fetchTradesInfo: SinonStub;
   let estimateGas: SinonStub;
   beforeEach(() => {
-    swapsUtilFetchTokens = stub(swapsUtil, 'fetchTokens').returns([]);
-    fetchTradesInfo = stub(swapsUtil, 'fetchTradesInfo').returns(API_TRADES);
-    estimateGas = stub(util, 'estimateGas').returns(
-      new Promise((resolve) => resolve({ gas: '0x5208', gasPrice: '0x5208' })),
+    swapsUtilFetchTokens = stub(swapsUtil, 'fetchTokens').returns([] as any);
+    fetchTradesInfo = stub(swapsUtil, 'fetchTradesInfo').returns(
+      API_TRADES as any,
+    );
+    estimateGas = stub(swapsUtil, 'estimateGas').returns(
+      new Promise((resolve) =>
+        resolve({ gas: '0x5208', gasPrice: '0x5208' }),
+      ) as any,
     );
     swapsController = new SwapsController({
       pollCountLimit: POLL_COUNT_LIMIT,
@@ -456,13 +479,19 @@ describe('SwapsController', () => {
   it('should create default cache for supported chainIds', () => {
     swapsController.configure({ supportedChainIds: ['23', '24', '291'] });
     swapsController.configure({ chainId: '23' });
-    expect(swapsController.state.chainCache['23']).toStrictEqual(INITIAL_CHAIN_DATA);
+    expect(swapsController.state.chainCache['23']).toStrictEqual(
+      INITIAL_CHAIN_DATA,
+    );
 
     swapsController.configure({ chainId: '24' });
-    expect(swapsController.state.chainCache['24']).toStrictEqual(INITIAL_CHAIN_DATA);
+    expect(swapsController.state.chainCache['24']).toStrictEqual(
+      INITIAL_CHAIN_DATA,
+    );
 
     swapsController.configure({ chainId: '291' });
-    expect(swapsController.state.chainCache['291']).toStrictEqual(INITIAL_CHAIN_DATA);
+    expect(swapsController.state.chainCache['291']).toStrictEqual(
+      INITIAL_CHAIN_DATA,
+    );
   });
 
   it('should not create default cache for supported chainIds', () => {
@@ -511,6 +540,8 @@ describe('SwapsController', () => {
     expect(swapsController.state.chainCache['24']).toStrictEqual(chainData24);
 
     swapsController.configure({ chainId: '291' });
-    expect(swapsController.state.chainCache['291']).toStrictEqual(chainData0x123);
+    expect(swapsController.state.chainCache['291']).toStrictEqual(
+      chainData0x123,
+    );
   });
 });

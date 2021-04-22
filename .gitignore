@@ -12,3 +12,5 @@ package-lock.json
 coverage
 dist
 docs
+
+.DS_Store

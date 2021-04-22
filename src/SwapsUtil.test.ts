@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { getOnce } from 'fetch-mock';
-import { APIType, SwapsToken } from '../src/swaps/SwapsInterfaces';
-import * as swapsUtil from '../src/swaps/SwapsUtil';
+import { APIType, SwapsToken } from './SwapsInterfaces';
+import * as swapsUtil from './SwapsUtil';
 
 const API_TRADES = [
   {
@@ -20,7 +20,11 @@ const API_TRADES = [
     aggType: 'AGG',
     fee: 0.875,
     gasMultiplier: 1.5,
-    priceSlippage: { ratio: 1, calculationError: 'No trade data to calculate price slippage', bucket: 'low' },
+    priceSlippage: {
+      ratio: 1,
+      calculationError: 'No trade data to calculate price slippage',
+      bucket: 'low',
+    },
   },
   {
     trade: {
@@ -45,7 +49,11 @@ const API_TRADES = [
     aggType: 'AGG',
     fee: 0.875,
     gasMultiplier: 1.5,
-    priceSlippage: { ratio: 1.0081693243499585, calculationError: '', bucket: 'low' },
+    priceSlippage: {
+      ratio: 1.0081693243499585,
+      calculationError: '',
+      bucket: 'low',
+    },
   },
   {
     trade: {
@@ -70,7 +78,11 @@ const API_TRADES = [
     aggType: 'DEX',
     fee: 0.875,
     gasMultiplier: 1.5,
-    priceSlippage: { ratio: 1.0027216076907874, calculationError: '', bucket: 'low' },
+    priceSlippage: {
+      ratio: 1.0027216076907874,
+      calculationError: '',
+      bucket: 'low',
+    },
   },
 ];
 
@@ -80,21 +92,24 @@ const API_TOKENS: SwapsToken[] = [
     symbol: 'DAI',
     decimals: 18,
     occurances: 30,
-    iconUrl: 'https://cloudflare-ipfs.com/ipfs/QmNYVMm3iC7HEoxfvxsZbRoapdjDHj9EREFac4BPeVphSJ',
+    iconUrl:
+      'https://cloudflare-ipfs.com/ipfs/QmNYVMm3iC7HEoxfvxsZbRoapdjDHj9EREFac4BPeVphSJ',
   },
   {
     address: '0xdac17f958d2ee523a2206206994597c13d831ec7',
     symbol: 'USDT',
     decimals: 6,
     occurances: 30,
-    iconUrl: 'https://cloudflare-ipfs.com/ipfs/QmR3TGmDDdmid99ExTHwPiKro4njZhSidbjcTbSrS5rHnq',
+    iconUrl:
+      'https://cloudflare-ipfs.com/ipfs/QmR3TGmDDdmid99ExTHwPiKro4njZhSidbjcTbSrS5rHnq',
   },
   {
     address: '0x8e870d67f660d95d5be530380d0ec0bd388289e1',
     symbol: 'PAX',
     decimals: 18,
     occurances: 30,
-    iconUrl: 'https://cloudflare-ipfs.com/ipfs/QmQTzo6Ecdn54x7NafwegjLetAnno1ATL9Y8M3PcVXGVhR',
+    iconUrl:
+      'https://cloudflare-ipfs.com/ipfs/QmQTzo6Ecdn54x7NafwegjLetAnno1ATL9Y8M3PcVXGVhR',
   },
 ];
 
@@ -103,18 +118,21 @@ const FAKE_SWAPS_TOKEN = {
   symbol: 'fakeswap',
   decimals: 18,
   occurances: 30,
-  iconUrl: 'https://cloudflare-ipfs.com/ipfs/QmQTzo6Ecdn54x7NafwegjLetAnno1ATL9Y8M3PcVXGVhR',
+  iconUrl:
+    'https://cloudflare-ipfs.com/ipfs/QmQTzo6Ecdn54x7NafwegjLetAnno1ATL9Y8M3PcVXGVhR',
 };
 
 describe('SwapsUtil', () => {
   describe('getBaseApiURL', () => {
     it('should return expected values', () => {
-      expect(swapsUtil.getBaseApiURL(APIType.TRADES, '1')).toBeTruthy();
-      expect(swapsUtil.getBaseApiURL(APIType.TRADES, '1')).toBeTruthy();
-      expect(swapsUtil.getBaseApiURL(APIType.TOKENS, '1')).toBeTruthy();
-      expect(swapsUtil.getBaseApiURL(APIType.TOP_ASSETS, '1')).toBeTruthy();
-      expect(swapsUtil.getBaseApiURL(APIType.FEATURE_FLAG, '1')).toBeTruthy();
-      expect(swapsUtil.getBaseApiURL(APIType.AGGREGATOR_METADATA, '1')).toBeTruthy();
+      expect(swapsUtil.getBaseApiURL(APIType.TRADES, '1')).toBeDefined();
+      expect(swapsUtil.getBaseApiURL(APIType.TRADES, '1')).toBeDefined();
+      expect(swapsUtil.getBaseApiURL(APIType.TOKENS, '1')).toBeDefined();
+      expect(swapsUtil.getBaseApiURL(APIType.TOP_ASSETS, '1')).toBeDefined();
+      expect(swapsUtil.getBaseApiURL(APIType.FEATURE_FLAG, '1')).toBeDefined();
+      expect(
+        swapsUtil.getBaseApiURL(APIType.AGGREGATOR_METADATA, '1'),
+      ).toBeDefined();
     });
   });
 
@@ -164,7 +182,11 @@ describe('SwapsUtil', () => {
           aggType: 'AGG',
           fee: 0.875,
           gasMultiplier: 1.5,
-          priceSlippage: { ratio: 1.0081693243499585, calculationError: '', bucket: 'low' },
+          priceSlippage: {
+            ratio: 1.0081693243499585,
+            calculationError: '',
+            bucket: 'low',
+          },
           slippage: 3,
         },
         uniswap: {
@@ -190,7 +212,11 @@ describe('SwapsUtil', () => {
           aggType: 'DEX',
           fee: 0.875,
           gasMultiplier: 1.5,
-          priceSlippage: { ratio: 1.0027216076907874, calculationError: '', bucket: 'low' },
+          priceSlippage: {
+            ratio: 1.0027216076907874,
+            calculationError: '',
+            bucket: 'low',
+          },
           slippage: 3,
         },
       });
@@ -207,7 +233,9 @@ describe('SwapsUtil', () => {
         { overwriteRoutes: true, method: 'GET' },
       );
       const tokens = await swapsUtil.fetchTokens('1');
-      expect(tokens).toEqual(API_TOKENS.concat([swapsUtil.ETH_SWAPS_TOKEN_OBJECT]));
+      expect(tokens).toEqual(
+        API_TOKENS.concat([swapsUtil.ETH_SWAPS_TOKEN_OBJECT]),
+      );
     });
   });
 
@@ -235,7 +263,7 @@ describe('SwapsUtil', () => {
         { overwriteRoutes: true, method: 'GET' },
       );
       const assets = await swapsUtil.fetchTopAssets('1');
-      expect(assets).toBeTruthy();
+      expect(assets).toBeDefined();
       expect(assets).toBeInstanceOf(Array);
     });
   });
@@ -258,29 +286,17 @@ describe('SwapsUtil', () => {
     });
   });
 
-  describe('fetchTokenPrice', () => {
-    it('should work', async () => {
-      const address = '0x6b175474e89094c44da98b954eedeac495271d0f';
-      getOnce(
-        `https://api.coingecko.com/api/v3/simple/token_price/ethereum?contract_addresses=0x6b175474e89094c44da98b954eedeac495271d0f&vs_currencies=eth`,
-        () => ({
-          body: JSON.stringify({ '0x6b175474e89094c44da98b954eedeac495271d0f': { eth: 0.00168682 } }),
-        }),
-        { overwriteRoutes: true, method: 'GET' },
-      );
-      const ethPrice = await swapsUtil.fetchTokenPrice(address);
-      expect(ethPrice).toBeTruthy();
-      expect(typeof ethPrice).toBe('number');
-    });
-  });
-
   describe('calculateGasEstimateWithRefund', () => {
     it('estimated with refund is more than estimated gas, return estimatedGas', () => {
       const maxGas = 500;
       const estimatedRefund = 10;
       const estimatedGas = 'c8'; // 200
       const expected = '200';
-      const estimatedWithRefund = swapsUtil.calculateGasEstimateWithRefund(maxGas, estimatedRefund, estimatedGas);
+      const estimatedWithRefund = swapsUtil.calculateGasEstimateWithRefund(
+        maxGas,
+        estimatedRefund,
+        estimatedGas,
+      );
       expect(estimatedWithRefund.toString(10)).toEqual(expected);
     });
     it('estimated with refund is more than estimated gas, return estimated with refund', () => {
@@ -288,7 +304,11 @@ describe('SwapsUtil', () => {
       const estimatedRefund = 10;
       const estimatedGas = '1f4'; // 500
       const expected = '490';
-      const estimatedWithRefund = swapsUtil.calculateGasEstimateWithRefund(maxGas, estimatedRefund, estimatedGas);
+      const estimatedWithRefund = swapsUtil.calculateGasEstimateWithRefund(
+        maxGas,
+        estimatedRefund,
+        estimatedGas,
+      );
       expect(estimatedWithRefund.toString(10)).toEqual(expected);
     });
   });
@@ -348,8 +368,11 @@ describe('SwapsUtil', () => {
       );
       const limit: BigNumber = new BigNumber(gasEstimateWithRefund);
       expect(tradeGasLimit.toString(16)).toEqual(limit.toString(16));
-      expect(tradeMaxGasLimit.toString(16)).toEqual(new BigNumber(gasEstimate).times(gasMultiplier).toString(16));
+      expect(tradeMaxGasLimit.toString(16)).toEqual(
+        new BigNumber(gasEstimate).times(gasMultiplier).toString(16),
+      );
     });
+
     it('if approval is needed and custom gas limit, max gas is custom gas limit and averageGas is the estimated fee', () => {
       const { tradeGasLimit, tradeMaxGasLimit } = swapsUtil.calculateGasLimits(
         true,
@@ -361,8 +384,11 @@ describe('SwapsUtil', () => {
         customGasLimit,
       );
       expect(tradeGasLimit.toString()).toEqual(averageGas.toString());
-      expect(tradeMaxGasLimit.toString(16)).toEqual(new BigNumber(customGasLimit).toString(16));
+      expect(tradeMaxGasLimit.toString(16)).toEqual(
+        new BigNumber(customGasLimit).toString(16),
+      );
     });
+
     it('if no approval is needed and custom gas limit, gas limit is gas limit minus refund and max gas is the custom gas limit', () => {
       const { tradeGasLimit, tradeMaxGasLimit } = swapsUtil.calculateGasLimits(
         false,
@@ -375,7 +401,9 @@ describe('SwapsUtil', () => {
       );
       const limit: BigNumber = new BigNumber(gasEstimateWithRefund);
       expect(tradeGasLimit.toString(16)).toEqual(limit.toString(16));
-      expect(tradeMaxGasLimit.toString(16)).toEqual(new BigNumber(customGasLimit).toString(16));
+      expect(tradeMaxGasLimit.toString(16)).toEqual(
+        new BigNumber(customGasLimit).toString(16),
+      );
     });
   });
 });

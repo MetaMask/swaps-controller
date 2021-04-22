@@ -1,11 +1,22 @@
-import BigNumber from 'bignumber.js';
-import AbortController from 'abort-controller';
-import BaseController, { BaseConfig, BaseState } from '../BaseController';
-import { calcTokenAmount, estimateGas, query } from '../util';
-import { Transaction } from '../transaction/TransactionController';
 import {
+  BaseController,
+  BaseConfig,
+  BaseState,
+  Transaction,
+  util,
+} from '@metamask/controllers';
+import AbortController from 'abort-controller';
+import BigNumber from 'bignumber.js';
+import { Mutex } from 'async-mutex';
+import abiERC20 from 'human-standard-token-abi';
+import EthQuery from 'ethjs-query';
+import Web3 from 'web3';
+
+import {
+  calcTokenAmount,
   calculateGasEstimateWithRefund,
   calculateGasLimits,
+  estimateGas,
   fetchAggregatorMetadata,
   fetchGasPrices,
   fetchTokens,
@@ -32,11 +43,6 @@ import {
   SwapsAsset,
   SwapsToken,
 } from './SwapsInterfaces';
-
-const { Mutex } = require('async-mutex');
-const abiERC20 = require('human-standard-token-abi');
-const EthQuery = require('ethjs-query');
-const Web3 = require('web3');
 
 export interface SwapsConfig extends BaseConfig {
   clientId?: string;
@@ -99,7 +105,11 @@ export const INITIAL_CHAIN_DATA: ChainData = {
  * @param data Data to be updated
  * @returns chainCache with updated data
  */
-function getNewChainCache(chainCache: ChainCache, chainId: string, data: Partial<ChainData>): ChainCache {
+function getNewChainCache(
+  chainCache: ChainCache,
+  chainId: string,
+  data: Partial<ChainData>,
+): ChainCache {
   return {
     ...chainCache,
     [chainId]: {
@@ -135,7 +145,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       //
     }
     try {
-      const gasPrice = await query(this.ethQuery, 'gasPrice');
+      const gasPrice = await util.query(this.ethQuery, 'gasPrice');
       return gasPrice;
     } catch (e) {
       //
@@ -149,8 +159,15 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
    * @param quote - Specific quote object
    * @param gasPrice - Gas price in hex format to calculate the `QuotesValue` with
    */
-  private calculateQuoteValues(quote: Quote, gasPrice: string, gasLimit: string | null): QuoteValues {
-    const { destinationTokenInfo, destinationTokenConversionRate } = this.state.fetchParamsMetaData;
+  private calculateQuoteValues(
+    quote: Quote,
+    gasPrice: string,
+    gasLimit: string | null,
+  ): QuoteValues {
+    const {
+      destinationTokenInfo,
+      destinationTokenConversionRate,
+    } = this.state.fetchParamsMetaData;
     const {
       aggregator,
       averageGas,
@@ -189,22 +206,39 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     const maxTotalInWei = maxTotalGasInWei.plus(trade.value, 16);
 
     // if value in trade, NATIVE fee will be the gas, if not it will be the total wei
-    const weiFee = sourceToken === NATIVE_SWAPS_TOKEN_ADDRESS ? totalInWei.minus(sourceAmount, 10) : totalInWei; // sourceAmount is in wei : totalInWei;
+    const weiFee =
+      sourceToken === NATIVE_SWAPS_TOKEN_ADDRESS
+        ? totalInWei.minus(sourceAmount, 10)
+        : totalInWei; // sourceAmount is in wei : totalInWei;
     const maxWeiFee =
-      sourceToken === NATIVE_SWAPS_TOKEN_ADDRESS ? maxTotalInWei.minus(sourceAmount, 10) : maxTotalInWei; // sourceAmount is in wei : totalInWei;
+      sourceToken === NATIVE_SWAPS_TOKEN_ADDRESS
+        ? maxTotalInWei.minus(sourceAmount, 10)
+        : maxTotalInWei; // sourceAmount is in wei : totalInWei;
     const ethFee = calcTokenAmount(weiFee, 18);
     const maxEthFee = calcTokenAmount(maxWeiFee, 18);
 
-    const decimalAdjustedDestinationAmount = calcTokenAmount(destinationAmount, destinationTokenInfo.decimals);
+    const decimalAdjustedDestinationAmount = calcTokenAmount(
+      destinationAmount,
+      destinationTokenInfo.decimals,
+    );
 
     // fees
-    const tokenPercentageOfPreFeeDestAmount = new BigNumber(100, 10).minus(metaMaskFee, 10).div(100);
-    const destinationAmountBeforeMetaMaskFee = decimalAdjustedDestinationAmount.div(tokenPercentageOfPreFeeDestAmount);
-    const metaMaskFeeInTokens = destinationAmountBeforeMetaMaskFee.minus(decimalAdjustedDestinationAmount);
+    const tokenPercentageOfPreFeeDestAmount = new BigNumber(100, 10)
+      .minus(metaMaskFee, 10)
+      .div(100);
+    const destinationAmountBeforeMetaMaskFee = decimalAdjustedDestinationAmount.div(
+      tokenPercentageOfPreFeeDestAmount,
+    );
+    const metaMaskFeeInTokens = destinationAmountBeforeMetaMaskFee.minus(
+      decimalAdjustedDestinationAmount,
+    );
 
     const conversionRate = destinationTokenConversionRate || 1;
 
-    const ethValueOfTokens = decimalAdjustedDestinationAmount.times(conversionRate, 10);
+    const ethValueOfTokens = decimalAdjustedDestinationAmount.times(
+      conversionRate,
+      10,
+    );
 
     // the more tokens the better
     const overallValueOfQuote = ethValueOfTokens.minus(ethFee, 10);
@@ -221,7 +255,11 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     return quoteValues;
   }
 
-  private calculatesCustomLimitMaxEthFee(quote: Quote, gasPrice: string, gasLimit: string): string {
+  private calculatesCustomLimitMaxEthFee(
+    quote: Quote,
+    gasPrice: string,
+    gasLimit: string,
+  ): string {
     const {
       averageGas,
       maxGas,
@@ -246,7 +284,9 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     const maxTotalGasInWei = tradeMaxGasLimit.times(gasPrice, 16);
     const maxTotalInWei = maxTotalGasInWei.plus(trade.value, 16);
     const maxWeiFee =
-      sourceToken === NATIVE_SWAPS_TOKEN_ADDRESS ? maxTotalInWei.minus(sourceAmount, 10) : maxTotalInWei;
+      sourceToken === NATIVE_SWAPS_TOKEN_ADDRESS
+        ? maxTotalInWei.minus(sourceAmount, 10)
+        : maxTotalInWei;
     const maxEthFee = calcTokenAmount(maxWeiFee, 18).toFixed(18);
     return maxEthFee;
   }
@@ -270,8 +310,13 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       const quoteValue = this.calculateQuoteValues(quote, usedGasPrice, null);
       quoteValues[quoteValue.aggregator] = quoteValue;
 
-      const bnOverallValueOfQuote = new BigNumber(quoteValue.overallValueOfQuote);
-      if (!overallValueOfBestQuoteForSorting || bnOverallValueOfQuote.gt(overallValueOfBestQuoteForSorting)) {
+      const bnOverallValueOfQuote = new BigNumber(
+        quoteValue.overallValueOfQuote,
+      );
+      if (
+        !overallValueOfBestQuoteForSorting ||
+        bnOverallValueOfQuote.gt(overallValueOfBestQuoteForSorting)
+      ) {
         topAggId = quote.aggregator;
         overallValueOfBestQuoteForSorting = bnOverallValueOfQuote;
       }
@@ -288,7 +333,10 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
    * @param walletAddress - Hex address of the wallet
    * @returns - Promise resolving to allowance number
    */
-  private async getERC20Allowance(contractAddress: string, walletAddress: string): Promise<number> {
+  private async getERC20Allowance(
+    contractAddress: string,
+    walletAddress: string,
+  ): Promise<number> {
     const contract = this.web3.eth.contract(abiERC20).at(contractAddress);
     const allowanceTimeout = new Promise<number>((_, reject) => {
       setTimeout(() => {
@@ -311,10 +359,15 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       );
     });
 
-    return Promise.race([allowanceTimeout, allowancePromise]) as Promise<number>;
+    return Promise.race([
+      allowanceTimeout,
+      allowancePromise,
+    ]) as Promise<number>;
   }
 
-  private timedoutGasReturn(tradeTxParams: Transaction | null): Promise<{ gas: string | null }> {
+  private timedoutGasReturn(
+    tradeTxParams: Transaction | null,
+  ): Promise<{ gas: string | null }> {
     if (!tradeTxParams) {
       return new Promise((resolve) => {
         resolve({ gas: null });
@@ -351,35 +404,48 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     this.handle && clearTimeout(this.handle);
     if (this.pollCount < this.config.pollCountLimit + 1) {
       !this.state.isInPolling && this.update({ isInPolling: true });
-      const { nextQuotesState, threshold, usedGasPrice } = await this.fetchQuotes();
-      this.update({ pollingCyclesLeft: this.config.pollCountLimit - this.pollCount });
+      const {
+        nextQuotesState,
+        threshold,
+        usedGasPrice,
+      } = await this.fetchQuotes();
+      this.update({
+        pollingCyclesLeft: this.config.pollCountLimit - this.pollCount,
+      });
       if (threshold && nextQuotesState?.quoteRefreshSeconds) {
         this.update({ ...this.state, ...nextQuotesState, usedGasPrice });
         this.handle = setTimeout(async () => {
           this.pollForNewQuotesWithThreshold(threshold);
-        }, (nextQuotesState.quoteRefreshSeconds * 1000) - threshold);
+        }, nextQuotesState.quoteRefreshSeconds * 1000 - threshold);
       }
     } else {
       this.handle = setTimeout(() => {
-        this.stopPollingAndResetState({ key: SwapsError.QUOTES_EXPIRED_ERROR, description: null });
+        this.stopPollingAndResetState({
+          key: SwapsError.QUOTES_EXPIRED_ERROR,
+          description: null,
+        });
       }, fetchThreshold);
     }
   }
 
-  private async getAllQuotesWithGasEstimates(trades: { [key: string]: Quote }): Promise<{ [key: string]: Quote }> {
+  private async getAllQuotesWithGasEstimates(trades: {
+    [key: string]: Quote;
+  }): Promise<{ [key: string]: Quote }> {
     const quoteGasData = await Promise.all(
       Object.values(trades).map((trade) => {
-        return new Promise<{ gas: string | null; aggId: string }>(async (resolve, reject) => {
-          try {
-            const { gas } = await this.timedoutGasReturn(trade.trade);
-            resolve({
-              gas,
-              aggId: trade.aggregator,
-            });
-          } catch (e) {
-            reject(e);
-          }
-        });
+        return new Promise<{ gas: string | null; aggId: string }>(
+          async (resolve, reject) => {
+            try {
+              const { gas } = await this.timedoutGasReturn(trade.trade);
+              resolve({
+                gas,
+                aggId: trade.aggregator,
+              });
+            } catch (e) {
+              reject(e);
+            }
+          },
+        );
       }),
     );
 
@@ -410,7 +476,12 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       /** We need to abort quotes fetch if stopPollingAndResetState is called while getting quotes */
       this.abortController = new AbortController();
       const { signal } = this.abortController;
-      let quotes: { [key: string]: Quote } = await fetchTradesInfo(fetchParams, signal, chainId, clientId);
+      let quotes: { [key: string]: Quote } = await fetchTradesInfo(
+        fetchParams,
+        signal,
+        chainId,
+        clientId,
+      );
 
       if (Object.values(quotes).length === 0) {
         throw new Error(SwapsError.QUOTES_NOT_AVAILABLE_ERROR);
@@ -424,7 +495,10 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       } | null = null;
 
       if (fetchParams.sourceToken !== NATIVE_SWAPS_TOKEN_ADDRESS) {
-        const allowance = await this.getERC20Allowance(fetchParams.sourceToken, fetchParams.walletAddress);
+        const allowance = await this.getERC20Allowance(
+          fetchParams.sourceToken,
+          fetchParams.walletAddress,
+        );
 
         if (Number(allowance) < fetchParams.sourceAmount) {
           approvalTransaction = Object.values(quotes)[0].approvalNeeded;
@@ -446,7 +520,10 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       quotes = await this.getAllQuotesWithGasEstimates(quotes);
       const usedGasPrice = await this.getGasPrice();
 
-      const { topAggId, quoteValues } = this.getBestQuoteAndQuotesValues(quotes, usedGasPrice);
+      const { topAggId, quoteValues } = this.getBestQuoteAndQuotesValues(
+        quotes,
+        usedGasPrice,
+      );
 
       const quotesLastFetched = Date.now();
 
@@ -458,9 +535,15 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
         quoteValues,
         quoteRefreshSeconds: quotes[topAggId]?.quoteRefreshSeconds,
       };
-      return { nextQuotesState, threshold: quotesLastFetched - timeStarted, usedGasPrice };
+      return {
+        nextQuotesState,
+        threshold: quotesLastFetched - timeStarted,
+        usedGasPrice,
+      };
     } catch (e) {
-      const errorKey = Object.values(SwapsError).includes(e.message) ? e.message : SwapsError.ERROR_FETCHING_QUOTES;
+      const errorKey = Object.values(SwapsError).includes(e.message)
+        ? e.message
+        : SwapsError.ERROR_FETCHING_QUOTES;
       this.stopPollingAndResetState({ key: errorKey, description: e });
       return { nextQuotesState: null, threshold: null, usedGasPrice: null };
     }
@@ -575,7 +658,10 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
    */
   updateQuotesWithGasPrice(customGasPrice: string): void {
     const { quotes } = this.state;
-    const { topAggId, quoteValues } = this.getBestQuoteAndQuotesValues(quotes, customGasPrice);
+    const { topAggId, quoteValues } = this.getBestQuoteAndQuotesValues(
+      quotes,
+      customGasPrice,
+    );
     this.update({ topAggId, quoteValues });
   }
 
@@ -590,12 +676,19 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       return;
     }
     const selectedQuote = quotes[topAggId];
-    const maxEthFee = this.calculatesCustomLimitMaxEthFee(selectedQuote, usedGasPrice, customGasLimit);
+    const maxEthFee = this.calculatesCustomLimitMaxEthFee(
+      selectedQuote,
+      usedGasPrice,
+      customGasLimit,
+    );
     quoteValues[selectedQuote.aggregator].maxEthFee = maxEthFee;
     this.update({ topAggId, quoteValues });
   }
 
-  startFetchAndSetQuotes(fetchParams: APIFetchQuotesParams, fetchParamsMetaData: APIFetchQuotesMetadata) {
+  startFetchAndSetQuotes(
+    fetchParams: APIFetchQuotesParams,
+    fetchParamsMetaData: APIFetchQuotesMetadata,
+  ) {
     if (!fetchParams) {
       return null;
     }
@@ -618,10 +711,16 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       try {
         const newTokens = await fetchTokens(chainId);
         const data = { tokens: newTokens, tokensLastFetched: Date.now() };
-        this.update({ ...data, chainCache: getNewChainCache(this.state.chainCache, chainId, data) });
+        this.update({
+          ...data,
+          chainCache: getNewChainCache(this.state.chainCache, chainId, data),
+        });
       } catch {
         const data = { tokensLastFetched: 0 };
-        this.update({ ...data, chainCache: getNewChainCache(this.state.chainCache, chainId, data) });
+        this.update({
+          ...data,
+          chainCache: getNewChainCache(this.state.chainCache, chainId, data),
+        });
       } finally {
         releaseLock();
       }
@@ -632,15 +731,27 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     const { chainId, fetchTopAssetsThreshold } = this.config;
     const { topAssets, topAssetsLastFetched } = this.state;
 
-    if (!topAssets || fetchTopAssetsThreshold < Date.now() - topAssetsLastFetched) {
+    if (
+      !topAssets ||
+      fetchTopAssetsThreshold < Date.now() - topAssetsLastFetched
+    ) {
       const releaseLock = await this.mutex.acquire();
       try {
         const newTopAssets = await fetchTopAssets(chainId);
-        const data = { topAssets: newTopAssets, topAssetsLastFetched: Date.now() };
-        this.update({ ...data, chainCache: getNewChainCache(this.state.chainCache, chainId, data) });
+        const data = {
+          topAssets: newTopAssets,
+          topAssetsLastFetched: Date.now(),
+        };
+        this.update({
+          ...data,
+          chainCache: getNewChainCache(this.state.chainCache, chainId, data),
+        });
       } catch {
         const data = { topAssetsLastFetched: 0 };
-        this.update({ ...data, chainCache: getNewChainCache(this.state.chainCache, chainId, data) });
+        this.update({
+          ...data,
+          chainCache: getNewChainCache(this.state.chainCache, chainId, data),
+        });
       } finally {
         releaseLock();
       }
@@ -651,15 +762,28 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     const { chainId, fetchAggregatorMetadataThreshold } = this.config;
     const { aggregatorMetadata, aggregatorMetadataLastFetched } = this.state;
 
-    if (!aggregatorMetadata || fetchAggregatorMetadataThreshold < Date.now() - aggregatorMetadataLastFetched) {
+    if (
+      !aggregatorMetadata ||
+      fetchAggregatorMetadataThreshold <
+        Date.now() - aggregatorMetadataLastFetched
+    ) {
       const releaseLock = await this.mutex.acquire();
       try {
         const newAggregatorMetada = await fetchAggregatorMetadata(chainId);
-        const data = { aggregatorMetadata: newAggregatorMetada, aggregatorMetadataLastFetched: Date.now() };
-        this.update({ ...data, chainCache: getNewChainCache(this.state.chainCache, chainId, data) });
+        const data = {
+          aggregatorMetadata: newAggregatorMetada,
+          aggregatorMetadataLastFetched: Date.now(),
+        };
+        this.update({
+          ...data,
+          chainCache: getNewChainCache(this.state.chainCache, chainId, data),
+        });
       } catch {
         const data = { aggregatorMetadataLastFetched: 0 };
-        this.update({ ...data, chainCache: getNewChainCache(this.state.chainCache, chainId, data) });
+        this.update({
+          ...data,
+          chainCache: getNewChainCache(this.state.chainCache, chainId, data),
+        });
       } finally {
         releaseLock();
       }
@@ -670,7 +794,10 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
    * Stops the polling process
    *
    */
-  stopPollingAndResetState(error?: { key: SwapsError | null; description: string | null }) {
+  stopPollingAndResetState(error?: {
+    key: SwapsError | null;
+    description: string | null;
+  }) {
     this.abortController && this.abortController.abort();
     this.handle && clearTimeout(this.handle);
     this.pollCount = this.config.pollCountLimit + 1;
