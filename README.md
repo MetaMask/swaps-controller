@@ -1,22 +1,24 @@
-# MetaMask Module Template
+# SwapsController
 
-This TypeScript module is maintained in the style of the MetaMask team.
+MetaMask Swaps controller.
 
 ## Installation
 
-`yarn add @metamask/this-module`
+`yarn add @metamask/swaps-controller`
 
 or
 
-`npm install @metamask/this-module`
+`npm install @metamask/swaps-controller`
 
 ## Usage
 
-_Add examples here_
+```js
+import SwapsController, { swapsUtils } from '@metamask/swaps-controller';
+```
 
 ## API
 
-_Add examples here_
+> TODO
 
 ## Testing
 
