@@ -7,9 +7,9 @@ import {
 } from '@metamask/controllers';
 import AbortController from 'abort-controller';
 import BigNumber from 'bignumber.js';
-import { Mutex } from 'async-mutex';
+import EthQuery from 'eth-query';
 import abiERC20 from 'human-standard-token-abi';
-import EthQuery from 'ethjs-query';
+import { Mutex } from 'async-mutex';
 import Web3 from 'web3';
 
 import {
