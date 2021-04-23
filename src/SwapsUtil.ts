@@ -11,7 +11,7 @@ import {
   APIFetchQuotesParams,
   QuoteValues,
   TransactionReceipt,
-} from './SwapsInterfaces';
+} from './swapsInterfaces';
 
 const {
   handleFetch,

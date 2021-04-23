@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { getOnce } from 'fetch-mock';
-import { APIType, SwapsToken } from './SwapsInterfaces';
-import * as swapsUtil from './SwapsUtil';
+import { APIType, SwapsToken } from './swapsInterfaces';
+import * as swapsUtil from './swapsUtil';
 
 const API_TRADES = [
   {

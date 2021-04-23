@@ -1,7 +1,7 @@
 import { ComposableController } from '@metamask/controllers';
 import { SinonStub, stub } from 'sinon';
 import SwapsController, { INITIAL_CHAIN_DATA } from './SwapsController';
-import * as swapsUtil from './SwapsUtil';
+import * as swapsUtil from './swapsUtil';
 
 // const HttpProvider = require('ethjs-provider-http');
 

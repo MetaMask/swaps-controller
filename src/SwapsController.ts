@@ -29,7 +29,7 @@ import {
   ETH_CHAIN_ID,
   BSC_CHAIN_ID,
   SWAPS_TESTNET_CHAIN_ID,
-} from './SwapsUtil';
+} from './swapsUtil';
 
 import {
   APIAggregatorMetadata,
@@ -42,7 +42,7 @@ import {
   QuoteValues,
   SwapsAsset,
   SwapsToken,
-} from './SwapsInterfaces';
+} from './swapsInterfaces';
 
 export interface SwapsConfig extends BaseConfig {
   clientId?: string;
