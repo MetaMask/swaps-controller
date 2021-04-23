@@ -133,6 +133,108 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
   private abortController?: AbortController;
 
   /**
+   * Name of this controller used during composition
+   */
+  name = 'SwapsController';
+
+  /**
+   * List of required sibling controllers this controller needs to function
+   */
+  requiredControllers = [];
+
+  /**
+   * Creates a SwapsController instance
+   *
+   * @param config - Initial options used to configure this controller
+   * @param state - Initial state to set on this controller
+   */
+  constructor(config?: Partial<SwapsConfig>, state?: Partial<SwapsState>) {
+    super(config, state);
+    this.defaultConfig = {
+      maxGasLimit: 2500000,
+      pollCountLimit: 3,
+      fetchAggregatorMetadataThreshold: 1000 * 60 * 60 * 24 * 15,
+      fetchTokensThreshold: 1000 * 60 * 60 * 24,
+      fetchTopAssetsThreshold: 1000 * 60 * 30,
+      provider: undefined,
+      chainId: '1',
+      supportedChainIds: [ETH_CHAIN_ID, BSC_CHAIN_ID, SWAPS_TESTNET_CHAIN_ID],
+      clientId: undefined,
+    };
+    this.defaultState = {
+      quotes: {},
+      quoteValues: {},
+      fetchParams: {
+        slippage: 0,
+        sourceToken: '',
+        sourceAmount: 0,
+        destinationToken: '',
+        walletAddress: '',
+      },
+      fetchParamsMetaData: {
+        sourceTokenInfo: {
+          decimals: 0,
+          address: '',
+          symbol: '',
+        },
+        destinationTokenInfo: {
+          decimals: 0,
+          address: '',
+          symbol: '',
+        },
+        accountBalance: '0x',
+      },
+      topAggSavings: null,
+      aggregatorMetadata: null,
+      tokens: null,
+      topAssets: null,
+      approvalTransaction: null,
+      aggregatorMetadataLastFetched: 0,
+      quotesLastFetched: 0,
+      topAssetsLastFetched: 0,
+      error: { key: null, description: null },
+      topAggId: null,
+      tokensLastFetched: 0,
+      isInPolling: false,
+      pollingCyclesLeft: config?.pollCountLimit || 3,
+      quoteRefreshSeconds: null,
+      usedGasPrice: null,
+      chainCache: {
+        '1': INITIAL_CHAIN_DATA,
+      },
+    };
+
+    this.initialize();
+  }
+
+  set provider(provider: any) {
+    if (provider) {
+      this.ethQuery = new EthQuery(provider);
+      this.web3 = new Web3(provider);
+    }
+  }
+
+  set chainId(chainId: string) {
+    if (!this.config.supportedChainIds.includes(chainId)) {
+      return;
+    }
+
+    const { chainCache } = this.state;
+    if (chainCache?.[chainId] === undefined) {
+      this.update({
+        ...INITIAL_CHAIN_DATA,
+        chainCache: getNewChainCache(chainCache, chainId, INITIAL_CHAIN_DATA),
+      });
+      return;
+    }
+
+    const cachedData = chainCache?.[chainId] || INITIAL_CHAIN_DATA;
+    this.update({
+      ...cachedData,
+    });
+  }
+
+  /**
    * Fetch current gas price
    *
    * @returns - Promise resolving to the current gas price or throw an error
@@ -547,108 +649,6 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       this.stopPollingAndResetState({ key: errorKey, description: e });
       return { nextQuotesState: null, threshold: null, usedGasPrice: null };
     }
-  }
-
-  /**
-   * Name of this controller used during composition
-   */
-  name = 'SwapsController';
-
-  /**
-   * List of required sibling controllers this controller needs to function
-   */
-  requiredControllers = [];
-
-  /**
-   * Creates a SwapsController instance
-   *
-   * @param config - Initial options used to configure this controller
-   * @param state - Initial state to set on this controller
-   */
-  constructor(config?: Partial<SwapsConfig>, state?: Partial<SwapsState>) {
-    super(config, state);
-    this.defaultConfig = {
-      maxGasLimit: 2500000,
-      pollCountLimit: 3,
-      fetchAggregatorMetadataThreshold: 1000 * 60 * 60 * 24 * 15,
-      fetchTokensThreshold: 1000 * 60 * 60 * 24,
-      fetchTopAssetsThreshold: 1000 * 60 * 30,
-      provider: undefined,
-      chainId: '1',
-      supportedChainIds: [ETH_CHAIN_ID, BSC_CHAIN_ID, SWAPS_TESTNET_CHAIN_ID],
-      clientId: undefined,
-    };
-    this.defaultState = {
-      quotes: {},
-      quoteValues: {},
-      fetchParams: {
-        slippage: 0,
-        sourceToken: '',
-        sourceAmount: 0,
-        destinationToken: '',
-        walletAddress: '',
-      },
-      fetchParamsMetaData: {
-        sourceTokenInfo: {
-          decimals: 0,
-          address: '',
-          symbol: '',
-        },
-        destinationTokenInfo: {
-          decimals: 0,
-          address: '',
-          symbol: '',
-        },
-        accountBalance: '0x',
-      },
-      topAggSavings: null,
-      aggregatorMetadata: null,
-      tokens: null,
-      topAssets: null,
-      approvalTransaction: null,
-      aggregatorMetadataLastFetched: 0,
-      quotesLastFetched: 0,
-      topAssetsLastFetched: 0,
-      error: { key: null, description: null },
-      topAggId: null,
-      tokensLastFetched: 0,
-      isInPolling: false,
-      pollingCyclesLeft: config?.pollCountLimit || 3,
-      quoteRefreshSeconds: null,
-      usedGasPrice: null,
-      chainCache: {
-        '1': INITIAL_CHAIN_DATA,
-      },
-    };
-
-    this.initialize();
-  }
-
-  set provider(provider: any) {
-    if (provider) {
-      this.ethQuery = new EthQuery(provider);
-      this.web3 = new Web3(provider);
-    }
-  }
-
-  set chainId(chainId: string) {
-    if (!this.config.supportedChainIds.includes(chainId)) {
-      return;
-    }
-
-    const { chainCache } = this.state;
-    if (chainCache?.[chainId] === undefined) {
-      this.update({
-        ...INITIAL_CHAIN_DATA,
-        chainCache: getNewChainCache(chainCache, chainId, INITIAL_CHAIN_DATA),
-      });
-      return;
-    }
-
-    const cachedData = chainCache?.[chainId] || INITIAL_CHAIN_DATA;
-    this.update({
-      ...cachedData,
-    });
   }
 
   /**
