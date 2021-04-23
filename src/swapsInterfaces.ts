@@ -1,5 +1,5 @@
+import { Transaction } from '@metamask/controllers';
 import BigNumber from 'bignumber.js';
-import { Transaction } from '../transaction/TransactionController';
 
 export enum APIType {
   TRADES = 'TRADES',
