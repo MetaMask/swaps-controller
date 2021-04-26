@@ -126,13 +126,16 @@ describe('SwapsUtil', () => {
   describe('getBaseApiURL', () => {
     it('should return expected values', () => {
       expect(swapsUtil.getBaseApiURL(APIType.TRADES, '1')).toBeDefined();
-      expect(swapsUtil.getBaseApiURL(APIType.TRADES, '1')).toBeDefined();
       expect(swapsUtil.getBaseApiURL(APIType.TOKENS, '1')).toBeDefined();
       expect(swapsUtil.getBaseApiURL(APIType.TOP_ASSETS, '1')).toBeDefined();
       expect(swapsUtil.getBaseApiURL(APIType.FEATURE_FLAG, '1')).toBeDefined();
       expect(
         swapsUtil.getBaseApiURL(APIType.AGGREGATOR_METADATA, '1'),
       ).toBeDefined();
+      expect(swapsUtil.getBaseApiURL(APIType.GAS_PRICES, '1')).toBeDefined();
+      expect(() =>
+        swapsUtil.getBaseApiURL('error value' as APIType, '1'),
+      ).toThrow();
     });
   });
 
