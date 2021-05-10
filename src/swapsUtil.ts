@@ -29,11 +29,22 @@ export const ETH_SWAPS_CONTRACT_ADDRESS =
   '0x881d40237659c251811cec9c364ef91dc08d300c';
 export const BSC_SWAPS_CONTRACT_ADDRESS =
   '0x1a1ec25dc08e98e5e93f1104b5e5cdd298707d31';
+export const WETH_CONTRACT_ADDRESS =
+  '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
 
 export const SWAPS_CONTRACT_ADDRESSES: { [key: string]: string } = {
   [ETH_CHAIN_ID]: ETH_SWAPS_CONTRACT_ADDRESS,
   [SWAPS_TESTNET_CHAIN_ID]: ETH_SWAPS_CONTRACT_ADDRESS,
   [BSC_CHAIN_ID]: BSC_SWAPS_CONTRACT_ADDRESS,
+};
+
+export const ALLOWED_CONTRACT_ADDRESSES: { [key: string]: string[] } = {
+  [ETH_CHAIN_ID]: [
+    SWAPS_CONTRACT_ADDRESSES[ETH_CHAIN_ID],
+    WETH_CONTRACT_ADDRESS,
+  ],
+  [SWAPS_TESTNET_CHAIN_ID]: [SWAPS_CONTRACT_ADDRESSES[SWAPS_TESTNET_CHAIN_ID]],
+  [BSC_CHAIN_ID]: [SWAPS_CONTRACT_ADDRESSES[BSC_CHAIN_ID]],
 };
 
 export const NATIVE_SWAPS_TOKEN_ADDRESS =
@@ -92,6 +103,18 @@ export function getNativeSwapsToken(chainId: string): SwapsToken {
 
 export function getSwapsContractAddress(chainId: string): string {
   return SWAPS_CONTRACT_ADDRESSES[chainId];
+}
+
+export function isValidContractAddress(
+  chainId: string,
+  contract: string | undefined,
+): boolean {
+  if (!contract) {
+    return false;
+  }
+  return ALLOWED_CONTRACT_ADDRESSES[chainId].some(
+    (allowedContract) => contract === allowedContract,
+  );
 }
 
 export const getBaseApiURL = function (type: APIType, chainId: string): string {
@@ -160,7 +183,7 @@ export async function fetchTradesInfo(
       if (
         !quote.error &&
         quote.trade &&
-        quote.trade?.to?.toLowerCase() === getSwapsContractAddress(chainId)
+        isValidContractAddress(chainId, quote.trade?.to?.toLowerCase())
       ) {
         const constructedTrade = constructTxParams({
           to: quote.trade.to,
