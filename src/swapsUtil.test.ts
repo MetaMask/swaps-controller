@@ -139,6 +139,56 @@ describe('SwapsUtil', () => {
     });
   });
 
+  describe('isValidContractAddress', () => {
+    it('should validate correctly', () => {
+      expect(
+        swapsUtil.isValidContractAddress(swapsUtil.ETH_CHAIN_ID, undefined),
+      ).toBe(false);
+      expect(
+        swapsUtil.isValidContractAddress(
+          swapsUtil.ETH_CHAIN_ID,
+          swapsUtil.getSwapsContractAddress(swapsUtil.ETH_CHAIN_ID),
+        ),
+      ).toBe(true);
+      expect(
+        swapsUtil.isValidContractAddress(
+          swapsUtil.ETH_CHAIN_ID,
+          swapsUtil.ETH_SWAPS_CONTRACT_ADDRESS,
+        ),
+      ).toBe(true);
+      expect(
+        swapsUtil.isValidContractAddress(
+          swapsUtil.SWAPS_TESTNET_CHAIN_ID,
+          swapsUtil.ETH_SWAPS_CONTRACT_ADDRESS,
+        ),
+      ).toBe(true);
+      expect(
+        swapsUtil.isValidContractAddress(
+          swapsUtil.ETH_CHAIN_ID,
+          swapsUtil.WETH_CONTRACT_ADDRESS,
+        ),
+      ).toBe(true);
+      expect(
+        swapsUtil.isValidContractAddress(
+          swapsUtil.BSC_CHAIN_ID,
+          swapsUtil.BSC_SWAPS_CONTRACT_ADDRESS,
+        ),
+      ).toBe(true);
+      expect(
+        swapsUtil.isValidContractAddress(
+          swapsUtil.ETH_CHAIN_ID,
+          swapsUtil.BSC_SWAPS_CONTRACT_ADDRESS,
+        ),
+      ).toBe(false);
+      expect(
+        swapsUtil.isValidContractAddress(
+          swapsUtil.BSC_CHAIN_ID,
+          swapsUtil.ETH_SWAPS_CONTRACT_ADDRESS,
+        ),
+      ).toBe(false);
+    });
+  });
+
   describe('fetchTradesInfo', () => {
     it('should work', async () => {
       getOnce(
