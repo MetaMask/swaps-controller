@@ -47,7 +47,6 @@ export interface APIFetchQuotesMetadata {
  * @property destinationToken - Destination token address
  * @property walletAddress - Address to do the swap from
  * @property exchangeList
- * @property balanceError
  * @property metaData - Metadata needed to fetch quotes
  *
  */
@@ -58,7 +57,6 @@ export interface APIFetchQuotesParams {
   destinationToken: string;
   walletAddress: string;
   exchangeList?: string[];
-  balanceError?: boolean;
   timeout?: number;
   clientId?: string;
 }
