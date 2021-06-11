@@ -164,10 +164,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     gasPrice: string,
     gasLimit: string | null,
   ): QuoteValues {
-    const {
-      destinationTokenInfo,
-      destinationTokenConversionRate,
-    } = this.state.fetchParamsMetaData;
+    const { destinationTokenInfo } = this.state.fetchParamsMetaData;
     const {
       aggregator,
       averageGas,
@@ -233,7 +230,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       decimalAdjustedDestinationAmount,
     );
 
-    const conversionRate = destinationTokenConversionRate || 1;
+    const conversionRate = quote.destinationTokenRate || 1;
 
     const ethValueOfTokens = decimalAdjustedDestinationAmount.times(
       conversionRate,
@@ -599,7 +596,6 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
           address: '',
           symbol: '',
         },
-        accountBalance: '0x',
       },
       topAggSavings: null,
       aggregatorMetadata: null,

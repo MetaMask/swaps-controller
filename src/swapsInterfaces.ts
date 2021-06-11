@@ -29,15 +29,11 @@ export interface SwapsToken extends SwapsAsset {
  *
  * @property sourceTokenInfo - Source token information
  * @property destinationTokenInfo - Destination token information
- * @property accountBalance Current - ETH account balance
- * @property destinationTokenConversionRate - Current conversion rate to ETH of destination token
  *
  */
 export interface APIFetchQuotesMetadata {
   sourceTokenInfo: SwapsToken;
   destinationTokenInfo: SwapsToken;
-  accountBalance: string;
-  destinationTokenConversionRate?: string;
 }
 
 /**
@@ -147,6 +143,8 @@ export interface Quote {
   savings: QuoteSavings | null;
   gasEstimate: string | null;
   gasEstimateWithRefund: string | null;
+  destinationTokenRate: number | null;
+  sourceTokenRate: number | null;
 }
 
 /**

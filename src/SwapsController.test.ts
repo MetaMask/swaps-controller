@@ -189,7 +189,6 @@ const API_TRADES = {
 //       symbol: 'USDC',
 //       decimals: 18,
 //     },
-//     accountBalance: '0x0',
 //   },
 // };
 
@@ -334,7 +333,6 @@ describe('SwapsController', () => {
           address: '',
           symbol: '',
         },
-        accountBalance: '0x',
       },
       topAggSavings: null,
       aggregatorMetadata: null,
