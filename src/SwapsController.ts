@@ -178,6 +178,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       gasEstimate,
       gasMultiplier,
       approvalNeeded,
+      destinationTokenRate,
     } = quote;
 
     // trade gas
@@ -230,7 +231,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       decimalAdjustedDestinationAmount,
     );
 
-    const conversionRate = quote.destinationTokenRate || 1;
+    const conversionRate = destinationTokenRate || 1;
 
     const ethValueOfTokens = decimalAdjustedDestinationAmount.times(
       conversionRate,
