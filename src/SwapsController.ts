@@ -51,6 +51,11 @@ interface LegacyGasPrice {
   gasPrice: string;
 }
 
+interface CustomLegacyGasPrice {
+  gasPrice: string;
+  selected?: 'slow' | 'average' | 'fast' | null;
+}
+
 interface Eip1559GasFee {
   minWaitTimeEstimate: number; // a time duration in milliseconds
   maxWaitTimeEstimate: number; // a time duration in milliseconds
@@ -61,6 +66,7 @@ interface Eip1559GasFee {
 interface CustomEip1559GasFee {
   maxFeePerGas: string; // a GWEI hex number
   maxPriorityFeePerGas: string; // a GWEI hex number
+  selected?: 'low' | 'medium' | 'high' | null;
 }
 
 export interface GasFeeEstimates {
@@ -130,7 +136,7 @@ export interface SwapsState extends BaseState {
   quoteValues: { [key: string]: QuoteValues } | null;
   quoteRefreshSeconds: number | null;
   usedGasEstimates: LegacyGasPrice | GasFeeEstimates | null;
-  usedCustomGas: LegacyGasPrice | CustomEip1559GasFee | null;
+  usedCustomGas: CustomLegacyGasPrice | CustomEip1559GasFee | null;
   aggregatorMetadata: null | { [key: string]: APIAggregatorMetadata };
   aggregatorMetadataLastFetched: number;
   tokens: null | SwapsToken[];
@@ -224,7 +230,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     quote: Quote,
     gasLimit: string | null,
     gasFeeEstimates: GasFeeEstimates | LegacyGasPrice,
-    customGasFee?: LegacyGasPrice | CustomEip1559GasFee,
+    customGasFee?: CustomLegacyGasPrice | CustomEip1559GasFee,
   ): QuoteValues {
     const {
       destinationTokenInfo,
@@ -271,7 +277,15 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       const [maxFeePerGas, maxPriorityFeePerGas] = isCustomEip1559GasFee(
         customGasFee,
       )
-        ? [customGasFee.maxFeePerGas, customGasFee.maxPriorityFeePerGas]
+        ? [
+            customGasFee.selected
+              ? gasFeeEstimates[customGasFee.selected].suggestedMaxFeePerGas
+              : customGasFee.maxFeePerGas,
+            customGasFee.selected
+              ? gasFeeEstimates[customGasFee.selected]
+                  .suggestedMaxPriorityFeePerGas
+              : customGasFee.maxPriorityFeePerGas,
+          ]
         : [
             gasFeeEstimates.high.suggestedMaxFeePerGas,
             gasFeeEstimates.high.suggestedMaxPriorityFeePerGas,
@@ -397,7 +411,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
   private getBestQuoteAndQuotesValues(
     quotes: { [key: string]: Quote },
     gasFeeEstimates: LegacyGasPrice | GasFeeEstimates,
-    customGasFee?: LegacyGasPrice | CustomEip1559GasFee,
+    customGasFee?: CustomLegacyGasPrice | CustomEip1559GasFee,
   ): { topAggId: string; quoteValues: { [key: string]: QuoteValues } } {
     let topAggId = '';
     let overallValueOfBestQuoteForSorting: BigNumber | null = null;
@@ -770,7 +784,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
    * @param customGasPrice - Custom gas price in hex format
    */
   updateQuotesWithGasPrice(
-    customGasFee: LegacyGasPrice | CustomEip1559GasFee,
+    customGasFee: CustomLegacyGasPrice | CustomEip1559GasFee,
   ): void {
     const { quotes, usedGasEstimates } = this.state;
     if (!usedGasEstimates) {

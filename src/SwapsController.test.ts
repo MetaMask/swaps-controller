@@ -350,7 +350,8 @@ describe('SwapsController', () => {
       isInPolling: false,
       pollingCyclesLeft: 3,
       quoteRefreshSeconds: null,
-      usedGasPrice: null,
+      usedGasEstimates: null,
+      usedCustomGas: null,
       chainCache: {
         '1': {
           aggregatorMetadataLastFetched: 0,
