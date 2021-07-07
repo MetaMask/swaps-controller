@@ -199,6 +199,14 @@ describe('SwapsUtil', () => {
         { overwriteRoutes: true, method: 'GET' },
       );
 
+      getOnce(
+        `https://api.metaswap.codefi.network/trades?destinationToken=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&sourceToken=0x6b175474e89094c44da98b954eedeac495271d0f&sourceAmount=1000000000000000000&slippage=3&timeout=10000&walletAddress=0xB0dA5965D43369968574D399dBe6374683773a65&clientId=mobile`,
+        () => ({
+          body: JSON.stringify(API_TRADES),
+        }),
+        { overwriteRoutes: true, method: 'GET' },
+      );
+
       const quotes = await swapsUtil.fetchTradesInfo(
         {
           slippage: 3,
@@ -211,7 +219,20 @@ describe('SwapsUtil', () => {
         '1',
       );
 
-      expect(quotes).toEqual({
+      const quotesWithClientId = await swapsUtil.fetchTradesInfo(
+        {
+          slippage: 3,
+          sourceToken: '0x6b175474e89094c44da98b954eedeac495271d0f',
+          destinationToken: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+          sourceAmount: 1000000000000000000,
+          walletAddress: '0xB0dA5965D43369968574D399dBe6374683773a65',
+        },
+        null,
+        '1',
+        'mobile',
+      );
+
+      const response = {
         paraswap: {
           trade: {
             from: '0xb0da5965d43369968574d399dbe6374683773a65',
@@ -272,7 +293,10 @@ describe('SwapsUtil', () => {
           },
           slippage: 3,
         },
-      });
+      };
+
+      expect(quotes).toEqual(response);
+      expect(quotesWithClientId).toEqual(response);
     });
   });
 
@@ -337,6 +361,70 @@ describe('SwapsUtil', () => {
       const featureLiveness = await swapsUtil.fetchSwapsFeatureLiveness('1');
       expect(featureLiveness).toBeInstanceOf(Object);
     });
+    it('should return false on exception', async () => {
+      getOnce(
+        `https://api.metaswap.codefi.network/featureFlag`,
+        () => {
+          throw new Error();
+        },
+        { overwriteRoutes: true, method: 'GET' },
+      );
+      const featureLiveness = await swapsUtil.fetchSwapsFeatureLiveness('1');
+      expect(featureLiveness).toBe(false);
+    });
+  });
+
+  describe('fetchGasPrices', () => {
+    it('should work', async () => {
+      getOnce(
+        `https://api.metaswap.codefi.network/gasPrices`,
+        () => ({
+          body: JSON.stringify({
+            SafeGasPrice: '1',
+            ProposeGasPrice: '2',
+            FastGasPrice: '3',
+          }),
+        }),
+        { overwriteRoutes: true, method: 'GET' },
+      );
+      getOnce(
+        `https://bsc-api.metaswap.codefi.network/gasPrices`,
+        () => ({
+          body: JSON.stringify({
+            SafeGasPrice: '4',
+            ProposeGasPrice: '5',
+            FastGasPrice: '6',
+          }),
+        }),
+        { overwriteRoutes: true, method: 'GET' },
+      );
+      const gasPrices = await swapsUtil.fetchGasPrices('1');
+      const gasPricesBSC = await swapsUtil.fetchGasPrices('56');
+      expect(gasPrices).toEqual({
+        safeGasPrice: '1',
+        proposedGasPrice: '2',
+        fastGasPrice: '3',
+      });
+      expect(gasPricesBSC).toEqual({
+        safeGasPrice: '4',
+        proposedGasPrice: '5',
+        fastGasPrice: '6',
+      });
+    });
+  });
+
+  describe('getMedianEthValueQuote', () => {
+    it('should throw when argument is not array or empty', () => {
+      expect(() => {
+        return swapsUtil.getMedianEthValueQuote([]);
+      }).toThrow();
+      expect(() => {
+        // @ts-expect-error: Argument string is not array
+        return swapsUtil.getMedianEthValueQuote('not an array');
+      }).toThrow();
+    });
+
+    it.todo('should work');
   });
 
   describe('calculateGasEstimateWithRefund', () => {
@@ -386,6 +474,27 @@ describe('SwapsUtil', () => {
       const medianValue = swapsUtil.getMedian(values);
       expect(medianValue).toBeInstanceOf(BigNumber);
       expect(medianValue.toString(10)).toBe(result);
+    });
+
+    it('should throw when argument is not array or empty', () => {
+      expect(() => {
+        return swapsUtil.getMedian([]);
+      }).toThrow();
+      expect(() => {
+        // @ts-expect-error: Argument string is not array
+        return swapsUtil.getMedian('not an array');
+      }).toThrow();
+    });
+  });
+
+  describe('calcTokenAmount', () => {
+    it('should calculate amount', () => {
+      expect(swapsUtil.calcTokenAmount(123456789, 8).toString(10)).toBe(
+        '1.23456789',
+      );
+      expect(swapsUtil.calcTokenAmount(123456789, 0).toString(10)).toBe(
+        '123456789',
+      );
     });
   });
 

@@ -61,7 +61,6 @@ export interface APIFetchQuotesParams {
   sourceAmount: number;
   destinationToken: string;
   walletAddress: string;
-  exchangeList?: string[];
   balanceError?: boolean;
   timeout?: number;
   clientId?: string;
