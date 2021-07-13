@@ -74,7 +74,7 @@ function isGasFeeStateLegacy(object: GasFeeState): object is GasFeeStateLegacy {
 
 interface CustomEthGasPriceEstimate {
   gasPrice: string; // a GWEI dec string
-  selected?: 'slow' | 'average' | 'fast';
+  selected?: 'low' | 'medium' | 'high';
 }
 
 interface CustomGasFee {
