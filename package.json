@@ -1,6 +1,6 @@
 {
   "name": "@metamask/swaps-controller",
-  "version": "4.0.0",
+  "version": "4.1.0",
   "description": "MetaMask Swaps controller module",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
