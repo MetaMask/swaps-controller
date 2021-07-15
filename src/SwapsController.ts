@@ -201,6 +201,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
    *
    * @returns - Promise resolving to the current gas price or throw an error
    */
+  /* istanbul ignore next */
   private async getGasPrice(): Promise<EthGasPriceEstimate | GasFeeEstimates> {
     if (this.fetchGasFeeEstimates) {
       const gasFeeState = await this.fetchGasFeeEstimates();
@@ -243,6 +244,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
    * @param gasFeeEstimates current gas fee estimates
    * @param customGasFee custom gas fee values
    */
+  /* istanbul ignore next */
   private calculateQuoteValues(
     quote: Quote,
     gasLimit: string | null,
@@ -380,6 +382,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     return quoteValues;
   }
 
+  /* istanbul ignore next */
   private calculatesCustomLimitMaxEthFee(
     quote: Quote,
     gasFee:
@@ -439,6 +442,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
    * @param quotes - Array of quotes
    * @returns - Promise resolving to the best quote object and values from quotes
    */
+  /* istanbul ignore next */
   private getBestQuoteAndQuotesValues(
     quotes: { [key: string]: Quote },
     gasFeeEstimates: EthGasPriceEstimate | GasFeeEstimates,
@@ -481,6 +485,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
    * @param walletAddress - Hex address of the wallet
    * @returns - Promise resolving to allowance number
    */
+  /* istanbul ignore next */
   private async getERC20Allowance(
     contractAddress: string,
     walletAddress: string,
@@ -513,6 +518,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     ]) as Promise<number>;
   }
 
+  /* istanbul ignore next */
   private timedoutGasReturn(
     tradeTxParams: Transaction | null,
   ): Promise<{ gas: string | null }> {
@@ -547,6 +553,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     });
   }
 
+  /* istanbul ignore next */
   private async pollForNewQuotesWithThreshold(fetchThreshold = 0) {
     this.pollCount += 1;
     this.handle && clearTimeout(this.handle);
@@ -576,6 +583,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     }
   }
 
+  /* istanbul ignore next */
   private async getAllQuotesWithGasEstimates(trades: {
     [key: string]: Quote;
   }): Promise<{ [key: string]: Quote }> {
@@ -612,6 +620,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     return newQuotes;
   }
 
+  /* istanbul ignore next */
   private async fetchQuotes(): Promise<{
     nextQuotesState: SwapsNextState | null;
     threshold: number | null;
