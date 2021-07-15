@@ -4,6 +4,7 @@ import {
   BaseState,
   BN,
   EthGasPriceEstimate,
+  FetchGasFeeEstimateOptions,
   GAS_ESTIMATE_TYPES,
   GasFeeEstimates,
   GasFeeState,
@@ -80,6 +81,7 @@ interface CustomEthGasPriceEstimate {
 interface CustomGasFee {
   maxFeePerGas: string; // a GWEI dec string
   maxPriorityFeePerGas: string; // a GWEI dec string
+  estimatedBaseFee?: string; // a GWEI dec string
   selected?: 'low' | 'medium' | 'high';
 }
 
@@ -194,7 +196,9 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
 
   private abortController?: AbortController;
 
-  private fetchGasFeeEstimates: () => Promise<GasFeeState | undefined>;
+  private fetchGasFeeEstimates: (
+    options?: FetchGasFeeEstimateOptions,
+  ) => Promise<GasFeeState | undefined>;
 
   /**
    * Fetch current gas price
@@ -204,7 +208,9 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
   /* istanbul ignore next */
   private async getGasPrice(): Promise<EthGasPriceEstimate | GasFeeEstimates> {
     if (this.fetchGasFeeEstimates) {
-      const gasFeeState = await this.fetchGasFeeEstimates();
+      const gasFeeState = await this.fetchGasFeeEstimates({
+        shouldUpdateState: this.pollCount === 1,
+      });
       if (
         !gasFeeState ||
         gasFeeState.gasEstimateType === GAS_ESTIMATE_TYPES.NONE
@@ -296,17 +302,12 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
         16,
       );
     } else {
-      const { estimatedBaseFee } = gasFeeEstimates;
+      const estimatedBaseFee =
+        (isCustomGasFee(customGasFee) && customGasFee?.estimatedBaseFee) ||
+        gasFeeEstimates.estimatedBaseFee;
+
       const [maxFeePerGas, maxPriorityFeePerGas] = isCustomGasFee(customGasFee)
-        ? [
-            customGasFee.selected
-              ? gasFeeEstimates[customGasFee.selected].suggestedMaxFeePerGas
-              : customGasFee.maxFeePerGas,
-            customGasFee.selected
-              ? gasFeeEstimates[customGasFee.selected]
-                  .suggestedMaxPriorityFeePerGas
-              : customGasFee.maxPriorityFeePerGas,
-          ]
+        ? [customGasFee.maxFeePerGas, customGasFee.maxPriorityFeePerGas]
         : [
             gasFeeEstimates.high.suggestedMaxFeePerGas,
             gasFeeEstimates.high.suggestedMaxPriorityFeePerGas,
