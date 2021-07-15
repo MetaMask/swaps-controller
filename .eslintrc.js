@@ -57,7 +57,7 @@ module.exports = {
     ],
 
     'accessor-pairs': 'off',
-    'camelcase': 'off',
+    camelcase: 'off',
     'consistent-return': 'off',
     'default-case': 'off',
     'function-paren-newline': 'off',
@@ -75,7 +75,7 @@ module.exports = {
     'no-param-reassign': 'off',
     'no-prototype-builtins': 'off',
     'no-useless-escape': 'off',
-    'radix': 'off',
+    radix: 'off',
     'require-atomic-updates': 'off',
 
     'node/no-extraneous-require': 'off',
