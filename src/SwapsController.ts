@@ -319,7 +319,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
           .toString(16),
         16,
       );
-      maxTotalGasInWei = tradeGasLimit.times(
+      maxTotalGasInWei = tradeMaxGasLimit.times(
         gweiDecToWEIBN(maxFeePerGas).toString(16),
         16,
       );
@@ -373,6 +373,8 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
 
     const quoteValues: QuoteValues = {
       aggregator,
+      totalGasInWei: totalGasInWei.toString(10),
+      maxTotalGasInWei: maxTotalGasInWei.toString(10),
       ethFee: ethFee.toFixed(18),
       maxEthFee: maxEthFee.toFixed(18),
       ethValueOfTokens: ethValueOfTokens.toFixed(18),
