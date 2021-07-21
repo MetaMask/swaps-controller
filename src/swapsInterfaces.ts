@@ -159,8 +159,8 @@ export interface Quote {
  */
 export interface QuoteValues {
   aggregator: string;
-  totalGasInWei: string;
-  maxTotalGasInWei: string;
+  tradeGasLimit: string;
+  tradeMaxGasLimit: string;
   ethFee: string;
   maxEthFee: string;
   ethValueOfTokens: string;
