@@ -196,7 +196,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
 
   private abortController?: AbortController;
 
-  private fetchGasFeeEstimates: (
+  private fetchGasFeeEstimates?: (
     options?: FetchGasFeeEstimateOptions,
   ) => Promise<GasFeeState | undefined>;
 
@@ -739,7 +739,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     {
       fetchGasFeeEstimates,
     }: {
-      fetchGasFeeEstimates: () => Promise<GasFeeState | undefined>;
+      fetchGasFeeEstimates?: () => Promise<GasFeeState | undefined>;
     },
     config?: Partial<SwapsConfig>,
     state?: Partial<SwapsState>,
