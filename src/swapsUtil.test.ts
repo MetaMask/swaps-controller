@@ -1,4 +1,4 @@
-import BigNumber from 'bignumber.js';
+import { BigNumber } from 'bignumber.js';
 import { getOnce } from 'fetch-mock';
 import { APIType, SwapsToken } from './swapsInterfaces';
 import * as swapsUtil from './swapsUtil';
