@@ -246,7 +246,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
   /**
    * Calculates a quote `QuotesValue`
    * @param quote Quote object
-   * @param gasLimit String with hex wei gas limit value
+   * @param gasLimit A hex string representing max units of gas to spend
    * @param gasFeeEstimates current gas fee estimates
    * @param customGasFee custom gas fee values
    */
@@ -833,7 +833,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
   /**
    * Updates all quotes with a new custom gas price
    *
-   * @param customGasPrice - Custom gas price in dec gwei format
+   * @param customGasFee - Custom gas price in dec gwei format
    */
   updateQuotesWithGasPrice(
     customGasFee: CustomEthGasPriceEstimate | CustomGasFee,
