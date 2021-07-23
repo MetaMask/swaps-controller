@@ -1,7 +1,16 @@
 import {
-  BaseController,
   BaseConfig,
+  BaseController,
   BaseState,
+  BN,
+  EthGasPriceEstimate,
+  FetchGasFeeEstimateOptions,
+  GAS_ESTIMATE_TYPES,
+  GasFeeEstimates,
+  GasFeeState,
+  GasFeeStateEthGasPrice,
+  GasFeeStateFeeMarket,
+  GasFeeStateLegacy,
   Transaction,
   util,
 } from '@metamask/controllers';
@@ -44,6 +53,60 @@ import {
   SwapsToken,
 } from './swapsInterfaces';
 
+// Functions to determine type of the return value from GasFeeController
+
+function isGasFeeStateEthGasPrice(
+  object: GasFeeState,
+): object is GasFeeStateEthGasPrice {
+  return object.gasEstimateType === GAS_ESTIMATE_TYPES.ETH_GASPRICE;
+}
+
+function isGasFeeStateFeeMarket(
+  object: GasFeeState,
+): object is GasFeeStateFeeMarket {
+  return object.gasEstimateType === GAS_ESTIMATE_TYPES.FEE_MARKET;
+}
+
+function isGasFeeStateLegacy(object: GasFeeState): object is GasFeeStateLegacy {
+  return object.gasEstimateType === GAS_ESTIMATE_TYPES.LEGACY;
+}
+
+// Custom types for custom gas values
+
+interface CustomEthGasPriceEstimate {
+  gasPrice: string; // a GWEI dec string
+  selected?: 'low' | 'medium' | 'high';
+}
+
+interface CustomGasFee {
+  maxFeePerGas: string; // a GWEI dec string
+  maxPriorityFeePerGas: string; // a GWEI dec string
+  estimatedBaseFee?: string; // a GWEI dec string
+  selected?: 'low' | 'medium' | 'high';
+}
+
+function isEthGasPriceEstimate(object: any): object is EthGasPriceEstimate {
+  return Boolean(object) && object?.gasPrice !== undefined;
+}
+
+function isCustomEthGasPriceEstimate(
+  object: any,
+): object is CustomEthGasPriceEstimate {
+  return Boolean(object) && object?.gasPrice !== undefined;
+}
+
+function isCustomGasFee(object: any): object is CustomGasFee {
+  return (
+    Boolean(object) &&
+    'maxFeePerGas' in object &&
+    'maxPriorityFeePerGas' in object
+  );
+}
+
+function gweiDecToWEIBN(n: string): BN {
+  return util.gweiDecToWEIBN(n);
+}
+
 export interface SwapsConfig extends BaseConfig {
   clientId?: string;
   maxGasLimit: number;
@@ -69,7 +132,8 @@ export interface SwapsState extends BaseState {
   approvalTransaction: Transaction | null;
   quoteValues: { [key: string]: QuoteValues } | null;
   quoteRefreshSeconds: number | null;
-  usedGasPrice: string | null;
+  usedGasEstimate: EthGasPriceEstimate | GasFeeEstimates | null;
+  usedCustomGas: CustomEthGasPriceEstimate | CustomGasFee | null;
   aggregatorMetadata: null | { [key: string]: APIAggregatorMetadata };
   aggregatorMetadataLastFetched: number;
   tokens: null | SwapsToken[];
@@ -132,21 +196,47 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
 
   private abortController?: AbortController;
 
+  private fetchGasFeeEstimates?: (
+    options?: FetchGasFeeEstimateOptions,
+  ) => Promise<GasFeeState | undefined>;
+
   /**
    * Fetch current gas price
    *
    * @returns - Promise resolving to the current gas price or throw an error
    */
-  private async getGasPrice(): Promise<string> {
+  /* istanbul ignore next */
+  private async getGasPrice(): Promise<EthGasPriceEstimate | GasFeeEstimates> {
+    if (this.fetchGasFeeEstimates) {
+      const gasFeeState = await this.fetchGasFeeEstimates({
+        shouldUpdateState: this.pollCount === 1,
+      });
+      if (
+        !gasFeeState ||
+        gasFeeState.gasEstimateType === GAS_ESTIMATE_TYPES.NONE
+      ) {
+        throw new Error(SwapsError.SWAPS_GAS_PRICE_ESTIMATION);
+      }
+      if (isGasFeeStateFeeMarket(gasFeeState)) {
+        return gasFeeState.gasFeeEstimates;
+      } else if (isGasFeeStateLegacy(gasFeeState)) {
+        return { gasPrice: gasFeeState.gasFeeEstimates.medium };
+      } else if (isGasFeeStateEthGasPrice(gasFeeState)) {
+        return { gasPrice: gasFeeState.gasFeeEstimates.gasPrice };
+      }
+    }
+
     try {
       const { proposedGasPrice } = await fetchGasPrices(this.config.chainId);
-      return proposedGasPrice;
+      return { gasPrice: proposedGasPrice };
     } catch (e) {
       //
     }
     try {
       const gasPrice = await util.query(this.ethQuery, 'gasPrice');
-      return gasPrice;
+      return {
+        gasPrice: util.weiHexToGweiDec(gasPrice).toString(),
+      };
     } catch (e) {
       //
     }
@@ -155,14 +245,17 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
 
   /**
    * Calculates a quote `QuotesValue`
-   *
-   * @param quote - Specific quote object
-   * @param gasPrice - Gas price in hex format to calculate the `QuotesValue` with
+   * @param quote Quote object
+   * @param gasLimit A hex string representing max units of gas to spend
+   * @param gasFeeEstimates current gas fee estimates
+   * @param customGasFee custom gas fee values
    */
+  /* istanbul ignore next */
   private calculateQuoteValues(
     quote: Quote,
-    gasPrice: string,
     gasLimit: string | null,
+    gasFeeEstimates: GasFeeEstimates | EthGasPriceEstimate,
+    customGasFee?: CustomEthGasPriceEstimate | CustomGasFee,
   ): QuoteValues {
     const { destinationTokenInfo } = this.state.fetchParamsMetaData;
     const {
@@ -192,8 +285,45 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       gasLimit,
     );
 
-    const totalGasInWei = tradeGasLimit.times(gasPrice, 16);
-    const maxTotalGasInWei = tradeMaxGasLimit.times(gasPrice, 16);
+    let totalGasInWei: BigNumber;
+    let maxTotalGasInWei: BigNumber;
+
+    if (isEthGasPriceEstimate(gasFeeEstimates)) {
+      const gasPrice = isCustomEthGasPriceEstimate(customGasFee)
+        ? customGasFee.gasPrice
+        : gasFeeEstimates.gasPrice;
+
+      totalGasInWei = tradeGasLimit.times(
+        gweiDecToWEIBN(gasPrice).toString(16),
+        16,
+      );
+      maxTotalGasInWei = tradeMaxGasLimit.times(
+        gweiDecToWEIBN(gasPrice).toString(16),
+        16,
+      );
+    } else {
+      const estimatedBaseFee =
+        (isCustomGasFee(customGasFee) && customGasFee?.estimatedBaseFee) ||
+        gasFeeEstimates.estimatedBaseFee;
+
+      const [maxFeePerGas, maxPriorityFeePerGas] = isCustomGasFee(customGasFee)
+        ? [customGasFee.maxFeePerGas, customGasFee.maxPriorityFeePerGas]
+        : [
+            gasFeeEstimates.high.suggestedMaxFeePerGas,
+            gasFeeEstimates.high.suggestedMaxPriorityFeePerGas,
+          ];
+
+      totalGasInWei = tradeGasLimit.times(
+        gweiDecToWEIBN(estimatedBaseFee)
+          .add(gweiDecToWEIBN(maxPriorityFeePerGas))
+          .toString(16),
+        16,
+      );
+      maxTotalGasInWei = tradeMaxGasLimit.times(
+        gweiDecToWEIBN(maxFeePerGas).toString(16),
+        16,
+      );
+    }
 
     // totalGas + trade value
     // trade.value is a sum of different values depending on the transaction.
@@ -243,6 +373,8 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
 
     const quoteValues: QuoteValues = {
       aggregator,
+      tradeGasLimit: tradeGasLimit.toString(10),
+      tradeMaxGasLimit: tradeMaxGasLimit.toString(10),
       ethFee: ethFee.toFixed(18),
       maxEthFee: maxEthFee.toFixed(18),
       ethValueOfTokens: ethValueOfTokens.toFixed(18),
@@ -253,9 +385,14 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     return quoteValues;
   }
 
+  /* istanbul ignore next */
   private calculatesCustomLimitMaxEthFee(
     quote: Quote,
-    gasPrice: string,
+    gasFee:
+      | EthGasPriceEstimate
+      | GasFeeEstimates
+      | CustomGasFee
+      | CustomEthGasPriceEstimate,
     gasLimit: string,
   ): string {
     const {
@@ -279,7 +416,20 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       gasMultiplier,
       gasLimit,
     );
-    const maxTotalGasInWei = tradeMaxGasLimit.times(gasPrice, 16);
+
+    let gasPrice;
+    if (isCustomEthGasPriceEstimate(gasFee) || isEthGasPriceEstimate(gasFee)) {
+      gasPrice = gasFee.gasPrice;
+    } else if (isCustomGasFee(gasFee)) {
+      gasPrice = gasFee.maxFeePerGas;
+    } else {
+      gasPrice = gasFee.high.suggestedMaxFeePerGas;
+    }
+
+    const maxTotalGasInWei = tradeMaxGasLimit.times(
+      gweiDecToWEIBN(gasPrice).toString(16),
+      16,
+    );
     const maxTotalInWei = maxTotalGasInWei.plus(trade.value, 16);
     const maxWeiFee =
       sourceToken === NATIVE_SWAPS_TOKEN_ADDRESS
@@ -295,9 +445,11 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
    * @param quotes - Array of quotes
    * @returns - Promise resolving to the best quote object and values from quotes
    */
+  /* istanbul ignore next */
   private getBestQuoteAndQuotesValues(
     quotes: { [key: string]: Quote },
-    usedGasPrice: string,
+    gasFeeEstimates: EthGasPriceEstimate | GasFeeEstimates,
+    customGasFee?: CustomEthGasPriceEstimate | CustomGasFee,
   ): { topAggId: string; quoteValues: { [key: string]: QuoteValues } } {
     let topAggId = '';
     let overallValueOfBestQuoteForSorting: BigNumber | null = null;
@@ -305,7 +457,12 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     const quoteValues: { [key: string]: QuoteValues } = {};
 
     Object.values(quotes).forEach((quote: Quote) => {
-      const quoteValue = this.calculateQuoteValues(quote, usedGasPrice, null);
+      const quoteValue = this.calculateQuoteValues(
+        quote,
+        null,
+        gasFeeEstimates,
+        customGasFee,
+      );
       quoteValues[quoteValue.aggregator] = quoteValue;
 
       const bnOverallValueOfQuote = new BigNumber(
@@ -331,6 +488,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
    * @param walletAddress - Hex address of the wallet
    * @returns - Promise resolving to allowance number
    */
+  /* istanbul ignore next */
   private async getERC20Allowance(
     contractAddress: string,
     walletAddress: string,
@@ -363,6 +521,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     ]) as Promise<number>;
   }
 
+  /* istanbul ignore next */
   private timedoutGasReturn(
     tradeTxParams: Transaction | null,
   ): Promise<{ gas: string | null }> {
@@ -397,6 +556,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     });
   }
 
+  /* istanbul ignore next */
   private async pollForNewQuotesWithThreshold(fetchThreshold = 0) {
     this.pollCount += 1;
     this.handle && clearTimeout(this.handle);
@@ -405,13 +565,13 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       const {
         nextQuotesState,
         threshold,
-        usedGasPrice,
+        usedGasEstimate,
       } = await this.fetchQuotes();
       this.update({
         pollingCyclesLeft: this.config.pollCountLimit - this.pollCount,
       });
       if (threshold && nextQuotesState?.quoteRefreshSeconds) {
-        this.update({ ...this.state, ...nextQuotesState, usedGasPrice });
+        this.update({ ...this.state, ...nextQuotesState, usedGasEstimate });
         this.handle = setTimeout(async () => {
           this.pollForNewQuotesWithThreshold(threshold);
         }, nextQuotesState.quoteRefreshSeconds * 1000 - threshold);
@@ -426,6 +586,7 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     }
   }
 
+  /* istanbul ignore next */
   private async getAllQuotesWithGasEstimates(trades: {
     [key: string]: Quote;
   }): Promise<{ [key: string]: Quote }> {
@@ -462,10 +623,11 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     return newQuotes;
   }
 
+  /* istanbul ignore next */
   private async fetchQuotes(): Promise<{
     nextQuotesState: SwapsNextState | null;
     threshold: number | null;
-    usedGasPrice: string | null;
+    usedGasEstimate: EthGasPriceEstimate | GasFeeEstimates | null;
   }> {
     const timeStarted = Date.now();
     const { fetchParams } = this.state;
@@ -515,12 +677,16 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
           };
         }
       }
+
       quotes = await this.getAllQuotesWithGasEstimates(quotes);
-      const usedGasPrice = await this.getGasPrice();
+
+      const gasFeeEstimates:
+        | EthGasPriceEstimate
+        | GasFeeEstimates = await this.getGasPrice();
 
       const { topAggId, quoteValues } = this.getBestQuoteAndQuotesValues(
         quotes,
-        usedGasPrice,
+        gasFeeEstimates,
       );
 
       const quotesLastFetched = Date.now();
@@ -536,14 +702,18 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       return {
         nextQuotesState,
         threshold: quotesLastFetched - timeStarted,
-        usedGasPrice,
+        usedGasEstimate: gasFeeEstimates,
       };
     } catch (e) {
       const errorKey = Object.values(SwapsError).includes(e.message)
         ? e.message
         : SwapsError.ERROR_FETCHING_QUOTES;
       this.stopPollingAndResetState({ key: errorKey, description: e });
-      return { nextQuotesState: null, threshold: null, usedGasPrice: null };
+      return {
+        nextQuotesState: null,
+        threshold: null,
+        usedGasEstimate: null,
+      };
     }
   }
 
@@ -560,10 +730,20 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
   /**
    * Creates a SwapsController instance
    *
+   * @param options
+   * @param options.fetchGasFeeEstimates - Fetches gas fee estimates from GasFeeController
    * @param config - Initial options used to configure this controller
    * @param state - Initial state to set on this controller
    */
-  constructor(config?: Partial<SwapsConfig>, state?: Partial<SwapsState>) {
+  constructor(
+    {
+      fetchGasFeeEstimates,
+    }: {
+      fetchGasFeeEstimates?: () => Promise<GasFeeState | undefined>;
+    },
+    config?: Partial<SwapsConfig>,
+    state?: Partial<SwapsState>,
+  ) {
     super(config, state);
     this.defaultConfig = {
       maxGasLimit: 2500000,
@@ -612,12 +792,14 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
       isInPolling: false,
       pollingCyclesLeft: config?.pollCountLimit || 3,
       quoteRefreshSeconds: null,
-      usedGasPrice: null,
+      usedGasEstimate: null,
+      usedCustomGas: null,
       chainCache: {
         '1': INITIAL_CHAIN_DATA,
       },
     };
 
+    this.fetchGasFeeEstimates = fetchGasFeeEstimates;
     this.initialize();
   }
 
@@ -651,15 +833,21 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
   /**
    * Updates all quotes with a new custom gas price
    *
-   * @param customGasPrice - Custom gas price in hex format
+   * @param customGasFee - Custom gas price in dec gwei format
    */
-  updateQuotesWithGasPrice(customGasPrice: string): void {
-    const { quotes } = this.state;
+  updateQuotesWithGasPrice(
+    customGasFee: CustomEthGasPriceEstimate | CustomGasFee,
+  ): void {
+    const { quotes, usedGasEstimate } = this.state;
+    if (!usedGasEstimate) {
+      return;
+    }
     const { topAggId, quoteValues } = this.getBestQuoteAndQuotesValues(
       quotes,
-      customGasPrice,
+      usedGasEstimate,
+      customGasFee,
     );
-    this.update({ topAggId, quoteValues });
+    this.update({ topAggId, quoteValues, usedCustomGas: customGasFee });
   }
 
   /**
@@ -668,14 +856,20 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
    * @param customGasLimit - Custom gas limit in hex format
    */
   updateSelectedQuoteWithGasLimit(customGasLimit: string): void {
-    const { topAggId, quotes, quoteValues, usedGasPrice } = this.state;
-    if (!topAggId || !quoteValues || !usedGasPrice) {
+    const {
+      topAggId,
+      quotes,
+      quoteValues,
+      usedGasEstimate,
+      usedCustomGas,
+    } = this.state;
+    if (!topAggId || !quoteValues || !usedGasEstimate) {
       return;
     }
     const selectedQuote = quotes[topAggId];
     const maxEthFee = this.calculatesCustomLimitMaxEthFee(
       selectedQuote,
-      usedGasPrice,
+      usedCustomGas || usedGasEstimate,
       customGasLimit,
     );
     quoteValues[selectedQuote.aggregator].maxEthFee = maxEthFee;

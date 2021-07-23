@@ -147,7 +147,6 @@ export async function fetchTradesInfo(
     sourceAmount,
     destinationToken,
     walletAddress,
-    exchangeList,
   }: APIFetchQuotesParams,
   abortSignal: AbortSignal | null,
   chainId: string,
@@ -161,10 +160,6 @@ export async function fetchTradesInfo(
     timeout: 10000,
     walletAddress,
   };
-
-  if (exchangeList) {
-    urlParams.exchangeList = exchangeList;
-  }
 
   if (clientId) {
     urlParams.clientId = clientId;
@@ -259,6 +254,11 @@ export async function fetchSwapsFeatureLiveness(
   }
 }
 
+/**
+ * Fetches gas prices from API URL
+ * @param chainId Current chainId
+ * @returns Gas prices represented as decimal GWEI strings
+ */
 export async function fetchGasPrices(
   chainId: string,
 ): Promise<{
@@ -273,11 +273,9 @@ export async function fetchGasPrices(
     },
   );
   return {
-    safeGasPrice: new BigNumber(SafeGasPrice).times(1000000000).toString(16),
-    proposedGasPrice: new BigNumber(ProposeGasPrice)
-      .times(1000000000)
-      .toString(16),
-    fastGasPrice: new BigNumber(FastGasPrice).times(1000000000).toString(16),
+    safeGasPrice: SafeGasPrice,
+    proposedGasPrice: ProposeGasPrice,
+    fastGasPrice: FastGasPrice,
   };
 }
 

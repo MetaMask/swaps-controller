@@ -56,7 +56,6 @@ export interface APIFetchQuotesParams {
   sourceAmount: number;
   destinationToken: string;
   walletAddress: string;
-  exchangeList?: string[];
   timeout?: number;
   clientId?: string;
 }
@@ -159,6 +158,8 @@ export interface Quote {
  */
 export interface QuoteValues {
   aggregator: string;
+  tradeGasLimit: string;
+  tradeMaxGasLimit: string;
   ethFee: string;
   maxEthFee: string;
   ethValueOfTokens: string;

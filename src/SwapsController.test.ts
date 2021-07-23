@@ -1,4 +1,6 @@
 import { ComposableController } from '@metamask/controllers';
+import EthQuery from 'eth-query';
+import Web3 from 'web3';
 import SwapsController, { INITIAL_CHAIN_DATA } from './SwapsController';
 import * as swapsUtil from './swapsUtil';
 
@@ -252,6 +254,7 @@ jest.mock('web3', () =>
 
 describe('SwapsController', () => {
   /* Setup */
+  let fetchGasFeeEstimates: jest.Mock;
   let swapsController: SwapsController;
   let swapsUtilFetchTokens: jest.SpyInstance;
   let swapsUtilFetchTopAssets: jest.SpyInstance;
@@ -260,9 +263,19 @@ describe('SwapsController', () => {
   let swapsUtilEstimateGas: jest.SpyInstance;
 
   beforeEach(() => {
-    swapsController = new SwapsController({
-      pollCountLimit: POLL_COUNT_LIMIT,
-    });
+    fetchGasFeeEstimates = jest.fn().mockImplementation(() => ({
+      gasFeeEstimates: {},
+      estimatedGasFeeTimeBounds: {},
+      gasEstimateType: 'none',
+    }));
+    swapsController = new SwapsController(
+      {
+        fetchGasFeeEstimates,
+      },
+      {
+        pollCountLimit: POLL_COUNT_LIMIT,
+      },
+    );
     new ComposableController([swapsController]);
 
     swapsUtilFetchTokens = jest
@@ -287,6 +300,7 @@ describe('SwapsController', () => {
   });
 
   afterEach(() => {
+    fetchGasFeeEstimates.mockRestore();
     swapsUtilFetchTokens.mockRestore();
     swapsUtilFetchTopAssets.mockRestore();
     swapsUtilFetchAggregatorMetadata.mockRestore();
@@ -347,7 +361,8 @@ describe('SwapsController', () => {
       isInPolling: false,
       pollingCyclesLeft: 3,
       quoteRefreshSeconds: null,
-      usedGasPrice: null,
+      usedGasEstimate: null,
+      usedCustomGas: null,
       chainCache: {
         '1': {
           aggregatorMetadataLastFetched: 0,
@@ -358,6 +373,17 @@ describe('SwapsController', () => {
           topAssets: null,
         },
       },
+    });
+  });
+
+  describe('provider', () => {
+    it('should create ethQuery and web3 when provider changes', () => {
+      expect(swapsController.provider).not.toBeDefined();
+      swapsController.configure({
+        provider: 'foo provider',
+      });
+      expect(EthQuery).toHaveBeenLastCalledWith('foo provider');
+      expect(Web3).toHaveBeenLastCalledWith('foo provider');
     });
   });
 
@@ -497,6 +523,19 @@ describe('SwapsController', () => {
       await swapsController.fetchTokenWithCache();
       expect(swapsUtilFetchTokens).not.toHaveBeenCalled();
     });
+
+    it('should set tokensLastFetched to 0 when fetchTokens throws', async () => {
+      swapsUtilFetchTokens.mockImplementation(() => {
+        throw new Error();
+      });
+      const threshold = 5000;
+      swapsController.configure({ fetchTokensThreshold: threshold });
+      swapsController.state.tokens = [];
+      swapsController.state.tokensLastFetched = Date.now() - threshold - 1;
+      await swapsController.fetchTokenWithCache();
+      expect(swapsUtilFetchTokens).toHaveBeenCalled();
+      expect(swapsController.state.tokensLastFetched).toBe(0);
+    });
   });
 
   describe('top assets cache', () => {
@@ -534,6 +573,19 @@ describe('SwapsController', () => {
       swapsController.state.topAssetsLastFetched = Date.now();
       await swapsController.fetchTopAssetsWithCache();
       expect(swapsUtilFetchTopAssets).not.toHaveBeenCalled();
+    });
+
+    it('should set topAssetsLastFetched to 0 when fetchTopAssets throws', async () => {
+      swapsUtilFetchTopAssets.mockImplementation(() => {
+        throw new Error();
+      });
+      const threshold = 5000;
+      swapsController.configure({ fetchTopAssetsThreshold: threshold });
+      swapsController.state.topAssets = [];
+      swapsController.state.topAssetsLastFetched = Date.now() - threshold - 1;
+      await swapsController.fetchTopAssetsWithCache();
+      expect(swapsUtilFetchTopAssets).toHaveBeenCalled();
+      expect(swapsController.state.topAssetsLastFetched).toBe(0);
     });
   });
 
@@ -575,6 +627,22 @@ describe('SwapsController', () => {
       swapsController.state.aggregatorMetadataLastFetched = Date.now();
       await swapsController.fetchAggregatorMetadataWithCache();
       expect(swapsUtilFetchAggregatorMetadata).not.toHaveBeenCalled();
+    });
+
+    it('should set aggregatorMetadataLastFetched to 0 when fetchAggregatorMetadata throws', async () => {
+      swapsUtilFetchAggregatorMetadata.mockImplementation(() => {
+        throw new Error();
+      });
+      const threshold = 5000;
+      swapsController.configure({
+        fetchAggregatorMetadataThreshold: threshold,
+      });
+      swapsController.state.aggregatorMetadata = {};
+      swapsController.state.aggregatorMetadataLastFetched =
+        Date.now() - threshold - 1;
+      await swapsController.fetchAggregatorMetadataWithCache();
+      expect(swapsUtilFetchAggregatorMetadata).toHaveBeenCalled();
+      expect(swapsController.state.aggregatorMetadataLastFetched).toBe(0);
     });
   });
 
