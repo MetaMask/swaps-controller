@@ -66,6 +66,7 @@ module.exports = {
     'import/no-anonymous-default-export': 'off',
     'import/no-extraneous-dependencies': 'off',
     'import/no-unassigned-import': 'off',
+    'import/no-named-as-default': 'off',
     'lines-around-comment': 'off',
     'no-async-promise-executor': 'off',
     'no-case-declarations': 'off',
