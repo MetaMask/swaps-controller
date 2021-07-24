@@ -14,8 +14,8 @@ import {
   Transaction,
   util,
 } from '@metamask/controllers';
-import AbortController from 'abort-controller';
-import BigNumber from 'bignumber.js';
+import { AbortController } from 'abort-controller';
+import { BigNumber } from 'bignumber.js';
 import EthQuery from 'eth-query';
 import abiERC20 from 'human-standard-token-abi';
 import { Mutex } from 'async-mutex';
@@ -183,7 +183,10 @@ function getNewChainCache(
   };
 }
 
-export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
+export default class SwapsController extends BaseController<
+  SwapsConfig,
+  SwapsState
+> {
   private handle?: NodeJS.Timer;
 
   private web3: any;
@@ -1006,5 +1009,3 @@ export class SwapsController extends BaseController<SwapsConfig, SwapsState> {
     });
   }
 }
-
-export default SwapsController;

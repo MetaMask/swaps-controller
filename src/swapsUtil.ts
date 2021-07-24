@@ -1,6 +1,6 @@
 import { Transaction, util } from '@metamask/controllers';
 import { AbortSignal } from 'abort-controller';
-import BigNumber from 'bignumber.js';
+import { BigNumber } from 'bignumber.js';
 import { addHexPrefix } from 'ethereumjs-util';
 import {
   APIAggregatorMetadata,
