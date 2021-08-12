@@ -23,12 +23,25 @@ const {
 
 export const ETH_CHAIN_ID = '1';
 export const BSC_CHAIN_ID = '56';
+export const POLYGON_CHAIN_ID = '137';
 export const SWAPS_TESTNET_CHAIN_ID = '1337';
+
+export const CHAIN_ID_TO_NAME_MAP: { [key: string]: string } = {
+  [ETH_CHAIN_ID]: 'ethereum',
+  [BSC_CHAIN_ID]: 'bsc',
+  [POLYGON_CHAIN_ID]: 'polygon',
+  [SWAPS_TESTNET_CHAIN_ID]: 'ethereum',
+};
+
+export const API_BASE_URL = 'https://api2.metaswap.codefi.network';
+export const DEV_BASE_URL = 'https://api2.metaswap-dev.codefi.network';
 
 export const ETH_SWAPS_CONTRACT_ADDRESS =
   '0x881d40237659c251811cec9c364ef91dc08d300c';
 export const BSC_SWAPS_CONTRACT_ADDRESS =
   '0x1a1ec25dc08e98e5e93f1104b5e5cdd298707d31';
+export const POLYGON_SWAPS_CONTRACT_ADDRESS =
+  '0x1a1ec25DC08e98e5E93F1104B5e5cdD298707d31';
 export const WETH_CONTRACT_ADDRESS =
   '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
 
@@ -36,6 +49,7 @@ export const SWAPS_CONTRACT_ADDRESSES: { [key: string]: string } = {
   [ETH_CHAIN_ID]: ETH_SWAPS_CONTRACT_ADDRESS,
   [SWAPS_TESTNET_CHAIN_ID]: ETH_SWAPS_CONTRACT_ADDRESS,
   [BSC_CHAIN_ID]: BSC_SWAPS_CONTRACT_ADDRESS,
+  [POLYGON_CHAIN_ID]: POLYGON_SWAPS_CONTRACT_ADDRESS,
 };
 
 export const ALLOWED_CONTRACT_ADDRESSES: { [key: string]: string[] } = {
@@ -48,6 +62,7 @@ export const ALLOWED_CONTRACT_ADDRESSES: { [key: string]: string[] } = {
     WETH_CONTRACT_ADDRESS,
   ],
   [BSC_CHAIN_ID]: [SWAPS_CONTRACT_ADDRESSES[BSC_CHAIN_ID]],
+  [POLYGON_CHAIN_ID]: [SWAPS_CONTRACT_ADDRESSES[POLYGON_CHAIN_ID]],
 };
 
 export const NATIVE_SWAPS_TOKEN_ADDRESS =
@@ -69,16 +84,18 @@ export const BSC_SWAPS_TOKEN_OBJECT: SwapsToken = {
   decimals: 18,
 };
 
+export const POLYGON_SWAPS_TOKEN_OBJECT: SwapsToken = {
+  symbol: 'MATIC',
+  name: 'Matic',
+  address: NATIVE_SWAPS_TOKEN_ADDRESS,
+  decimals: 18,
+};
+
 const SWAPS_NATIVE_TOKEN_OBJECTS: { [key: string]: SwapsToken } = {
   [ETH_CHAIN_ID]: ETH_SWAPS_TOKEN_OBJECT,
   [SWAPS_TESTNET_CHAIN_ID]: ETH_SWAPS_TOKEN_OBJECT,
   [BSC_CHAIN_ID]: BSC_SWAPS_TOKEN_OBJECT,
-};
-
-const API_BASE_HOST_URL: { [key: string]: string } = {
-  [ETH_CHAIN_ID]: 'https://api.metaswap.codefi.network',
-  [SWAPS_TESTNET_CHAIN_ID]: 'https://metaswap-api.airswap-dev.codefi.network',
-  [BSC_CHAIN_ID]: 'https://bsc-api.metaswap.codefi.network',
+  [POLYGON_CHAIN_ID]: POLYGON_SWAPS_TOKEN_OBJECT,
 };
 
 export const DEFAULT_ERC20_APPROVE_GAS = '0x1d4c0';
@@ -121,20 +138,23 @@ export function isValidContractAddress(
 }
 
 export const getBaseApiURL = function (type: APIType, chainId: string): string {
-  const hostURL = API_BASE_HOST_URL[chainId];
+  const apiChainId =
+    chainId === SWAPS_TESTNET_CHAIN_ID ? ETH_CHAIN_ID : chainId;
+  const apiBaseUrl =
+    chainId === SWAPS_TESTNET_CHAIN_ID ? DEV_BASE_URL : API_BASE_URL;
   switch (type) {
     case APIType.TRADES:
-      return `${hostURL}/trades`;
+      return `${apiBaseUrl}/networks/${apiChainId}/trades`;
     case APIType.TOKENS:
-      return `${hostURL}/tokens`;
+      return `${apiBaseUrl}/networks/${apiChainId}/tokens`;
     case APIType.TOP_ASSETS:
-      return `${hostURL}/topAssets`;
+      return `${apiBaseUrl}/networks/${apiChainId}/topAssets`;
     case APIType.FEATURE_FLAG:
-      return `${hostURL}/featureFlag`;
+      return `${apiBaseUrl}/featureFlags`;
     case APIType.AGGREGATOR_METADATA:
-      return `${hostURL}/aggregatorMetadata`;
+      return `${apiBaseUrl}/networks/${apiChainId}/aggregatorMetadata`;
     case APIType.GAS_PRICES:
-      return `${hostURL}/gasPrices`;
+      return `${apiBaseUrl}/networks/${apiChainId}/gasPrices`;
     default:
       throw new Error('getBaseApiURL requires an api call type');
   }
@@ -248,7 +268,8 @@ export async function fetchSwapsFeatureLiveness(
       getBaseApiURL(APIType.FEATURE_FLAG, chainId),
       { method: 'GET' },
     );
-    return status;
+    const networkName = CHAIN_ID_TO_NAME_MAP[chainId];
+    return status[networkName];
   } catch (err) {
     return false;
   }

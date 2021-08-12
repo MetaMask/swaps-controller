@@ -38,6 +38,7 @@ import {
   ETH_CHAIN_ID,
   BSC_CHAIN_ID,
   SWAPS_TESTNET_CHAIN_ID,
+  POLYGON_CHAIN_ID,
 } from './swapsUtil';
 
 import {
@@ -756,7 +757,12 @@ export default class SwapsController extends BaseController<
       fetchTopAssetsThreshold: 1000 * 60 * 30,
       provider: undefined,
       chainId: '1',
-      supportedChainIds: [ETH_CHAIN_ID, BSC_CHAIN_ID, SWAPS_TESTNET_CHAIN_ID],
+      supportedChainIds: [
+        ETH_CHAIN_ID,
+        BSC_CHAIN_ID,
+        SWAPS_TESTNET_CHAIN_ID,
+        POLYGON_CHAIN_ID,
+      ],
       clientId: undefined,
     };
     this.defaultState = {
