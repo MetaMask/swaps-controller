@@ -312,7 +312,7 @@ describe('SwapsController', () => {
     expect(swapsController.config).toEqual(swapsController.defaultConfig);
     expect(swapsController.config).toEqual({
       chainId: '1',
-      supportedChainIds: ['1', '56', '1337'],
+      supportedChainIds: ['1', '56', '1337', '137'],
       maxGasLimit: 2500000,
       pollCountLimit: 3,
       fetchAggregatorMetadataThreshold: 1000 * 60 * 60 * 24 * 15,
