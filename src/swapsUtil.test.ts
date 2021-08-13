@@ -389,7 +389,7 @@ describe('SwapsUtil', () => {
   describe('fetchGasPrices', () => {
     it('should work', async () => {
       getOnce(
-        `https://api2.metaswap.codefi.network/networks/1/gasPrices`,
+        `https://gas-api.metaswap.codefi.network/networks/1/gasPrices`,
         () => ({
           body: JSON.stringify({
             SafeGasPrice: '1',
@@ -400,7 +400,7 @@ describe('SwapsUtil', () => {
         { overwriteRoutes: true, method: 'GET' },
       );
       getOnce(
-        `https://api2.metaswap.codefi.network/networks/56/gasPrices`,
+        `https://gas-api.metaswap.codefi.network/networks/56/gasPrices`,
         () => ({
           body: JSON.stringify({
             SafeGasPrice: '4',

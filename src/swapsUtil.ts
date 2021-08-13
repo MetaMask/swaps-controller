@@ -3,6 +3,20 @@ import { AbortSignal } from 'abort-controller';
 import { BigNumber } from 'bignumber.js';
 import { addHexPrefix } from 'ethereumjs-util';
 import {
+  ALLOWED_CONTRACT_ADDRESSES,
+  API_BASE_URL,
+  CHAIN_ID_TO_NAME_MAP,
+  DEV_BASE_URL,
+  ETH_CHAIN_ID,
+  GAS_API_BASE_URL,
+  MAX_GAS_LIMIT,
+  NATIVE_SWAPS_TOKEN_ADDRESS,
+  SWAPS_CONTRACT_ADDRESSES,
+  SWAPS_NATIVE_TOKEN_OBJECTS,
+  SWAPS_TESTNET_CHAIN_ID,
+  TOKEN_TRANSFER_LOG_TOPIC_HASH,
+} from './constants';
+import {
   APIAggregatorMetadata,
   SwapsAsset,
   SwapsToken,
@@ -13,6 +27,8 @@ import {
   TransactionReceipt,
 } from './swapsInterfaces';
 
+export * from './constants';
+
 const {
   handleFetch,
   timeoutFetch,
@@ -20,88 +36,6 @@ const {
   query,
   normalizeTransaction,
 } = util;
-
-export const ETH_CHAIN_ID = '1';
-export const BSC_CHAIN_ID = '56';
-export const POLYGON_CHAIN_ID = '137';
-export const SWAPS_TESTNET_CHAIN_ID = '1337';
-
-export const CHAIN_ID_TO_NAME_MAP: { [key: string]: string } = {
-  [ETH_CHAIN_ID]: 'ethereum',
-  [BSC_CHAIN_ID]: 'bsc',
-  [POLYGON_CHAIN_ID]: 'polygon',
-  [SWAPS_TESTNET_CHAIN_ID]: 'ethereum',
-};
-
-export const API_BASE_URL = 'https://api2.metaswap.codefi.network';
-export const DEV_BASE_URL = 'https://api2.metaswap-dev.codefi.network';
-
-export const ETH_SWAPS_CONTRACT_ADDRESS =
-  '0x881d40237659c251811cec9c364ef91dc08d300c';
-export const BSC_SWAPS_CONTRACT_ADDRESS =
-  '0x1a1ec25dc08e98e5e93f1104b5e5cdd298707d31';
-export const POLYGON_SWAPS_CONTRACT_ADDRESS =
-  '0x1a1ec25DC08e98e5E93F1104B5e5cdD298707d31';
-export const WETH_CONTRACT_ADDRESS =
-  '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
-
-export const SWAPS_CONTRACT_ADDRESSES: { [key: string]: string } = {
-  [ETH_CHAIN_ID]: ETH_SWAPS_CONTRACT_ADDRESS,
-  [SWAPS_TESTNET_CHAIN_ID]: ETH_SWAPS_CONTRACT_ADDRESS,
-  [BSC_CHAIN_ID]: BSC_SWAPS_CONTRACT_ADDRESS,
-  [POLYGON_CHAIN_ID]: POLYGON_SWAPS_CONTRACT_ADDRESS,
-};
-
-export const ALLOWED_CONTRACT_ADDRESSES: { [key: string]: string[] } = {
-  [ETH_CHAIN_ID]: [
-    SWAPS_CONTRACT_ADDRESSES[ETH_CHAIN_ID],
-    WETH_CONTRACT_ADDRESS,
-  ],
-  [SWAPS_TESTNET_CHAIN_ID]: [
-    SWAPS_CONTRACT_ADDRESSES[SWAPS_TESTNET_CHAIN_ID],
-    WETH_CONTRACT_ADDRESS,
-  ],
-  [BSC_CHAIN_ID]: [SWAPS_CONTRACT_ADDRESSES[BSC_CHAIN_ID]],
-  [POLYGON_CHAIN_ID]: [SWAPS_CONTRACT_ADDRESSES[POLYGON_CHAIN_ID]],
-};
-
-export const NATIVE_SWAPS_TOKEN_ADDRESS =
-  '0x0000000000000000000000000000000000000000';
-const TOKEN_TRANSFER_LOG_TOPIC_HASH =
-  '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
-
-export const ETH_SWAPS_TOKEN_OBJECT: SwapsToken = {
-  symbol: 'ETH',
-  name: 'Ether',
-  address: NATIVE_SWAPS_TOKEN_ADDRESS,
-  decimals: 18,
-};
-
-export const BSC_SWAPS_TOKEN_OBJECT: SwapsToken = {
-  symbol: 'BNB',
-  name: 'Binance Coin',
-  address: NATIVE_SWAPS_TOKEN_ADDRESS,
-  decimals: 18,
-};
-
-export const POLYGON_SWAPS_TOKEN_OBJECT: SwapsToken = {
-  symbol: 'MATIC',
-  name: 'Matic',
-  address: NATIVE_SWAPS_TOKEN_ADDRESS,
-  decimals: 18,
-};
-
-const SWAPS_NATIVE_TOKEN_OBJECTS: { [key: string]: SwapsToken } = {
-  [ETH_CHAIN_ID]: ETH_SWAPS_TOKEN_OBJECT,
-  [SWAPS_TESTNET_CHAIN_ID]: ETH_SWAPS_TOKEN_OBJECT,
-  [BSC_CHAIN_ID]: BSC_SWAPS_TOKEN_OBJECT,
-  [POLYGON_CHAIN_ID]: POLYGON_SWAPS_TOKEN_OBJECT,
-};
-
-export const DEFAULT_ERC20_APPROVE_GAS = '0x1d4c0';
-
-// The MAX_GAS_LIMIT is a number that is higher than the maximum gas costs we have observed on any aggregator
-const MAX_GAS_LIMIT = 2500000;
 
 export enum SwapsError {
   QUOTES_EXPIRED_ERROR = 'quotes-expired',
@@ -138,10 +72,10 @@ export function isValidContractAddress(
 }
 
 export const getBaseApiURL = function (type: APIType, chainId: string): string {
-  const apiChainId =
-    chainId === SWAPS_TESTNET_CHAIN_ID ? ETH_CHAIN_ID : chainId;
-  const apiBaseUrl =
-    chainId === SWAPS_TESTNET_CHAIN_ID ? DEV_BASE_URL : API_BASE_URL;
+  const [apiChainId, apiBaseUrl] =
+    chainId === SWAPS_TESTNET_CHAIN_ID
+      ? [ETH_CHAIN_ID, DEV_BASE_URL]
+      : [chainId, API_BASE_URL];
   switch (type) {
     case APIType.TRADES:
       return `${apiBaseUrl}/networks/${apiChainId}/trades`;
@@ -154,7 +88,7 @@ export const getBaseApiURL = function (type: APIType, chainId: string): string {
     case APIType.AGGREGATOR_METADATA:
       return `${apiBaseUrl}/networks/${apiChainId}/aggregatorMetadata`;
     case APIType.GAS_PRICES:
-      return `${apiBaseUrl}/networks/${apiChainId}/gasPrices`;
+      return `${GAS_API_BASE_URL}/networks/${apiChainId}/gasPrices`;
     default:
       throw new Error('getBaseApiURL requires an api call type');
   }
