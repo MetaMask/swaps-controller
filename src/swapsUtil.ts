@@ -67,7 +67,7 @@ export function isValidContractAddress(
     return false;
   }
   return ALLOWED_CONTRACT_ADDRESSES[chainId].some(
-    (allowedContract) => contract === allowedContract,
+    (allowedContract) => contract.toLowerCase() === allowedContract,
   );
 }
 
@@ -135,7 +135,7 @@ export async function fetchTradesInfo(
       if (
         !quote.error &&
         quote.trade &&
-        isValidContractAddress(chainId, quote.trade?.to?.toLowerCase())
+        isValidContractAddress(chainId, quote.trade?.to)
       ) {
         const constructedTrade = constructTxParams({
           to: quote.trade.to,
