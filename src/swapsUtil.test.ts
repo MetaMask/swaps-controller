@@ -91,7 +91,7 @@ const API_TOKENS: SwapsToken[] = [
     address: '0x6b175474e89094c44da98b954eedeac495271d0f',
     symbol: 'DAI',
     decimals: 18,
-    occurances: 30,
+    occurrences: 30,
     iconUrl:
       'https://cloudflare-ipfs.com/ipfs/QmNYVMm3iC7HEoxfvxsZbRoapdjDHj9EREFac4BPeVphSJ',
   },
@@ -99,7 +99,7 @@ const API_TOKENS: SwapsToken[] = [
     address: '0xdac17f958d2ee523a2206206994597c13d831ec7',
     symbol: 'USDT',
     decimals: 6,
-    occurances: 30,
+    occurrences: 30,
     iconUrl:
       'https://cloudflare-ipfs.com/ipfs/QmR3TGmDDdmid99ExTHwPiKro4njZhSidbjcTbSrS5rHnq',
   },
@@ -107,7 +107,7 @@ const API_TOKENS: SwapsToken[] = [
     address: '0x8e870d67f660d95d5be530380d0ec0bd388289e1',
     symbol: 'PAX',
     decimals: 18,
-    occurances: 30,
+    occurrences: 30,
     iconUrl:
       'https://cloudflare-ipfs.com/ipfs/QmQTzo6Ecdn54x7NafwegjLetAnno1ATL9Y8M3PcVXGVhR',
   },
@@ -117,7 +117,7 @@ const FAKE_SWAPS_TOKEN = {
   address: '0x0000000000000000000000000000000000000000',
   symbol: 'fakeswap',
   decimals: 18,
-  occurances: 30,
+  occurrences: 30,
   iconUrl:
     'https://cloudflare-ipfs.com/ipfs/QmQTzo6Ecdn54x7NafwegjLetAnno1ATL9Y8M3PcVXGVhR',
 };

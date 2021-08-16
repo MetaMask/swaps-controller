@@ -14,6 +14,7 @@ import {
   SWAPS_CONTRACT_ADDRESSES,
   SWAPS_NATIVE_TOKEN_OBJECTS,
   SWAPS_TESTNET_CHAIN_ID,
+  SWAPS_WRAPPED_TOKENS,
   TOKEN_TRANSFER_LOG_TOPIC_HASH,
 } from './constants';
 import {
@@ -117,6 +118,15 @@ export async function fetchTradesInfo(
 
   if (clientId) {
     urlParams.clientId = clientId;
+  }
+
+  const wrappedToken = SWAPS_WRAPPED_TOKENS[chainId];
+  const nativeToken = SWAPS_NATIVE_TOKEN_OBJECTS[chainId].address;
+  if (
+    (sourceToken === wrappedToken && destinationToken === nativeToken) ||
+    (sourceToken === nativeToken && destinationToken === wrappedToken)
+  ) {
+    urlParams.enableDirectWrapping = true;
   }
 
   const tradeURL = `${getBaseApiURL(
