@@ -18,7 +18,7 @@ export interface SwapsAsset {
 
 export interface SwapsToken extends SwapsAsset {
   decimals: number;
-  occurances?: number;
+  occurrences?: number;
   iconUrl?: string;
 }
 
@@ -58,6 +58,7 @@ export interface APIFetchQuotesParams {
   walletAddress: string;
   timeout?: number;
   clientId?: string;
+  enableDirectWrapping?: boolean;
 }
 
 /**
