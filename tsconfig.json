@@ -4,7 +4,7 @@
     "declarationDir": "dist",
     "inlineSources": true,
     "esModuleInterop": true,
-    "lib": ["ES2020"],
+    "lib": ["DOM", "ES2020"],
     "module": "CommonJS",
     "moduleResolution": "Node",
     "noUnusedLocals": true,

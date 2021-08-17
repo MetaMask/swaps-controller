@@ -144,42 +144,49 @@ describe('SwapsUtil', () => {
       expect(
         swapsUtil.isValidContractAddress(swapsUtil.ETH_CHAIN_ID, undefined),
       ).toBe(false);
+
       expect(
         swapsUtil.isValidContractAddress(
           swapsUtil.ETH_CHAIN_ID,
           swapsUtil.getSwapsContractAddress(swapsUtil.ETH_CHAIN_ID),
         ),
       ).toBe(true);
+
       expect(
         swapsUtil.isValidContractAddress(
           swapsUtil.ETH_CHAIN_ID,
           swapsUtil.ETH_SWAPS_CONTRACT_ADDRESS,
         ),
       ).toBe(true);
+
       expect(
         swapsUtil.isValidContractAddress(
           swapsUtil.SWAPS_TESTNET_CHAIN_ID,
           swapsUtil.ETH_SWAPS_CONTRACT_ADDRESS,
         ),
       ).toBe(true);
+
       expect(
         swapsUtil.isValidContractAddress(
           swapsUtil.ETH_CHAIN_ID,
           swapsUtil.WETH_CONTRACT_ADDRESS,
         ),
       ).toBe(true);
+
       expect(
         swapsUtil.isValidContractAddress(
           swapsUtil.BSC_CHAIN_ID,
           swapsUtil.BSC_SWAPS_CONTRACT_ADDRESS,
         ),
       ).toBe(true);
+
       expect(
         swapsUtil.isValidContractAddress(
           swapsUtil.ETH_CHAIN_ID,
           swapsUtil.BSC_SWAPS_CONTRACT_ADDRESS,
         ),
       ).toBe(false);
+
       expect(
         swapsUtil.isValidContractAddress(
           swapsUtil.BSC_CHAIN_ID,
@@ -295,8 +302,8 @@ describe('SwapsUtil', () => {
         },
       };
 
-      expect(quotes).toEqual(response);
-      expect(quotesWithClientId).toEqual(response);
+      expect(quotes).toStrictEqual(response);
+      expect(quotesWithClientId).toStrictEqual(response);
     });
 
     it('should work for direct wrapping', async () => {
@@ -383,7 +390,7 @@ describe('SwapsUtil', () => {
         },
       };
 
-      expect(quotes).toEqual(response);
+      expect(quotes).toStrictEqual(response);
     });
   });
 
@@ -397,7 +404,7 @@ describe('SwapsUtil', () => {
         { overwriteRoutes: true, method: 'GET' },
       );
       const tokens = await swapsUtil.fetchTokens('1');
-      expect(tokens).toEqual(
+      expect(tokens).toStrictEqual(
         API_TOKENS.concat([swapsUtil.ETH_SWAPS_TOKEN_OBJECT]),
       );
     });
@@ -460,6 +467,7 @@ describe('SwapsUtil', () => {
       const featureLiveness = await swapsUtil.fetchSwapsFeatureLiveness('1');
       expect(featureLiveness).toBeInstanceOf(Object);
     });
+
     it('should return false on exception', async () => {
       getOnce(
         `https://api2.metaswap.codefi.network/featureFlags`,
@@ -486,6 +494,7 @@ describe('SwapsUtil', () => {
         }),
         { overwriteRoutes: true, method: 'GET' },
       );
+
       getOnce(
         `https://gas-api.metaswap.codefi.network/networks/56/gasPrices`,
         () => ({
@@ -499,12 +508,13 @@ describe('SwapsUtil', () => {
       );
       const gasPrices = await swapsUtil.fetchGasPrices('1');
       const gasPricesBSC = await swapsUtil.fetchGasPrices('56');
-      expect(gasPrices).toEqual({
+      expect(gasPrices).toStrictEqual({
         safeGasPrice: '1',
         proposedGasPrice: '2',
         fastGasPrice: '3',
       });
-      expect(gasPricesBSC).toEqual({
+
+      expect(gasPricesBSC).toStrictEqual({
         safeGasPrice: '4',
         proposedGasPrice: '5',
         fastGasPrice: '6',
@@ -517,6 +527,7 @@ describe('SwapsUtil', () => {
       expect(() => {
         return swapsUtil.getMedianEthValueQuote([]);
       }).toThrow();
+
       expect(() => {
         // @ts-expect-error: Argument string is not array
         return swapsUtil.getMedianEthValueQuote('not an array');
@@ -537,8 +548,9 @@ describe('SwapsUtil', () => {
         estimatedRefund,
         estimatedGas,
       );
-      expect(estimatedWithRefund.toString(10)).toEqual(expected);
+      expect(estimatedWithRefund.toString(10)).toStrictEqual(expected);
     });
+
     it('estimated with refund is more than estimated gas, return estimated with refund', () => {
       const maxGas = 500;
       const estimatedRefund = 10;
@@ -549,7 +561,7 @@ describe('SwapsUtil', () => {
         estimatedRefund,
         estimatedGas,
       );
-      expect(estimatedWithRefund.toString(10)).toEqual(expected);
+      expect(estimatedWithRefund.toString(10)).toStrictEqual(expected);
     });
   });
 
@@ -579,6 +591,7 @@ describe('SwapsUtil', () => {
       expect(() => {
         return swapsUtil.getMedian([]);
       }).toThrow();
+
       expect(() => {
         // @ts-expect-error: Argument string is not array
         return swapsUtil.getMedian('not an array');
@@ -591,6 +604,7 @@ describe('SwapsUtil', () => {
       expect(swapsUtil.calcTokenAmount(123456789, 8).toString(10)).toBe(
         '1.23456789',
       );
+
       expect(swapsUtil.calcTokenAmount(123456789, 0).toString(10)).toBe(
         '123456789',
       );
@@ -614,9 +628,10 @@ describe('SwapsUtil', () => {
         gasMultiplier,
         null,
       );
-      expect(tradeGasLimit.toString()).toEqual(averageGas.toString());
-      expect(tradeMaxGasLimit.toString()).toEqual(maxGas.toString());
+      expect(tradeGasLimit.toString()).toStrictEqual(averageGas.toString());
+      expect(tradeMaxGasLimit.toString()).toStrictEqual(maxGas.toString());
     });
+
     it('if no approval is needed, gas limit is gas limit minus refund and max gas is the gas estimated by multiplier', () => {
       const { tradeGasLimit, tradeMaxGasLimit } = swapsUtil.calculateGasLimits(
         false,
@@ -628,8 +643,8 @@ describe('SwapsUtil', () => {
         null,
       );
       const limit: BigNumber = new BigNumber(gasEstimateWithRefund);
-      expect(tradeGasLimit.toString(16)).toEqual(limit.toString(16));
-      expect(tradeMaxGasLimit.toString(16)).toEqual(
+      expect(tradeGasLimit.toString(16)).toStrictEqual(limit.toString(16));
+      expect(tradeMaxGasLimit.toString(16)).toStrictEqual(
         new BigNumber(gasEstimate).times(gasMultiplier).toString(16),
       );
     });
@@ -644,8 +659,8 @@ describe('SwapsUtil', () => {
         gasMultiplier,
         customGasLimit,
       );
-      expect(tradeGasLimit.toString()).toEqual(averageGas.toString());
-      expect(tradeMaxGasLimit.toString(16)).toEqual(
+      expect(tradeGasLimit.toString()).toStrictEqual(averageGas.toString());
+      expect(tradeMaxGasLimit.toString(16)).toStrictEqual(
         new BigNumber(customGasLimit).toString(16),
       );
     });
@@ -661,8 +676,8 @@ describe('SwapsUtil', () => {
         customGasLimit,
       );
       const limit: BigNumber = new BigNumber(gasEstimateWithRefund);
-      expect(tradeGasLimit.toString(16)).toEqual(limit.toString(16));
-      expect(tradeMaxGasLimit.toString(16)).toEqual(
+      expect(tradeGasLimit.toString(16)).toStrictEqual(limit.toString(16));
+      expect(tradeMaxGasLimit.toString(16)).toStrictEqual(
         new BigNumber(customGasLimit).toString(16),
       );
     });

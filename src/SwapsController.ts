@@ -188,7 +188,7 @@ export default class SwapsController extends BaseController<
   SwapsConfig,
   SwapsState
 > {
-  private handle?: NodeJS.Timer;
+  private handle?: NodeJS.Timer | undefined;
 
   private web3: any;
 
@@ -221,6 +221,7 @@ export default class SwapsController extends BaseController<
       ) {
         throw new Error(SwapsError.SWAPS_GAS_PRICE_ESTIMATION);
       }
+
       if (isGasFeeStateFeeMarket(gasFeeState)) {
         return gasFeeState.gasFeeEstimates;
       } else if (isGasFeeStateLegacy(gasFeeState)) {
@@ -236,6 +237,7 @@ export default class SwapsController extends BaseController<
     } catch (e) {
       //
     }
+
     try {
       const gasPrice = await util.query(this.ethQuery, 'gasPrice');
       return {
@@ -301,6 +303,7 @@ export default class SwapsController extends BaseController<
         gweiDecToWEIBN(gasPrice).toString(16),
         16,
       );
+
       maxTotalGasInWei = tradeMaxGasLimit.times(
         gweiDecToWEIBN(gasPrice).toString(16),
         16,
@@ -323,6 +326,7 @@ export default class SwapsController extends BaseController<
           .toString(16),
         16,
       );
+
       maxTotalGasInWei = tradeMaxGasLimit.times(
         gweiDecToWEIBN(maxFeePerGas).toString(16),
         16,
@@ -574,6 +578,7 @@ export default class SwapsController extends BaseController<
       this.update({
         pollingCyclesLeft: this.config.pollCountLimit - this.pollCount,
       });
+
       if (threshold && nextQuotesState?.quoteRefreshSeconds) {
         this.update({ ...this.state, ...nextQuotesState, usedGasEstimate });
         this.handle = setTimeout(async () => {
@@ -765,6 +770,7 @@ export default class SwapsController extends BaseController<
       ],
       clientId: undefined,
     };
+
     this.defaultState = {
       quotes: {},
       quoteValues: {},

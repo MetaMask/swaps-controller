@@ -305,6 +305,7 @@ export function getSwapsTokensReceived(
 
     return postBalanceMinusGas.minus(previousBalanceMinusGas).toString(16);
   }
+
   if (!receipt?.logs || receipt.status === '0x0') {
     return;
   }
@@ -515,6 +516,7 @@ export async function estimateGas(transaction: Transaction, ethQuery: any) {
   estimatedTransaction.data = !data
     ? data
     : /* istanbul ignore next */ addHexPrefix(data);
+
   // 3. If this is a contract address, safely estimate gas using RPC
   estimatedTransaction.value =
     typeof value === 'undefined' ? '0x0' : /* istanbul ignore next */ value;

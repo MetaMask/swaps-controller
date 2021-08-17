@@ -10,6 +10,13 @@ module.exports = {
     },
 
     {
+      files: ['*.d.ts'],
+      parserOptions: {
+        sourceType: 'script',
+      },
+    },
+
+    {
       files: ['*.js'],
       parserOptions: {
         sourceType: 'script',
@@ -20,6 +27,36 @@ module.exports = {
     {
       files: ['*.test.ts', '*.test.js'],
       extends: ['@metamask/eslint-config-jest'],
+    },
+
+    // TODO: Enable these
+    {
+      files: ['src/SwapsController.ts'],
+      rules: {
+        'accessor-pairs': 'off',
+        'consistent-return': 'off',
+        'no-async-promise-executor': 'off',
+        '@typescript-eslint/prefer-optional-chain': 'off',
+      },
+    },
+    {
+      files: ['src/SwapsController.test.ts'],
+      rules: {
+        'no-new': 'off',
+      },
+    },
+    {
+      files: ['src/swapsUtil.ts'],
+      rules: {
+        'consistent-return': 'off',
+        'no-negated-condition': 'off',
+      },
+    },
+    {
+      files: ['src/swapsUtil.test.ts'],
+      rules: {
+        'jest/require-to-throw-message': 'off',
+      },
     },
   ],
 
