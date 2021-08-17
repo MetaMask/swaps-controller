@@ -72,6 +72,19 @@ export function isValidContractAddress(
   );
 }
 
+export function shouldshouldEnableDirectWrapping(
+  chainId: string,
+  sourceToken: string,
+  destinationToken: string,
+): boolean {
+  const wrappedToken = SWAPS_WRAPPED_TOKENS_ADDRESSES[chainId];
+  const nativeToken = SWAPS_NATIVE_TOKEN_OBJECTS[chainId].address;
+  return (
+    (sourceToken === wrappedToken && destinationToken === nativeToken) ||
+    (sourceToken === nativeToken && destinationToken === wrappedToken)
+  );
+}
+
 export const getBaseApiURL = function (type: APIType, chainId: string): string {
   const [apiChainId, apiBaseUrl] =
     chainId === SWAPS_TESTNET_CHAIN_ID
@@ -120,11 +133,8 @@ export async function fetchTradesInfo(
     urlParams.clientId = clientId;
   }
 
-  const wrappedToken = SWAPS_WRAPPED_TOKENS_ADDRESSES[chainId];
-  const nativeToken = SWAPS_NATIVE_TOKEN_OBJECTS[chainId].address;
   if (
-    (sourceToken === wrappedToken && destinationToken === nativeToken) ||
-    (sourceToken === nativeToken && destinationToken === wrappedToken)
+    shouldshouldEnableDirectWrapping(chainId, sourceToken, destinationToken)
   ) {
     urlParams.enableDirectWrapping = true;
   }
