@@ -64,7 +64,7 @@ export function isValidContractAddress(
   chainId: string,
   contract: string | undefined,
 ): boolean {
-  if (!contract) {
+  if (!contract || !ALLOWED_CONTRACT_ADDRESSES[chainId]) {
     return false;
   }
   return ALLOWED_CONTRACT_ADDRESSES[chainId].some(
