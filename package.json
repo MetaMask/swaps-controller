@@ -19,7 +19,7 @@
     "url": "https://github.com/MetaMask/swaps-controller.git"
   },
   "scripts": {
-    "setup": "yarn allow-scripts auto && yarn install",
+    "setup": "yarn install && yarn allow-scripts",
     "test": "jest",
     "test:watch": "jest --watch",
     "prepublishOnly": "yarn build:clean && yarn lint && yarn test",
