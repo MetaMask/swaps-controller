@@ -72,7 +72,7 @@ export function isValidContractAddress(
   );
 }
 
-export function shouldshouldEnableDirectWrapping(
+export function shouldEnableDirectWrapping(
   chainId: string,
   sourceToken: string,
   destinationToken: string,
@@ -133,9 +133,7 @@ export async function fetchTradesInfo(
     urlParams.clientId = clientId;
   }
 
-  if (
-    shouldshouldEnableDirectWrapping(chainId, sourceToken, destinationToken)
-  ) {
+  if (shouldEnableDirectWrapping(chainId, sourceToken, destinationToken)) {
     urlParams.enableDirectWrapping = true;
   }
 
