@@ -2,17 +2,18 @@
   "compilerOptions": {
     "declaration": true,
     "declarationDir": "dist",
+    "inlineSources": true,
     "esModuleInterop": true,
-    "module": "commonjs",
-    "moduleResolution": "node",
+    "lib": ["ES2020"],
+    "module": "CommonJS",
+    "moduleResolution": "Node",
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "outDir": "dist",
     "rootDir": "./src",
     "sourceMap": true,
-    "inlineSources": true,
     "strict": true,
-    "target": "es6"
+    "target": "ES2017"
   },
   "include": ["src/**/*.ts"],
   "exclude": ["**/*.test.ts"]
