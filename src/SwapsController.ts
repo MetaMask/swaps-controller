@@ -39,6 +39,7 @@ import {
   BSC_CHAIN_ID,
   SWAPS_TESTNET_CHAIN_ID,
   POLYGON_CHAIN_ID,
+  shouldEnableDirectWrapping,
 } from './swapsUtil';
 
 import {
@@ -658,11 +659,19 @@ export default class SwapsController extends BaseController<
         gas?: string;
       } | null = null;
 
-      // If quotes array has only 1 item with an aggType of CONTRACT,
-      // we can assume it's a direct wrapping swap
+      const enableDirectWrappingParam = shouldEnableDirectWrapping(
+        chainId,
+        fetchParams.sourceToken,
+        fetchParams.destinationToken,
+      );
+
+      const quotesArray = Object.values(quotes);
+
+      const onlyContractQuote =
+        quotesArray.length === 1 && quotesArray[0].aggType === 'CONTRACT';
+
       const enableDirectWrapping =
-        Object.values(quotes).length === 1 &&
-        Object.values(quotes)[0].aggType === 'CONTRACT';
+        enableDirectWrappingParam && onlyContractQuote;
 
       if (
         fetchParams.sourceToken !== NATIVE_SWAPS_TOKEN_ADDRESS &&
@@ -675,8 +684,8 @@ export default class SwapsController extends BaseController<
 
         if (Number(allowance) < fetchParams.sourceAmount) {
           approvalTransaction =
-            Object.values(quotes).find((quote) => quote.approvalNeeded)
-              ?.approvalNeeded || null;
+            quotesArray.find((quote) => quote.approvalNeeded)?.approvalNeeded ||
+            null;
           if (!approvalTransaction) {
             throw new Error(SwapsError.SWAPS_ALLOWANCE_ERROR);
           }
