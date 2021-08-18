@@ -39,6 +39,7 @@ import {
   BSC_CHAIN_ID,
   SWAPS_TESTNET_CHAIN_ID,
   POLYGON_CHAIN_ID,
+  shouldEnableDirectWrapping,
 } from './swapsUtil';
 
 import {
@@ -658,9 +659,15 @@ export default class SwapsController extends BaseController<
         gas?: string;
       } | null = null;
 
+      const enableDirectWrapping = shouldEnableDirectWrapping(
+        chainId,
+        fetchParams.sourceToken,
+        fetchParams.destinationToken,
+      );
+
       if (
         fetchParams.sourceToken !== NATIVE_SWAPS_TOKEN_ADDRESS &&
-        !fetchParams.enableDirectWrapping
+        !enableDirectWrapping
       ) {
         const allowance = await this.getERC20Allowance(
           fetchParams.sourceToken,
