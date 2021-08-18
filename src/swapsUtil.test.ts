@@ -667,4 +667,101 @@ describe('SwapsUtil', () => {
       );
     });
   });
+
+  describe('shouldEnableDirectWrapping', () => {
+    const randomTokenAddress = '0x881d40237659c251811cec9c364ef91234567890';
+
+    it('returns true if swapping from ETH to WETH', () => {
+      expect(
+        swapsUtil.shouldEnableDirectWrapping(
+          swapsUtil.ETH_CHAIN_ID,
+          swapsUtil.SWAPS_NATIVE_TOKEN_OBJECTS[swapsUtil.ETH_CHAIN_ID]?.address,
+          swapsUtil.WETH_CONTRACT_ADDRESS,
+        ),
+      ).toBe(true);
+    });
+
+    it('returns true if swapping from WETH to ETH', () => {
+      expect(
+        swapsUtil.shouldEnableDirectWrapping(
+          swapsUtil.ETH_CHAIN_ID,
+          swapsUtil.WETH_CONTRACT_ADDRESS,
+          swapsUtil.SWAPS_NATIVE_TOKEN_OBJECTS[swapsUtil.ETH_CHAIN_ID]?.address,
+        ),
+      ).toBe(true);
+    });
+
+    it('returns false if swapping from ETH to a non-WETH token', () => {
+      expect(
+        swapsUtil.shouldEnableDirectWrapping(
+          swapsUtil.ETH_CHAIN_ID,
+          swapsUtil.SWAPS_NATIVE_TOKEN_OBJECTS[swapsUtil.ETH_CHAIN_ID]?.address,
+          randomTokenAddress,
+        ),
+      ).toBe(false);
+    });
+
+    it('returns true if swapping from BNB to WBNB', () => {
+      expect(
+        swapsUtil.shouldEnableDirectWrapping(
+          swapsUtil.BSC_CHAIN_ID,
+          swapsUtil.SWAPS_NATIVE_TOKEN_OBJECTS[swapsUtil.BSC_CHAIN_ID]?.address,
+          swapsUtil.WBNB_CONTRACT_ADDRESS,
+        ),
+      ).toBe(true);
+    });
+
+    it('returns true if swapping from WBNB to BNB', () => {
+      expect(
+        swapsUtil.shouldEnableDirectWrapping(
+          swapsUtil.BSC_CHAIN_ID,
+          swapsUtil.WBNB_CONTRACT_ADDRESS,
+          swapsUtil.SWAPS_NATIVE_TOKEN_OBJECTS[swapsUtil.BSC_CHAIN_ID]?.address,
+        ),
+      ).toBe(true);
+    });
+
+    it('returns false if swapping from BNB to a non-WBNB token', () => {
+      expect(
+        swapsUtil.shouldEnableDirectWrapping(
+          swapsUtil.BSC_CHAIN_ID,
+          swapsUtil.SWAPS_NATIVE_TOKEN_OBJECTS[swapsUtil.BSC_CHAIN_ID]?.address,
+          randomTokenAddress,
+        ),
+      ).toBe(false);
+    });
+
+    it('returns true if swapping from MATIC to WMATIC', () => {
+      expect(
+        swapsUtil.shouldEnableDirectWrapping(
+          swapsUtil.POLYGON_CHAIN_ID,
+          swapsUtil.SWAPS_NATIVE_TOKEN_OBJECTS[swapsUtil.POLYGON_CHAIN_ID]
+            ?.address,
+          swapsUtil.WMATIC_CONTRACT_ADDRESS,
+        ),
+      ).toBe(true);
+    });
+
+    it('returns true if swapping from WMATIC to MATIC', () => {
+      expect(
+        swapsUtil.shouldEnableDirectWrapping(
+          swapsUtil.POLYGON_CHAIN_ID,
+          swapsUtil.WMATIC_CONTRACT_ADDRESS,
+          swapsUtil.SWAPS_NATIVE_TOKEN_OBJECTS[swapsUtil.POLYGON_CHAIN_ID]
+            ?.address,
+        ),
+      ).toBe(true);
+    });
+
+    it('returns false if swapping from MATIC to a non-WMATIC token', () => {
+      expect(
+        swapsUtil.shouldEnableDirectWrapping(
+          swapsUtil.POLYGON_CHAIN_ID,
+          swapsUtil.SWAPS_NATIVE_TOKEN_OBJECTS[swapsUtil.POLYGON_CHAIN_ID]
+            ?.address,
+          randomTokenAddress,
+        ),
+      ).toBe(false);
+    });
+  });
 });
