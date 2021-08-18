@@ -658,7 +658,10 @@ export default class SwapsController extends BaseController<
         gas?: string;
       } | null = null;
 
-      if (fetchParams.sourceToken !== NATIVE_SWAPS_TOKEN_ADDRESS) {
+      if (
+        fetchParams.sourceToken !== NATIVE_SWAPS_TOKEN_ADDRESS &&
+        !fetchParams.enableDirectWrapping
+      ) {
         const allowance = await this.getERC20Allowance(
           fetchParams.sourceToken,
           fetchParams.walletAddress,
