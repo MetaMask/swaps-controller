@@ -268,6 +268,7 @@ describe('SwapsController', () => {
       estimatedGasFeeTimeBounds: {},
       gasEstimateType: 'none',
     }));
+
     swapsController = new SwapsController(
       {
         fetchGasFeeEstimates,
@@ -309,8 +310,8 @@ describe('SwapsController', () => {
   });
 
   it('should set default config', () => {
-    expect(swapsController.config).toEqual(swapsController.defaultConfig);
-    expect(swapsController.config).toEqual({
+    expect(swapsController.config).toStrictEqual(swapsController.defaultConfig);
+    expect(swapsController.config).toStrictEqual({
       chainId: '1',
       supportedChainIds: ['1', '56', '1337', '137'],
       maxGasLimit: 2500000,
@@ -324,8 +325,8 @@ describe('SwapsController', () => {
   });
 
   it('should set default state', () => {
-    expect(swapsController.state).toEqual(swapsController.defaultState);
-    expect(swapsController.state).toEqual({
+    expect(swapsController.state).toStrictEqual(swapsController.defaultState);
+    expect(swapsController.state).toStrictEqual({
       quotes: {},
       quoteValues: {},
       fetchParams: {
@@ -394,11 +395,13 @@ describe('SwapsController', () => {
         fetchTokensThreshold: 1000 * 60 * 60 * 24,
         fetchTopAssetsThreshold: 1000 * 60 * 30,
       });
+
       swapsController.configure({
         fetchAggregatorMetadataThreshold: 0,
         fetchTokensThreshold: 0,
         fetchTopAssetsThreshold: 0,
       });
+
       expect(swapsController.config).toMatchObject({
         fetchAggregatorMetadataThreshold: 0,
         fetchTokensThreshold: 0,
@@ -681,7 +684,7 @@ describe('SwapsController', () => {
   //     await awaitPollingInterval();
   //     expect(fetchAndSetQuotes.calledThrice).toBe(true);
   //     await awaitPollingInterval();
-  //     expect(swapsController.state.errorKey).toEqual(SwapsError.QUOTES_EXPIRED_ERROR);
+  //     expect(swapsController.state.errorKey).toStrictEqual(SwapsError.QUOTES_EXPIRED_ERROR);
   //     resolve('');
   //   });
   // });
@@ -691,8 +694,8 @@ describe('SwapsController', () => {
   //   swapsController.configure({ provider: MAINNET_PROVIDER });
   //   return new Promise(async (resolve) => {
   //     await swapsController.startFetchAndSetQuotes(FETCH_PARAMS, FETCH_PARAMS.metaData, '0x12');
-  //     expect(swapsController.state.fetchParams).toEqual(FETCH_PARAMS);
-  //     expect(swapsController.state.customGasPrice).toEqual('0x12');
+  //     expect(swapsController.state.fetchParams).toStrictEqual(FETCH_PARAMS);
+  //     expect(swapsController.state.customGasPrice).toStrictEqual('0x12');
   //     expect(pollForNewQuotes.called).toBe(true);
   //     resolve('');
   //   });
@@ -704,12 +707,12 @@ describe('SwapsController', () => {
   //   swapsController.state.isInPolling = true;
   //   return new Promise(async (resolve) => {
   //     await swapsController.fetchAndSetQuotes();
-  //     expect(swapsController.state.fetchParams).toEqual(FETCH_PARAMS);
+  //     expect(swapsController.state.fetchParams).toStrictEqual(FETCH_PARAMS);
   //     expect(swapsController.state.quotes).toBeTruthy();
   //     expect(swapsController.state.topAggId).toBeTruthy();
   //     stub(swapsController, 'getAllQuotesWithGasEstimates').throws('ERROR');
   //     await swapsController.fetchAndSetQuotes();
-  //     expect(swapsController.state.errorKey).toEqual(SwapsError.ERROR_FETCHING_QUOTES);
+  //     expect(swapsController.state.errorKey).toStrictEqual(SwapsError.ERROR_FETCHING_QUOTES);
   //     resolve('');
   //   });
   // });

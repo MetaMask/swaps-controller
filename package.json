@@ -19,25 +19,28 @@
     "url": "https://github.com/MetaMask/swaps-controller.git"
   },
   "scripts": {
+    "setup": "yarn install && yarn allow-scripts",
     "test": "jest",
     "test:watch": "jest --watch",
-    "prepublishOnly": "yarn build && yarn lint && yarn test",
+    "prepublishOnly": "yarn build:clean && yarn lint && yarn test",
     "lint:eslint": "eslint . --cache --ext js,ts",
-    "lint:misc": "prettier '**/*.json' '**/*.md' '!CHANGELOG.md' '**/*.yml' --single-quote --ignore-path .gitignore",
+    "lint:misc": "prettier '**/*.json' '**/*.md' '!CHANGELOG.md' '**/*.yml' --ignore-path .gitignore",
     "lint": "yarn lint:eslint && yarn lint:misc --check",
     "lint:fix": "yarn lint:eslint --fix && yarn lint:misc --write",
+    "build:clean": "rimraf dist && yarn build",
     "build": "tsc --project ."
   },
   "devDependencies": {
+    "@lavamoat/allow-scripts": "^1.0.5",
     "@metamask/auto-changelog": "^2.5.0",
-    "@metamask/eslint-config": "^7.0.1",
-    "@metamask/eslint-config-jest": "^7.0.0",
-    "@metamask/eslint-config-nodejs": "^7.0.1",
-    "@metamask/eslint-config-typescript": "^7.0.1",
+    "@metamask/eslint-config": "^8.0.0",
+    "@metamask/eslint-config-jest": "^8.0.0",
+    "@metamask/eslint-config-nodejs": "^8.0.0",
+    "@metamask/eslint-config-typescript": "^8.0.0",
     "@types/ethereumjs-util": "^6.1.0",
     "@types/fetch-mock": "^7.3.3",
     "@types/jest": "^26.0.22",
-    "@types/node": "^14.14.41",
+    "@types/node": "^16.6.2",
     "@typescript-eslint/eslint-plugin": "^4.21.0",
     "@typescript-eslint/parser": "^4.21.0",
     "eslint": "^7.25.0",
@@ -49,6 +52,7 @@
     "fetch-mock": "^9.11.0",
     "jest": "^26.4.2",
     "prettier": "^2.2.1",
+    "rimraf": "^3.0.2",
     "ts-jest": "^26.3.0",
     "ts-node": "^9.0.0",
     "typescript": "^4.2.4"
@@ -62,5 +66,13 @@
     "ethereumjs-util": "^7.0.10",
     "human-standard-token-abi": "^2.0.0",
     "web3": "^0.20.7"
+  },
+  "lavamoat": {
+    "allowScripts": {
+      "@lavamoat/preinstall-always-fail": false,
+      "keccak": true,
+      "secp256k1": true,
+      "core-js": false
+    }
   }
 }
