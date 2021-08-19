@@ -127,6 +127,7 @@ describe('SwapsUtil', () => {
     it('should return expected values', () => {
       expect(swapsUtil.getBaseApiURL(APIType.TRADES, '1')).toBeDefined();
       expect(swapsUtil.getBaseApiURL(APIType.TOKENS, '1')).toBeDefined();
+      expect(swapsUtil.getBaseApiURL(APIType.TOKEN, '1')).toBeDefined();
       expect(swapsUtil.getBaseApiURL(APIType.TOP_ASSETS, '1')).toBeDefined();
       expect(swapsUtil.getBaseApiURL(APIType.FEATURE_FLAG, '1')).toBeDefined();
       expect(
@@ -193,6 +194,30 @@ describe('SwapsUtil', () => {
           swapsUtil.ETH_SWAPS_CONTRACT_ADDRESS,
         ),
       ).toBe(false);
+    });
+  });
+
+  describe('getTokenMetadataURL', () => {
+    it('should work', () => {
+      expect(swapsUtil.getTokenMetadataURL('1')).toBe(
+        'https://api2.metaswap.codefi.network/networks/1/token',
+      );
+
+      expect(swapsUtil.getTokenMetadataURL(swapsUtil.ETH_CHAIN_ID)).toBe(
+        'https://api2.metaswap.codefi.network/networks/1/token',
+      );
+
+      expect(
+        swapsUtil.getTokenMetadataURL(swapsUtil.SWAPS_TESTNET_CHAIN_ID),
+      ).toBe('https://api2.metaswap-dev.codefi.network/networks/1/token');
+
+      expect(swapsUtil.getTokenMetadataURL(swapsUtil.BSC_CHAIN_ID)).toBe(
+        'https://api2.metaswap.codefi.network/networks/56/token',
+      );
+
+      expect(swapsUtil.getTokenMetadataURL(swapsUtil.POLYGON_CHAIN_ID)).toBe(
+        'https://api2.metaswap.codefi.network/networks/137/token',
+      );
     });
   });
 

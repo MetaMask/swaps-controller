@@ -95,6 +95,8 @@ export const getBaseApiURL = function (type: APIType, chainId: string): string {
       return `${apiBaseUrl}/networks/${apiChainId}/trades`;
     case APIType.TOKENS:
       return `${apiBaseUrl}/networks/${apiChainId}/tokens`;
+    case APIType.TOKEN:
+      return `${apiBaseUrl}/networks/${apiChainId}/token`;
     case APIType.TOP_ASSETS:
       return `${apiBaseUrl}/networks/${apiChainId}/topAssets`;
     case APIType.FEATURE_FLAG:
@@ -107,6 +109,10 @@ export const getBaseApiURL = function (type: APIType, chainId: string): string {
       throw new Error('getBaseApiURL requires an api call type');
   }
 };
+
+export function getTokenMetadataURL(chainId: string): string {
+  return getBaseApiURL(APIType.TOKEN, chainId);
+}
 
 export async function fetchTradesInfo(
   {
