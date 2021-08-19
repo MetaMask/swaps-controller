@@ -95,6 +95,8 @@ export const getBaseApiURL = function (type: APIType, chainId: string): string {
       return `${apiBaseUrl}/networks/${apiChainId}/trades`;
     case APIType.TOKENS:
       return `${apiBaseUrl}/networks/${apiChainId}/tokens`;
+    case APIType.TOKEN:
+      return `${apiBaseUrl}/networks/${apiChainId}/token`;
     case APIType.TOP_ASSETS:
       return `${apiBaseUrl}/networks/${apiChainId}/topAssets`;
     case APIType.FEATURE_FLAG:
@@ -107,6 +109,10 @@ export const getBaseApiURL = function (type: APIType, chainId: string): string {
       throw new Error('getBaseApiURL requires an api call type');
   }
 };
+
+export function getTokenMetadataURL(chainId: string): string {
+  return getBaseApiURL(APIType.TOKEN, chainId);
+}
 
 export async function fetchTradesInfo(
   {
@@ -305,6 +311,7 @@ export function getSwapsTokensReceived(
 
     return postBalanceMinusGas.minus(previousBalanceMinusGas).toString(16);
   }
+
   if (!receipt?.logs || receipt.status === '0x0') {
     return;
   }
@@ -515,6 +522,7 @@ export async function estimateGas(transaction: Transaction, ethQuery: any) {
   estimatedTransaction.data = !data
     ? data
     : /* istanbul ignore next */ addHexPrefix(data);
+
   // 3. If this is a contract address, safely estimate gas using RPC
   estimatedTransaction.value =
     typeof value === 'undefined' ? '0x0' : /* istanbul ignore next */ value;
