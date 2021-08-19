@@ -7,9 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [6.1.1]
-### Uncategorized
-- Standardize repository ([#74](https://github.com/MetaMask/swaps-controller/pull/74))
+### Fixed
 - Fix unwrapping by bypassing allowance check ([#76](https://github.com/MetaMask/swaps-controller/pull/76))
+- Fix polygon contract address constant ([#76](https://github.com/MetaMask/swaps-controller/pull/76))
 
 ## [6.1.0]
 ### Changed
