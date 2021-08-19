@@ -39,6 +39,7 @@ import {
   BSC_CHAIN_ID,
   SWAPS_TESTNET_CHAIN_ID,
   POLYGON_CHAIN_ID,
+  shouldEnableDirectWrapping,
 } from './swapsUtil';
 
 import {
@@ -663,14 +664,33 @@ export default class SwapsController extends BaseController<
         gas?: string;
       } | null = null;
 
-      if (fetchParams.sourceToken !== NATIVE_SWAPS_TOKEN_ADDRESS) {
+      const enableDirectWrappingParam = shouldEnableDirectWrapping(
+        chainId,
+        fetchParams.sourceToken,
+        fetchParams.destinationToken,
+      );
+
+      const quotesArray = Object.values(quotes);
+
+      const onlyContractQuote =
+        quotesArray.length === 1 && quotesArray[0].aggType === 'CONTRACT';
+
+      const enableDirectWrapping =
+        enableDirectWrappingParam && onlyContractQuote;
+
+      if (
+        fetchParams.sourceToken !== NATIVE_SWAPS_TOKEN_ADDRESS &&
+        !enableDirectWrapping
+      ) {
         const allowance = await this.getERC20Allowance(
           fetchParams.sourceToken,
           fetchParams.walletAddress,
         );
 
         if (Number(allowance) < fetchParams.sourceAmount) {
-          approvalTransaction = Object.values(quotes)[0].approvalNeeded;
+          approvalTransaction =
+            quotesArray.find((quote) => quote.approvalNeeded)?.approvalNeeded ||
+            null;
           if (!approvalTransaction) {
             throw new Error(SwapsError.SWAPS_ALLOWANCE_ERROR);
           }
