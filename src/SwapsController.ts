@@ -189,7 +189,7 @@ export default class SwapsController extends BaseController<
   SwapsConfig,
   SwapsState
 > {
-  private handle?: NodeJS.Timer | undefined;
+  private handle?: NodeJS.Timeout;
 
   private web3: any;
 
