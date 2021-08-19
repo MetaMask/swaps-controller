@@ -691,6 +691,7 @@ export default class SwapsController extends BaseController<
           approvalTransaction =
             quotesArray.find((quote) => quote.approvalNeeded)?.approvalNeeded ||
             null;
+
           if (!approvalTransaction) {
             throw new Error(SwapsError.SWAPS_ALLOWANCE_ERROR);
           }
