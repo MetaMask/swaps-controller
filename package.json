@@ -18,6 +18,7 @@
     "type": "git",
     "url": "https://github.com/MetaMask/swaps-controller.git"
   },
+  "license": "SEE LICENSE IN LICENSE",
   "scripts": {
     "setup": "yarn install && yarn allow-scripts",
     "test": "jest",
