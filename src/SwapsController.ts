@@ -792,7 +792,7 @@ export default class SwapsController extends BaseController<
         SWAPS_TESTNET_CHAIN_ID,
         POLYGON_CHAIN_ID,
       ],
-      clientId: '',
+      clientId: undefined,
     };
 
     this.defaultState = {
