@@ -110,7 +110,7 @@ function gweiDecToWEIBN(n: string): BN {
 }
 
 export interface SwapsConfig extends BaseConfig {
-  clientId: string;
+  clientId?: string;
   maxGasLimit: number;
   pollCountLimit: number;
   fetchAggregatorMetadataThreshold: number;
@@ -792,7 +792,7 @@ export default class SwapsController extends BaseController<
         SWAPS_TESTNET_CHAIN_ID,
         POLYGON_CHAIN_ID,
       ],
-      clientId: 'mobile',
+      clientId: '',
     };
 
     this.defaultState = {
