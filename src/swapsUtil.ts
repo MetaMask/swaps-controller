@@ -51,6 +51,14 @@ export enum SwapsError {
 }
 
 // Functions
+function getClientIdHeader(clientId?: string) {
+  if (!clientId) {
+    return undefined;
+  }
+  return {
+    'X-Client-Id': clientId,
+  };
+}
 
 export function getNativeSwapsToken(chainId: string): SwapsToken {
   return SWAPS_NATIVE_TOKEN_OBJECTS[chainId];
@@ -150,7 +158,11 @@ export async function fetchTradesInfo(
 
   const tradesResponse = await timeoutFetch(
     tradeURL,
-    { method: 'GET', signal: abortSignal },
+    {
+      method: 'GET',
+      signal: abortSignal,
+      headers: getClientIdHeader(clientId),
+    },
     15000,
   );
   const trades = (await tradesResponse.json()) as Quote[];
@@ -187,9 +199,15 @@ export async function fetchTradesInfo(
   return newQuotes;
 }
 
-export async function fetchTokens(chainId: string): Promise<SwapsToken[]> {
+export async function fetchTokens(
+  chainId: string,
+  clientId?: string,
+): Promise<SwapsToken[]> {
   const tokenUrl = getBaseApiURL(APIType.TOKENS, chainId);
-  const tokens: SwapsToken[] = await handleFetch(tokenUrl, { method: 'GET' });
+  const tokens: SwapsToken[] = await handleFetch(tokenUrl, {
+    method: 'GET',
+    headers: getClientIdHeader(clientId),
+  });
   const filteredTokens = tokens.filter((token) => {
     return token.address !== NATIVE_SWAPS_TOKEN_ADDRESS;
   });
@@ -197,7 +215,10 @@ export async function fetchTokens(chainId: string): Promise<SwapsToken[]> {
   return filteredTokens;
 }
 
-export async function fetchAggregatorMetadata(chainId: string) {
+export async function fetchAggregatorMetadata(
+  chainId: string,
+  clientId?: string,
+) {
   const aggregatorMetadataUrl = getBaseApiURL(
     APIType.AGGREGATOR_METADATA,
     chainId,
@@ -206,25 +227,31 @@ export async function fetchAggregatorMetadata(chainId: string) {
     [key: string]: APIAggregatorMetadata;
   } = await handleFetch(aggregatorMetadataUrl, {
     method: 'GET',
+    headers: getClientIdHeader(clientId),
   });
   return aggregators;
 }
 
-export async function fetchTopAssets(chainId: string): Promise<SwapsAsset[]> {
+export async function fetchTopAssets(
+  chainId: string,
+  clientId?: string,
+): Promise<SwapsAsset[]> {
   const topAssetsUrl = getBaseApiURL(APIType.TOP_ASSETS, chainId);
   const response: SwapsAsset[] = await handleFetch(topAssetsUrl, {
     method: 'GET',
+    headers: getClientIdHeader(clientId),
   });
   return response;
 }
 
 export async function fetchSwapsFeatureLiveness(
   chainId: string,
+  clientId?: string,
 ): Promise<boolean> {
   try {
     const status = await handleFetch(
       getBaseApiURL(APIType.FEATURE_FLAG, chainId),
-      { method: 'GET' },
+      { method: 'GET', headers: getClientIdHeader(clientId) },
     );
     const networkName = CHAIN_ID_TO_NAME_MAP[chainId];
     return status[networkName];
@@ -240,6 +267,7 @@ export async function fetchSwapsFeatureLiveness(
  */
 export async function fetchGasPrices(
   chainId: string,
+  clientId?: string,
 ): Promise<{
   safeGasPrice: string;
   proposedGasPrice: string;
@@ -249,6 +277,7 @@ export async function fetchGasPrices(
     getBaseApiURL(APIType.GAS_PRICES, chainId),
     {
       method: 'GET',
+      headers: getClientIdHeader(clientId),
     },
   );
   return {
