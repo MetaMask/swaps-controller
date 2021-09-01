@@ -233,7 +233,10 @@ export default class SwapsController extends BaseController<
     }
 
     try {
-      const { proposedGasPrice } = await fetchGasPrices(this.config.chainId);
+      const { proposedGasPrice } = await fetchGasPrices(
+        this.config.chainId,
+        this.config.clientId,
+      );
       return { gasPrice: proposedGasPrice };
     } catch (e) {
       //
@@ -930,13 +933,13 @@ export default class SwapsController extends BaseController<
   }
 
   async fetchTokenWithCache() {
-    const { chainId, fetchTokensThreshold } = this.config;
+    const { chainId, clientId, fetchTokensThreshold } = this.config;
     const { tokens, tokensLastFetched } = this.state;
 
     if (!tokens || fetchTokensThreshold < Date.now() - tokensLastFetched) {
       const releaseLock = await this.mutex.acquire();
       try {
-        const newTokens = await fetchTokens(chainId);
+        const newTokens = await fetchTokens(chainId, clientId);
         const data = { tokens: newTokens, tokensLastFetched: Date.now() };
         this.update({
           ...data,
@@ -955,7 +958,7 @@ export default class SwapsController extends BaseController<
   }
 
   async fetchTopAssetsWithCache() {
-    const { chainId, fetchTopAssetsThreshold } = this.config;
+    const { chainId, clientId, fetchTopAssetsThreshold } = this.config;
     const { topAssets, topAssetsLastFetched } = this.state;
 
     if (
@@ -964,7 +967,7 @@ export default class SwapsController extends BaseController<
     ) {
       const releaseLock = await this.mutex.acquire();
       try {
-        const newTopAssets = await fetchTopAssets(chainId);
+        const newTopAssets = await fetchTopAssets(chainId, clientId);
         const data = {
           topAssets: newTopAssets,
           topAssetsLastFetched: Date.now(),
@@ -986,7 +989,7 @@ export default class SwapsController extends BaseController<
   }
 
   async fetchAggregatorMetadataWithCache() {
-    const { chainId, fetchAggregatorMetadataThreshold } = this.config;
+    const { chainId, clientId, fetchAggregatorMetadataThreshold } = this.config;
     const { aggregatorMetadata, aggregatorMetadataLastFetched } = this.state;
 
     if (
@@ -996,7 +999,10 @@ export default class SwapsController extends BaseController<
     ) {
       const releaseLock = await this.mutex.acquire();
       try {
-        const newAggregatorMetada = await fetchAggregatorMetadata(chainId);
+        const newAggregatorMetada = await fetchAggregatorMetadata(
+          chainId,
+          clientId,
+        );
         const data = {
           aggregatorMetadata: newAggregatorMetada,
           aggregatorMetadataLastFetched: Date.now(),
