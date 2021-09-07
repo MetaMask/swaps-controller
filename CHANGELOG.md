@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.3.0]
+### Added
+- License file ([#83](https://github.com/MetaMask/swaps-controller/pull/83))
+
+### Changed
+- Set `clientId` on HTTP request headers ([#84](https://github.com/MetaMask/swaps-controller/pull/84))
+
 ## [6.2.0]
 ### Added
 - Add Token metadata API endpoint and function ([#80](https://github.com/MetaMask/swaps-controller/pull/80))
@@ -21,7 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use standalone gas API endpoint ([#70](https://github.com/MetaMask/swaps-controller/pull/70))
 - Bump @metamask/controllers from 14.1.0 to 14.2.0 ([#69](https://github.com/MetaMask/swaps-controller/pull/69))
 
-[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v6.2.0...HEAD
+[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v6.3.0...HEAD
+[6.3.0]: https://github.com/MetaMask/swaps-controller/compare/v6.2.0...v6.3.0
 [6.2.0]: https://github.com/MetaMask/swaps-controller/compare/v6.1.1...v6.2.0
 [6.1.1]: https://github.com/MetaMask/swaps-controller/compare/v6.1.0...v6.1.1
 [6.1.0]: https://github.com/MetaMask/swaps-controller/releases/tag/v6.1.0
