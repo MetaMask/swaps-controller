@@ -8,12 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [6.3.0]
 ### Added
-- Bump @metamask/controllers from 14.2.0 to 15.0.1 ([#87](https://github.com/MetaMask/swaps-controller/pull/87))
-- Add clientId to header on every request ([#84](https://github.com/MetaMask/swaps-controller/pull/84))
-- Bump tar from 6.1.8 to 6.1.11 ([#86](https://github.com/MetaMask/swaps-controller/pull/86))
-- Add license ([#83](https://github.com/MetaMask/swaps-controller/pull/83))
-- Add shouldEnableDirectWrapping tests ([#75](https://github.com/MetaMask/swaps-controller/pull/75))
-- Add codefi codeowners ([#82](https://github.com/MetaMask/swaps-controller/pull/82))
+- License file ([#83](https://github.com/MetaMask/swaps-controller/pull/83))
+
+### Changed
+- Set `clientId` on HTTP request headers ([#84](https://github.com/MetaMask/swaps-controller/pull/84))
 
 ## [6.2.0]
 ### Added
