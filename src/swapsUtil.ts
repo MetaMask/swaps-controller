@@ -26,6 +26,8 @@ import {
   APIFetchQuotesParams,
   QuoteValues,
   TransactionReceipt,
+  NetworkFeatureFlags,
+  NetworksFeatureStatus,
 } from './swapsInterfaces';
 
 export * from './constants';
@@ -247,17 +249,13 @@ export async function fetchTopAssets(
 export async function fetchSwapsFeatureLiveness(
   chainId: string,
   clientId?: string,
-): Promise<boolean> {
-  try {
-    const status = await handleFetch(
-      getBaseApiURL(APIType.FEATURE_FLAG, chainId),
-      { method: 'GET', headers: getClientIdHeader(clientId) },
-    );
-    const networkName = CHAIN_ID_TO_NAME_MAP[chainId];
-    return status[networkName];
-  } catch (err) {
-    return false;
-  }
+): Promise<NetworkFeatureFlags | undefined> {
+  const status: NetworksFeatureStatus = await handleFetch(
+    getBaseApiURL(APIType.FEATURE_FLAG, chainId),
+    { method: 'GET', headers: getClientIdHeader(clientId) },
+  );
+  const networkName = CHAIN_ID_TO_NAME_MAP[chainId];
+  return status[networkName];
 }
 
 /**

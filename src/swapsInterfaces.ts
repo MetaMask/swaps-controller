@@ -23,6 +23,19 @@ export interface SwapsToken extends SwapsAsset {
   iconUrl?: string;
 }
 
+export interface NetworkFeatureFlags {
+  // eslint-disable-next-line camelcase
+  mobile_active: boolean;
+  // eslint-disable-next-line camelcase
+  extension_active: boolean;
+  // eslint-disable-next-line camelcase
+  fallback_to_v1?: boolean;
+}
+
+export interface NetworksFeatureStatus {
+  [network: string]: NetworkFeatureFlags;
+}
+
 /**
  * Metadata needed to fetch quotes
  *

@@ -493,16 +493,49 @@ describe('SwapsUtil', () => {
       expect(featureLiveness).toBeInstanceOf(Object);
     });
 
-    it('should return false on exception', async () => {
+    it('should return undefined on unsupported networks', async () => {
       getOnce(
         `https://api2.metaswap.codefi.network/featureFlags`,
-        () => {
-          throw new Error();
-        },
+        () => ({
+          body: JSON.stringify({
+            bsc: {
+              mobile_active: false,
+              extension_active: true,
+              fallback_to_v1: true,
+            },
+            ethereum: {
+              mobile_active: false,
+              extension_active: true,
+              fallback_to_v1: true,
+            },
+            polygon: {
+              mobile_active: false,
+              extension_active: true,
+              fallback_to_v1: false,
+            },
+          }),
+        }),
         { overwriteRoutes: true, method: 'GET' },
       );
-      const featureLiveness = await swapsUtil.fetchSwapsFeatureLiveness('1');
-      expect(featureLiveness).toBe(false);
+      const featureLiveness = await swapsUtil.fetchSwapsFeatureLiveness('321');
+      expect(featureLiveness).toBeUndefined();
+    });
+
+    it('should throw on exception', async () => {
+      getOnce(
+        `https://api2.metaswap.codefi.network/featureFlags`,
+        {
+          throws: new Error('this is an error'),
+        },
+        {
+          overwriteRoutes: true,
+          method: 'GET',
+        },
+      );
+
+      await expect(() =>
+        swapsUtil.fetchSwapsFeatureLiveness('1'),
+      ).rejects.toThrow();
     });
   });
 
