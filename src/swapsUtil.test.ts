@@ -200,23 +200,23 @@ describe('SwapsUtil', () => {
   describe('getTokenMetadataURL', () => {
     it('should work', () => {
       expect(swapsUtil.getTokenMetadataURL('1')).toBe(
-        'https://api2.metaswap.codefi.network/networks/1/token',
+        'https://swap.metaswap.codefi.network/networks/1/token',
       );
 
       expect(swapsUtil.getTokenMetadataURL(swapsUtil.ETH_CHAIN_ID)).toBe(
-        'https://api2.metaswap.codefi.network/networks/1/token',
+        'https://swap.metaswap.codefi.network/networks/1/token',
       );
 
       expect(
         swapsUtil.getTokenMetadataURL(swapsUtil.SWAPS_TESTNET_CHAIN_ID),
-      ).toBe('https://api2.metaswap-dev.codefi.network/networks/1/token');
+      ).toBe('https://swap.metaswap-dev.codefi.network/networks/1/token');
 
       expect(swapsUtil.getTokenMetadataURL(swapsUtil.BSC_CHAIN_ID)).toBe(
-        'https://api2.metaswap.codefi.network/networks/56/token',
+        'https://swap.metaswap.codefi.network/networks/56/token',
       );
 
       expect(swapsUtil.getTokenMetadataURL(swapsUtil.POLYGON_CHAIN_ID)).toBe(
-        'https://api2.metaswap.codefi.network/networks/137/token',
+        'https://swap.metaswap.codefi.network/networks/137/token',
       );
     });
   });
@@ -224,7 +224,7 @@ describe('SwapsUtil', () => {
   describe('fetchTradesInfo', () => {
     it('should work', async () => {
       getOnce(
-        `https://api2.metaswap.codefi.network/networks/1/trades?destinationToken=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&sourceToken=0x6b175474e89094c44da98b954eedeac495271d0f&sourceAmount=1000000000000000000&slippage=3&timeout=10000&walletAddress=0xB0dA5965D43369968574D399dBe6374683773a65`,
+        `https://swap.metaswap.codefi.network/networks/1/trades?destinationToken=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&sourceToken=0x6b175474e89094c44da98b954eedeac495271d0f&sourceAmount=1000000000000000000&slippage=3&timeout=10000&walletAddress=0xB0dA5965D43369968574D399dBe6374683773a65`,
         () => ({
           body: JSON.stringify(API_TRADES),
         }),
@@ -232,7 +232,7 @@ describe('SwapsUtil', () => {
       );
 
       getOnce(
-        `https://api2.metaswap.codefi.network/networks/1/trades?destinationToken=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&sourceToken=0x6b175474e89094c44da98b954eedeac495271d0f&sourceAmount=1000000000000000000&slippage=3&timeout=10000&walletAddress=0xB0dA5965D43369968574D399dBe6374683773a65&clientId=mobile`,
+        `https://swap.metaswap.codefi.network/networks/1/trades?destinationToken=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&sourceToken=0x6b175474e89094c44da98b954eedeac495271d0f&sourceAmount=1000000000000000000&slippage=3&timeout=10000&walletAddress=0xB0dA5965D43369968574D399dBe6374683773a65&clientId=mobile`,
         () => ({
           body: JSON.stringify(API_TRADES),
         }),
@@ -333,7 +333,7 @@ describe('SwapsUtil', () => {
 
     it('should work for direct wrapping', async () => {
       getOnce(
-        `https://api2.metaswap.codefi.network/networks/1/trades?destinationToken=0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2&sourceToken=0x0000000000000000000000000000000000000000&sourceAmount=1000000000000000000&slippage=3&timeout=10000&walletAddress=0xB0dA5965D43369968574D399dBe6374683773a65&enableDirectWrapping=true`,
+        `https://swap.metaswap.codefi.network/networks/1/trades?destinationToken=0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2&sourceToken=0x0000000000000000000000000000000000000000&sourceAmount=1000000000000000000&slippage=3&timeout=10000&walletAddress=0xB0dA5965D43369968574D399dBe6374683773a65&enableDirectWrapping=true`,
         () => ({
           body: JSON.stringify(API_TRADES),
         }),
@@ -422,7 +422,7 @@ describe('SwapsUtil', () => {
   describe('fetchTokens', () => {
     it('should work', async () => {
       getOnce(
-        `https://api2.metaswap.codefi.network/networks/1/tokens`,
+        `https://swap.metaswap.codefi.network/networks/1/tokens`,
         () => ({
           body: JSON.stringify(API_TOKENS.concat([FAKE_SWAPS_TOKEN])),
         }),
@@ -438,7 +438,7 @@ describe('SwapsUtil', () => {
   describe('fetchAggregatorMetadata', () => {
     it('should work', async () => {
       getOnce(
-        `https://api2.metaswap.codefi.network/networks/1/aggregatorMetadata`,
+        `https://swap.metaswap.codefi.network/networks/1/aggregatorMetadata`,
         () => ({
           body: JSON.stringify(API_TRADES),
         }),
@@ -452,7 +452,7 @@ describe('SwapsUtil', () => {
   describe('fetchTopAssets', () => {
     it('should work', async () => {
       getOnce(
-        `https://api2.metaswap.codefi.network/networks/1/topAssets`,
+        `https://swap.metaswap.codefi.network/networks/1/topAssets`,
         () => ({
           body: JSON.stringify(API_TRADES),
         }),
@@ -467,7 +467,7 @@ describe('SwapsUtil', () => {
   describe('fetchSwapsFeatureLiveness', () => {
     it('should work', async () => {
       getOnce(
-        `https://api2.metaswap.codefi.network/featureFlags`,
+        `https://swap.metaswap.codefi.network/featureFlags`,
         () => ({
           body: JSON.stringify({
             bsc: {
@@ -495,7 +495,7 @@ describe('SwapsUtil', () => {
 
     it('should return undefined on unsupported networks', async () => {
       getOnce(
-        `https://api2.metaswap.codefi.network/featureFlags`,
+        `https://swap.metaswap.codefi.network/featureFlags`,
         () => ({
           body: JSON.stringify({
             bsc: {
@@ -523,7 +523,7 @@ describe('SwapsUtil', () => {
 
     it('should throw on exception', async () => {
       getOnce(
-        `https://api2.metaswap.codefi.network/featureFlags`,
+        `https://swap.metaswap.codefi.network/featureFlags`,
         {
           throws: new Error('this is an error'),
         },
@@ -542,7 +542,7 @@ describe('SwapsUtil', () => {
   describe('fetchGasPrices', () => {
     it('should work', async () => {
       getOnce(
-        `https://gas-api.metaswap.codefi.network/networks/1/gasPrices`,
+        `https://gas.metaswap.codefi.network/networks/1/gasPrices`,
         () => ({
           body: JSON.stringify({
             SafeGasPrice: '1',
@@ -554,7 +554,7 @@ describe('SwapsUtil', () => {
       );
 
       getOnce(
-        `https://gas-api.metaswap.codefi.network/networks/56/gasPrices`,
+        `https://gas.metaswap.codefi.network/networks/56/gasPrices`,
         () => ({
           body: JSON.stringify({
             SafeGasPrice: '4',
