@@ -934,19 +934,19 @@
     semver "^7.3.5"
     yargs "^17.0.1"
 
-"@metamask/contract-metadata@^1.30.0":
-  version "1.30.0"
-  resolved "https://registry.yarnpkg.com/@metamask/contract-metadata/-/contract-metadata-1.30.0.tgz#fa8e1b0c3e7aaa963986088f691fb553ffbe3904"
-  integrity sha512-b2usYW/ptQYnE6zhUmr4T+nvOAQJK5ABcpKudyQANpy4K099elpv4aN0WcrcOcwV99NHOdMzFP3ZuG0HoAyOBQ==
+"@metamask/contract-metadata@^1.31.0":
+  version "1.31.0"
+  resolved "https://registry.yarnpkg.com/@metamask/contract-metadata/-/contract-metadata-1.31.0.tgz#9e3e46de7a955ea1ca61f7db20d9a17b5e91d3d0"
+  integrity sha512-4FBJkg/vDiYp/thIiZknxrJ0lfsj2eWIPenwlNZmoqOhoL4VqhK5eKWxi+EuGMvv9taP+QBRk6Key7wC1uL78A==
 
-"@metamask/controllers@^20.0.0":
-  version "20.0.0"
-  resolved "https://registry.yarnpkg.com/@metamask/controllers/-/controllers-20.0.0.tgz#5c3fd293e1c8d3de964bbbfadbd73d637d83a1a8"
-  integrity sha512-H7ql719730+KCFRvAxWVKe3PvEabKgA9b+0+k4/nRA2Xvb7Pe3BlQ4lgt44wOFKDqdWyvwvH7mgNTAhDzBu4OA==
+"@metamask/controllers@^22.0.0":
+  version "22.0.0"
+  resolved "https://registry.yarnpkg.com/@metamask/controllers/-/controllers-22.0.0.tgz#54f172be2ae7e32ce47536a1ff06e35cc6ee3c80"
+  integrity sha512-5m4aT+B87IOAvvlbfgqI5n7Pd6VSQUjHBfm34qMBBL5jjUFUSfK6BL0h6ef2jxTE2VCuyBibQ8A7sETQ1+Hd+Q==
   dependencies:
     "@ethereumjs/common" "^2.3.1"
     "@ethereumjs/tx" "^3.2.1"
-    "@metamask/contract-metadata" "^1.30.0"
+    "@metamask/contract-metadata" "^1.31.0"
     "@types/uuid" "^8.3.0"
     abort-controller "^3.0.0"
     async-mutex "^0.2.6"
@@ -965,11 +965,12 @@
     ethjs-unit "^0.1.6"
     ethjs-util "^0.1.6"
     human-standard-collectible-abi "^1.0.2"
-    human-standard-multi-collectible-abi "^1.0.2"
+    human-standard-multi-collectible-abi "^1.0.4"
     human-standard-token-abi "^2.0.0"
     immer "^9.0.6"
     isomorphic-fetch "^3.0.0"
     jsonschema "^1.2.4"
+    multiformats "^9.5.2"
     nanoid "^3.1.12"
     punycode "^2.1.1"
     single-call-balance-checker-abi "^1.0.0"
@@ -3796,7 +3797,7 @@ human-standard-collectible-abi@^1.0.2:
   resolved "https://registry.yarnpkg.com/human-standard-collectible-abi/-/human-standard-collectible-abi-1.0.2.tgz#077bae9ed1b0b0b82bc46932104b4b499c941aa0"
   integrity sha512-nD3ITUuSAIBgkaCm9J2BGwlHL8iEzFjJfTleDAC5Wi8RBJEXXhxV0JeJjd95o+rTwf98uTE5MW+VoBKOIYQh0g==
 
-human-standard-multi-collectible-abi@^1.0.2:
+human-standard-multi-collectible-abi@^1.0.4:
   version "1.0.4"
   resolved "https://registry.yarnpkg.com/human-standard-multi-collectible-abi/-/human-standard-multi-collectible-abi-1.0.4.tgz#981625bc1a6bea5fef90567f9e12c11581fac497"
   integrity sha512-ylR9JDXClDJAxWD/QJxsjXJJdLTUmhipTquMAgrfybXL3qX3x3P/vmKg92A7qFu7SqVOf2hyv5dA8vX0j+0Thg==
@@ -5110,6 +5111,11 @@ ms@2.1.2:
   version "2.1.2"
   resolved "https://registry.yarnpkg.com/ms/-/ms-2.1.2.tgz#d09d1f357b443f493382a8eb3ccd183872ae6009"
   integrity sha512-sGkPx+VjMtmA6MX27oA4FBFELFCZZ4S4XqeGOXCv68tT+jb3vk/RyaKWP0PTKyWtmLSM0b+adUTEvbs1PEaH2w==
+
+multiformats@^9.5.2:
+  version "9.5.4"
+  resolved "https://registry.yarnpkg.com/multiformats/-/multiformats-9.5.4.tgz#bf60eee834f7bcbd3a61b1c61d7e8d6b158a0f63"
+  integrity sha512-MFT8e8BOLX7OZKfSBGm13FwYvJVI6MEcZ7hujUCpyJwvYyrC1anul50A0Ee74GdeJ77aYTO6YU1vO+oF8NqSIw==
 
 nanoid@^3.1.12:
   version "3.1.22"
