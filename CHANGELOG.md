@@ -7,8 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [6.5.0]
-### Uncategorized
+### Added
 - Add Avalanche constants ([#111](https://github.com/MetaMask/swaps-controller/pull/111))
+
+### Changed
 - Bump @metamask/controllers from 22.0.0 to 25.1.0 ([#109](https://github.com/MetaMask/swaps-controller/pull/109))
 
 ## [6.4.0]
