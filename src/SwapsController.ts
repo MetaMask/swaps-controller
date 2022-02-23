@@ -39,6 +39,7 @@ import {
   BSC_CHAIN_ID,
   SWAPS_TESTNET_CHAIN_ID,
   POLYGON_CHAIN_ID,
+  AVALANCHE_CHAIN_ID,
   shouldEnableDirectWrapping,
 } from './swapsUtil';
 
@@ -791,6 +792,7 @@ export default class SwapsController extends BaseController<
         BSC_CHAIN_ID,
         SWAPS_TESTNET_CHAIN_ID,
         POLYGON_CHAIN_ID,
+        AVALANCHE_CHAIN_ID,
       ],
       clientId: undefined,
     };
@@ -933,8 +935,17 @@ export default class SwapsController extends BaseController<
   }
 
   async fetchTokenWithCache() {
-    const { chainId, clientId, fetchTokensThreshold } = this.config;
+    const {
+      chainId,
+      clientId,
+      fetchTokensThreshold,
+      supportedChainIds,
+    } = this.config;
     const { tokens, tokensLastFetched } = this.state;
+
+    if (!supportedChainIds.includes(chainId)) {
+      return;
+    }
 
     if (!tokens || fetchTokensThreshold < Date.now() - tokensLastFetched) {
       const releaseLock = await this.mutex.acquire();
@@ -958,8 +969,17 @@ export default class SwapsController extends BaseController<
   }
 
   async fetchTopAssetsWithCache() {
-    const { chainId, clientId, fetchTopAssetsThreshold } = this.config;
+    const {
+      chainId,
+      clientId,
+      fetchTopAssetsThreshold,
+      supportedChainIds,
+    } = this.config;
     const { topAssets, topAssetsLastFetched } = this.state;
+
+    if (!supportedChainIds.includes(chainId)) {
+      return;
+    }
 
     if (
       !topAssets ||
@@ -989,8 +1009,17 @@ export default class SwapsController extends BaseController<
   }
 
   async fetchAggregatorMetadataWithCache() {
-    const { chainId, clientId, fetchAggregatorMetadataThreshold } = this.config;
+    const {
+      chainId,
+      clientId,
+      fetchAggregatorMetadataThreshold,
+      supportedChainIds,
+    } = this.config;
     const { aggregatorMetadata, aggregatorMetadataLastFetched } = this.state;
+
+    if (!supportedChainIds.includes(chainId)) {
+      return;
+    }
 
     if (
       !aggregatorMetadata ||
