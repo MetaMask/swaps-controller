@@ -7,9 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [6.6.0]
-### Uncategorized
+### Added
+- Update default supported chains and add check for supported chainId on fetch methods ([#113](https://github.com/MetaMask/swaps-controller/pull/113))
+
+### Changed
 - Bump @metamask/controllers from 25.1.0 to 26.0.0 ([#114](https://github.com/MetaMask/swaps-controller/pull/114))
-- Add check for supported chainId on fetch methods ([#113](https://github.com/MetaMask/swaps-controller/pull/113))
 
 ## [6.5.0]
 ### Added
