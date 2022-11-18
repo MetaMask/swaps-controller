@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.7.0]
+### Uncategorized
+- Add support for new networks ([#141](https://github.com/MetaMask/swaps-controller/pull/141))
+- Bump minimist from 1.2.5 to 1.2.6 ([#118](https://github.com/MetaMask/swaps-controller/pull/118))
+
 ## [6.6.0]
 ### Added
 - Update default supported chains and add check for supported chainId on fetch methods ([#113](https://github.com/MetaMask/swaps-controller/pull/113))
@@ -49,7 +54,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use standalone gas API endpoint ([#70](https://github.com/MetaMask/swaps-controller/pull/70))
 - Bump @metamask/controllers from 14.1.0 to 14.2.0 ([#69](https://github.com/MetaMask/swaps-controller/pull/69))
 
-[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v6.6.0...HEAD
+[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v6.7.0...HEAD
+[6.7.0]: https://github.com/MetaMask/swaps-controller/compare/v6.6.0...v6.7.0
 [6.6.0]: https://github.com/MetaMask/swaps-controller/compare/v6.5.0...v6.6.0
 [6.5.0]: https://github.com/MetaMask/swaps-controller/compare/v6.4.0...v6.5.0
 [6.4.0]: https://github.com/MetaMask/swaps-controller/compare/v6.3.0...v6.4.0
