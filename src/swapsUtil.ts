@@ -169,16 +169,8 @@ export async function fetchTradesInfo(
     15000,
   );
   const trades = (await tradesResponse.json()) as Quote[];
-  console.log('-------------------------trades------------------------------');
-  console.log(trades);
-  console.log('-------------------------chainId------------------------------');
-  console.log(chainId);
   const newQuotes = trades.reduce(
     (aggIdTradeMap: { [key: string]: Quote }, quote: Quote) => {
-      console.log(
-        '-------------------------isValidContractAddress(chainId, quote.trade?.to)------------------------------',
-      );
-      console.log(isValidContractAddress(chainId, quote.trade?.to));
       if (
         !quote.error &&
         quote.trade &&

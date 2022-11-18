@@ -656,10 +656,6 @@ export default class SwapsController extends BaseController<
         chainId,
         clientId,
       );
-      console.log(
-        '-------------------------quotes------------------------------',
-      );
-      console.log(quotes);
 
       if (Object.values(quotes).length === 0) {
         throw new Error(SwapsError.QUOTES_NOT_AVAILABLE_ERROR);
