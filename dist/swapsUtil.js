@@ -51,7 +51,7 @@ function isValidContractAddress(chainId, contract) {
     if (!contract || !constants_1.ALLOWED_CONTRACT_ADDRESSES[chainId]) {
         return false;
     }
-    return constants_1.ALLOWED_CONTRACT_ADDRESSES[chainId].some((allowedContract) => contract.toLowerCase() === allowedContract);
+    return constants_1.ALLOWED_CONTRACT_ADDRESSES[chainId].some((allowedContract) => contract.toLowerCase() === allowedContract.toLowerCase());
 }
 exports.isValidContractAddress = isValidContractAddress;
 function shouldEnableDirectWrapping(chainId, sourceToken, destinationToken) {
