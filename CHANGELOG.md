@@ -7,8 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [6.7.0]
-### Uncategorized
-- Add support for new networks ([#141](https://github.com/MetaMask/swaps-controller/pull/141))
+### Added
+- Add support for new networks - Optimism and Arbitrum ([#141](https://github.com/MetaMask/swaps-controller/pull/141))
+
+### Changed
 - Bump minimist from 1.2.5 to 1.2.6 ([#118](https://github.com/MetaMask/swaps-controller/pull/118))
 
 ## [6.6.0]
