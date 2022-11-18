@@ -78,7 +78,8 @@ export function isValidContractAddress(
     return false;
   }
   return ALLOWED_CONTRACT_ADDRESSES[chainId].some(
-    (allowedContract) => contract.toLowerCase() === allowedContract,
+    (allowedContract) =>
+      contract.toLowerCase() === allowedContract.toLowerCase(),
   );
 }
 
