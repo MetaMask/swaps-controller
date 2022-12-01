@@ -94,8 +94,8 @@ export function shouldEnableDirectWrapping(
   const nativeTokenLowerCase = SWAPS_NATIVE_TOKEN_OBJECTS[
     chainId
   ].address?.toLowerCase();
-  const sourceTokenLowerCase = sourceToken.toLowerCase();
-  const destinationTokenLowerCase = destinationToken.toLowerCase();
+  const sourceTokenLowerCase = sourceToken?.toLowerCase();
+  const destinationTokenLowerCase = destinationToken?.toLowerCase();
   return (
     (sourceTokenLowerCase === wrappedTokenLowerCase &&
       destinationTokenLowerCase === nativeTokenLowerCase) ||
