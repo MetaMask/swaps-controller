@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.7.2]
+### Uncategorized
+- Handle empty values for sourceToken and destinationToken ([#146](https://github.com/MetaMask/swaps-controller/pull/146))
+
 ## [6.7.1]
 ### Fixed
 - Change contract addresses for Arbitrum and Optimism to lowercase ([#144](https://github.com/MetaMask/swaps-controller/pull/144))
@@ -60,7 +64,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use standalone gas API endpoint ([#70](https://github.com/MetaMask/swaps-controller/pull/70))
 - Bump @metamask/controllers from 14.1.0 to 14.2.0 ([#69](https://github.com/MetaMask/swaps-controller/pull/69))
 
-[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v6.7.1...HEAD
+[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v6.7.2...HEAD
+[6.7.2]: https://github.com/MetaMask/swaps-controller/compare/v6.7.1...v6.7.2
 [6.7.1]: https://github.com/MetaMask/swaps-controller/compare/v6.7.0...v6.7.1
 [6.7.0]: https://github.com/MetaMask/swaps-controller/compare/v6.6.0...v6.7.0
 [6.6.0]: https://github.com/MetaMask/swaps-controller/compare/v6.5.0...v6.6.0
