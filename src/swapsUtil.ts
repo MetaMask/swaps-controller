@@ -88,11 +88,19 @@ export function shouldEnableDirectWrapping(
   sourceToken: string,
   destinationToken: string,
 ): boolean {
-  const wrappedToken = SWAPS_WRAPPED_TOKENS_ADDRESSES[chainId];
-  const nativeToken = SWAPS_NATIVE_TOKEN_OBJECTS[chainId].address;
+  const wrappedTokenLowerCase = SWAPS_WRAPPED_TOKENS_ADDRESSES[
+    chainId
+  ]?.toLowerCase();
+  const nativeTokenLowerCase = SWAPS_NATIVE_TOKEN_OBJECTS[
+    chainId
+  ].address?.toLowerCase();
+  const sourceTokenLowerCase = sourceToken.toLowerCase();
+  const destinationTokenLowerCase = destinationToken.toLowerCase();
   return (
-    (sourceToken === wrappedToken && destinationToken === nativeToken) ||
-    (sourceToken === nativeToken && destinationToken === wrappedToken)
+    (sourceTokenLowerCase === wrappedTokenLowerCase &&
+      destinationTokenLowerCase === nativeTokenLowerCase) ||
+    (sourceTokenLowerCase === nativeTokenLowerCase &&
+      destinationTokenLowerCase === wrappedTokenLowerCase)
   );
 }
 
