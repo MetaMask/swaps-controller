@@ -7,8 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [6.7.1]
-### Uncategorized
+### Fixed
 - Change contract addresses for Arbitrum and Optimism to lowercase ([#144](https://github.com/MetaMask/swaps-controller/pull/144))
+
+### Changed
 - Bump cross-fetch from 2.2.3 to 2.2.6 ([#123](https://github.com/MetaMask/swaps-controller/pull/123))
 - Bump minimatch from 3.0.4 to 3.1.2 ([#143](https://github.com/MetaMask/swaps-controller/pull/143))
 
