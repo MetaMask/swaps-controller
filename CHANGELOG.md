@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [6.7.2]
-### Uncategorized
+### Fixed
 - Handle empty values for sourceToken and destinationToken ([#146](https://github.com/MetaMask/swaps-controller/pull/146))
 
 ## [6.7.1]
