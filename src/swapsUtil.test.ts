@@ -764,6 +764,16 @@ describe('SwapsUtil', () => {
       ).toBe(true);
     });
 
+    it('returns true if swapping from ETH to WETH with uppercase contract address', () => {
+      expect(
+        swapsUtil.shouldEnableDirectWrapping(
+          swapsUtil.ETH_CHAIN_ID,
+          swapsUtil.SWAPS_NATIVE_TOKEN_OBJECTS[swapsUtil.ETH_CHAIN_ID]?.address,
+          '0xc02AAA39b223fe8d0a0e5c4f27ead9083c756CC2',
+        ),
+      ).toBe(true);
+    });
+
     it('returns false if swapping from ETH to a non-WETH token', () => {
       expect(
         swapsUtil.shouldEnableDirectWrapping(
