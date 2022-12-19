@@ -59,6 +59,7 @@ export default class SwapsController extends BaseController<SwapsConfig, SwapsSt
     private handle?;
     private web3;
     private ethQuery;
+    private eth;
     private pollCount;
     private mutex;
     private abortController?;

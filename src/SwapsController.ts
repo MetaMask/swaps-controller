@@ -17,6 +17,7 @@ import {
 import { AbortController } from 'abort-controller';
 import { BigNumber } from 'bignumber.js';
 import EthQuery from 'eth-query';
+import Eth from 'ethjs-query';
 import abiERC20 from 'human-standard-token-abi';
 import { Mutex } from 'async-mutex';
 import Web3 from 'web3';
@@ -196,6 +197,8 @@ export default class SwapsController extends BaseController<
   private web3: any;
 
   private ethQuery: any;
+
+  private eth: any;
 
   private pollCount = 0;
 
@@ -679,7 +682,7 @@ export default class SwapsController extends BaseController<
           Object.values(quotes).map(async (quote) => {
             if (quote.trade) {
               const multiLayerL1TradeFeeTotal = await this.fetchEstimatedMultiLayerL1Fee(
-                this.ethQuery,
+                this.eth,
                 {
                   txParams: quote.trade,
                   chainId,
@@ -887,6 +890,7 @@ export default class SwapsController extends BaseController<
   set provider(provider: any) {
     if (provider) {
       this.ethQuery = new EthQuery(provider);
+      this.eth = new Eth(provider);
       this.web3 = new Web3(provider);
     }
   }

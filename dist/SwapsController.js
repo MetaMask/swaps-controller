@@ -8,6 +8,7 @@ const controllers_1 = require("@metamask/controllers");
 const abort_controller_1 = require("abort-controller");
 const bignumber_js_1 = require("bignumber.js");
 const eth_query_1 = __importDefault(require("eth-query"));
+const ethjs_query_1 = __importDefault(require("ethjs-query"));
 const human_standard_token_abi_1 = __importDefault(require("human-standard-token-abi"));
 const async_mutex_1 = require("async-mutex");
 const web3_1 = __importDefault(require("web3"));
@@ -429,7 +430,7 @@ class SwapsController extends controllers_1.BaseController {
                 console.log('-------------------------fetchEstimatedMultiLayerL1Fee------------------------------');
                 await Promise.all(Object.values(quotes).map(async (quote) => {
                     if (quote.trade) {
-                        const multiLayerL1TradeFeeTotal = await this.fetchEstimatedMultiLayerL1Fee(this.ethQuery, {
+                        const multiLayerL1TradeFeeTotal = await this.fetchEstimatedMultiLayerL1Fee(this.eth, {
                             txParams: quote.trade,
                             chainId,
                         });
@@ -497,6 +498,7 @@ class SwapsController extends controllers_1.BaseController {
     set provider(provider) {
         if (provider) {
             this.ethQuery = new eth_query_1.default(provider);
+            this.eth = new ethjs_query_1.default(provider);
             this.web3 = new web3_1.default(provider);
         }
     }
