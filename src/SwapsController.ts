@@ -40,6 +40,7 @@ import {
   SWAPS_TESTNET_CHAIN_ID,
   POLYGON_CHAIN_ID,
   AVALANCHE_CHAIN_ID,
+  OPTIMISM_CHAIN_ID,
   shouldEnableDirectWrapping,
 } from './swapsUtil';
 
@@ -205,6 +206,14 @@ export default class SwapsController extends BaseController<
   private fetchGasFeeEstimates?: (
     options?: FetchGasFeeEstimateOptions,
   ) => Promise<GasFeeState | undefined>;
+
+  private fetchEstimatedMultiLayerL1Fee: (
+    eth: any,
+    options: {
+      txParams: any;
+      chainId: string;
+    },
+  ) => Promise<string | undefined>;
 
   /**
    * Fetch current gas price
@@ -661,6 +670,34 @@ export default class SwapsController extends BaseController<
         throw new Error(SwapsError.QUOTES_NOT_AVAILABLE_ERROR);
       }
 
+      if (chainId === OPTIMISM_CHAIN_ID && Object.values(quotes).length > 0) {
+        console.log(
+          '-------------------------fetchEstimatedMultiLayerL1Fee------------------------------',
+        );
+
+        await Promise.all(
+          Object.values(quotes).map(async (quote) => {
+            if (quote.trade) {
+              const multiLayerL1TradeFeeTotal = await this.fetchEstimatedMultiLayerL1Fee(
+                this.ethQuery,
+                {
+                  txParams: quote.trade,
+                  chainId,
+                },
+              );
+              // eslint-disable-next-line require-atomic-updates
+              quote.multiLayerL1TradeFeeTotal = multiLayerL1TradeFeeTotal;
+            }
+            return quote;
+          }),
+        );
+
+        console.log(
+          '-------------------------quotes------------------------------',
+        );
+        console.log(quotes);
+      }
+
       let approvalTransaction: {
         data?: string;
         from: string;
@@ -772,8 +809,10 @@ export default class SwapsController extends BaseController<
   constructor(
     {
       fetchGasFeeEstimates,
+      fetchEstimatedMultiLayerL1Fee,
     }: {
       fetchGasFeeEstimates?: () => Promise<GasFeeState | undefined>;
+      fetchEstimatedMultiLayerL1Fee: () => Promise<undefined>;
     },
     config?: Partial<SwapsConfig>,
     state?: Partial<SwapsState>,
@@ -841,6 +880,7 @@ export default class SwapsController extends BaseController<
     };
 
     this.fetchGasFeeEstimates = fetchGasFeeEstimates;
+    this.fetchEstimatedMultiLayerL1Fee = fetchEstimatedMultiLayerL1Fee;
     this.initialize();
   }
 
