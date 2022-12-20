@@ -192,7 +192,7 @@ class SwapsController extends controllers_1.BaseController {
     /* istanbul ignore next */
     calculateQuoteValues(quote, gasLimit, gasFeeEstimates, customGasFee) {
         const { destinationTokenInfo } = this.state.fetchParamsMetaData;
-        const { aggregator, averageGas, maxGas, destinationAmount = 0, fee: metaMaskFee, sourceAmount, sourceToken, trade, gasEstimateWithRefund, gasEstimate, gasMultiplier, approvalNeeded, destinationTokenRate, } = quote;
+        const { aggregator, averageGas, maxGas, destinationAmount = 0, fee: metaMaskFee, sourceAmount, sourceToken, trade, gasEstimateWithRefund, gasEstimate, gasMultiplier, approvalNeeded, destinationTokenRate, multiLayerL1TradeFeeTotal, } = quote;
         // trade gas
         const { tradeGasLimit, tradeMaxGasLimit } = swapsUtil_1.calculateGasLimits(Boolean(approvalNeeded), gasEstimateWithRefund, gasEstimate, averageGas, maxGas, gasMultiplier, gasLimit);
         let totalGasInWei;
@@ -203,6 +203,10 @@ class SwapsController extends controllers_1.BaseController {
                 : gasFeeEstimates.gasPrice;
             totalGasInWei = tradeGasLimit.times(gweiDecToWEIBN(gasPrice).toString(16), 16);
             maxTotalGasInWei = tradeMaxGasLimit.times(gweiDecToWEIBN(gasPrice).toString(16), 16);
+            if (multiLayerL1TradeFeeTotal) {
+                totalGasInWei = totalGasInWei.plus(multiLayerL1TradeFeeTotal, 16);
+                maxTotalGasInWei = maxTotalGasInWei.plus(multiLayerL1TradeFeeTotal, 16);
+            }
         }
         else {
             const estimatedBaseFee = (isCustomGasFee(customGasFee) && (customGasFee === null || customGasFee === void 0 ? void 0 : customGasFee.estimatedBaseFee)) ||
