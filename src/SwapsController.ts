@@ -295,6 +295,7 @@ export default class SwapsController extends BaseController<
       gasMultiplier,
       approvalNeeded,
       destinationTokenRate,
+      multiLayerL1TradeFeeTotal,
     } = quote;
 
     // trade gas
@@ -325,6 +326,11 @@ export default class SwapsController extends BaseController<
         gweiDecToWEIBN(gasPrice).toString(16),
         16,
       );
+
+      if (multiLayerL1TradeFeeTotal) {
+        totalGasInWei = totalGasInWei.plus(multiLayerL1TradeFeeTotal, 16);
+        maxTotalGasInWei = maxTotalGasInWei.plus(multiLayerL1TradeFeeTotal, 16);
+      }
     } else {
       const estimatedBaseFee =
         (isCustomGasFee(customGasFee) && customGasFee?.estimatedBaseFee) ||

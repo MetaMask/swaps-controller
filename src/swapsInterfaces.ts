@@ -157,7 +157,7 @@ export interface Quote {
   gasEstimateWithRefund: string | null;
   destinationTokenRate: number | null;
   sourceTokenRate: number | null;
-  multiLayerL1TradeFeeTotal: string | undefined;
+  multiLayerL1TradeFeeTotal: string;
 }
 
 /**
