@@ -255,6 +255,7 @@ jest.mock('web3', () =>
 describe('SwapsController', () => {
   /* Setup */
   let fetchGasFeeEstimates: jest.Mock;
+  let fetchEstimatedMultiLayerL1Fee: jest.Mock;
   let swapsController: SwapsController;
   let swapsUtilFetchTokens: jest.SpyInstance;
   let swapsUtilFetchTopAssets: jest.SpyInstance;
@@ -269,9 +270,12 @@ describe('SwapsController', () => {
       gasEstimateType: 'none',
     }));
 
+    fetchGasFeeEstimates = jest.fn();
+
     swapsController = new SwapsController(
       {
         fetchGasFeeEstimates,
+        fetchEstimatedMultiLayerL1Fee,
       },
       {
         pollCountLimit: POLL_COUNT_LIMIT,
@@ -379,12 +383,13 @@ describe('SwapsController', () => {
 
   describe('provider', () => {
     it('should create ethQuery and web3 when provider changes', () => {
+      const provider = { name: 'foo provider' };
       expect(swapsController.provider).not.toBeDefined();
       swapsController.configure({
-        provider: 'foo provider',
+        provider,
       });
-      expect(EthQuery).toHaveBeenLastCalledWith('foo provider');
-      expect(Web3).toHaveBeenLastCalledWith('foo provider');
+      expect(EthQuery).toHaveBeenLastCalledWith(provider);
+      expect(Web3).toHaveBeenLastCalledWith(provider);
     });
   });
 
