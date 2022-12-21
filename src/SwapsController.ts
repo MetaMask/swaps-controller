@@ -680,10 +680,7 @@ export default class SwapsController extends BaseController<
       }
 
       if (chainId === OPTIMISM_CHAIN_ID && Object.values(quotes).length > 0) {
-        console.log(
-          '-------------------------fetchEstimatedMultiLayerL1Fee------------------------------',
-        );
-
+        // Fetch an L1 fee for each quote on Optimism.
         await Promise.all(
           Object.values(quotes).map(async (quote) => {
             if (quote.trade) {
@@ -700,11 +697,6 @@ export default class SwapsController extends BaseController<
             return quote;
           }),
         );
-
-        console.log(
-          '-------------------------quotes------------------------------',
-        );
-        console.log(quotes);
       }
 
       let approvalTransaction: {
@@ -821,7 +813,7 @@ export default class SwapsController extends BaseController<
       fetchEstimatedMultiLayerL1Fee,
     }: {
       fetchGasFeeEstimates?: () => Promise<GasFeeState | undefined>;
-      fetchEstimatedMultiLayerL1Fee: () => Promise<undefined>;
+      fetchEstimatedMultiLayerL1Fee: () => Promise<string | undefined>;
     },
     config?: Partial<SwapsConfig>,
     state?: Partial<SwapsState>,
