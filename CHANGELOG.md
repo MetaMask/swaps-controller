@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.8.0]
+### Added
+- Fetch an L1 fee for each quote on Optimism ([#150](https://github.com/MetaMask/swaps-controller/pull/150))
+
+### Changed
+- Bump decode-uri-component from 0.2.0 to 0.2.2 ([#148](https://github.com/MetaMask/swaps-controller/pull/148))
+- Bump qs from 6.5.2 to 6.5.3 ([#149](https://github.com/MetaMask/swaps-controller/pull/149))
+
 ## [6.7.2]
 ### Fixed
 - Handle empty values for sourceToken and destinationToken ([#146](https://github.com/MetaMask/swaps-controller/pull/146))
@@ -64,7 +72,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use standalone gas API endpoint ([#70](https://github.com/MetaMask/swaps-controller/pull/70))
 - Bump @metamask/controllers from 14.1.0 to 14.2.0 ([#69](https://github.com/MetaMask/swaps-controller/pull/69))
 
-[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v6.7.2...HEAD
+[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v6.8.0...HEAD
+[6.8.0]: https://github.com/MetaMask/swaps-controller/compare/v6.7.2...v6.8.0
 [6.7.2]: https://github.com/MetaMask/swaps-controller/compare/v6.7.1...v6.7.2
 [6.7.1]: https://github.com/MetaMask/swaps-controller/compare/v6.7.0...v6.7.1
 [6.7.0]: https://github.com/MetaMask/swaps-controller/compare/v6.6.0...v6.7.0
