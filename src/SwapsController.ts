@@ -210,10 +210,10 @@ export default class SwapsController extends BaseController<
     options?: FetchGasFeeEstimateOptions,
   ) => Promise<GasFeeState | undefined>;
 
-  private fetchEstimatedMultiLayerL1Fee: (
+  private fetchEstimatedMultiLayerL1Fee?: (
     eth: any,
     options: {
-      txParams: any;
+      txParams: Transaction;
       chainId: string;
     },
   ) => Promise<string | undefined>;
@@ -683,7 +683,7 @@ export default class SwapsController extends BaseController<
         // Fetch an L1 fee for each quote on Optimism.
         await Promise.all(
           Object.values(quotes).map(async (quote) => {
-            if (quote.trade) {
+            if (quote.trade && this.fetchEstimatedMultiLayerL1Fee) {
               const multiLayerL1TradeFeeTotal = await this.fetchEstimatedMultiLayerL1Fee(
                 this.eth,
                 {
@@ -813,7 +813,13 @@ export default class SwapsController extends BaseController<
       fetchEstimatedMultiLayerL1Fee,
     }: {
       fetchGasFeeEstimates?: () => Promise<GasFeeState | undefined>;
-      fetchEstimatedMultiLayerL1Fee: () => Promise<string | undefined>;
+      fetchEstimatedMultiLayerL1Fee?: (
+        eth: any,
+        options: {
+          txParams: Transaction;
+          chainId: string;
+        },
+      ) => Promise<string | undefined>;
     },
     config?: Partial<SwapsConfig>,
     state?: Partial<SwapsState>,
