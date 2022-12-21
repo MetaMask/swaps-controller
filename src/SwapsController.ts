@@ -17,6 +17,7 @@ import {
 import { AbortController } from 'abort-controller';
 import { BigNumber } from 'bignumber.js';
 import EthQuery from 'eth-query';
+import Eth from 'ethjs-query';
 import abiERC20 from 'human-standard-token-abi';
 import { Mutex } from 'async-mutex';
 import Web3 from 'web3';
@@ -40,6 +41,7 @@ import {
   SWAPS_TESTNET_CHAIN_ID,
   POLYGON_CHAIN_ID,
   AVALANCHE_CHAIN_ID,
+  OPTIMISM_CHAIN_ID,
   shouldEnableDirectWrapping,
 } from './swapsUtil';
 
@@ -196,6 +198,8 @@ export default class SwapsController extends BaseController<
 
   private ethQuery: any;
 
+  private eth: any;
+
   private pollCount = 0;
 
   private mutex = new Mutex();
@@ -205,6 +209,14 @@ export default class SwapsController extends BaseController<
   private fetchGasFeeEstimates?: (
     options?: FetchGasFeeEstimateOptions,
   ) => Promise<GasFeeState | undefined>;
+
+  private fetchEstimatedMultiLayerL1Fee?: (
+    eth: any,
+    options: {
+      txParams: Transaction;
+      chainId: string;
+    },
+  ) => Promise<string | undefined>;
 
   /**
    * Fetch current gas price
@@ -283,6 +295,7 @@ export default class SwapsController extends BaseController<
       gasMultiplier,
       approvalNeeded,
       destinationTokenRate,
+      multiLayerL1TradeFeeTotal,
     } = quote;
 
     // trade gas
@@ -313,6 +326,11 @@ export default class SwapsController extends BaseController<
         gweiDecToWEIBN(gasPrice).toString(16),
         16,
       );
+
+      if (multiLayerL1TradeFeeTotal) {
+        totalGasInWei = totalGasInWei.plus(multiLayerL1TradeFeeTotal, 16);
+        maxTotalGasInWei = maxTotalGasInWei.plus(multiLayerL1TradeFeeTotal, 16);
+      }
     } else {
       const estimatedBaseFee =
         (isCustomGasFee(customGasFee) && customGasFee?.estimatedBaseFee) ||
@@ -661,6 +679,26 @@ export default class SwapsController extends BaseController<
         throw new Error(SwapsError.QUOTES_NOT_AVAILABLE_ERROR);
       }
 
+      if (chainId === OPTIMISM_CHAIN_ID && Object.values(quotes).length > 0) {
+        // Fetch an L1 fee for each quote on Optimism.
+        await Promise.all(
+          Object.values(quotes).map(async (quote) => {
+            if (quote.trade && this.fetchEstimatedMultiLayerL1Fee) {
+              const multiLayerL1TradeFeeTotal = await this.fetchEstimatedMultiLayerL1Fee(
+                this.eth,
+                {
+                  txParams: quote.trade,
+                  chainId,
+                },
+              );
+              // eslint-disable-next-line require-atomic-updates
+              quote.multiLayerL1TradeFeeTotal = multiLayerL1TradeFeeTotal;
+            }
+            return quote;
+          }),
+        );
+      }
+
       let approvalTransaction: {
         data?: string;
         from: string;
@@ -772,8 +810,16 @@ export default class SwapsController extends BaseController<
   constructor(
     {
       fetchGasFeeEstimates,
+      fetchEstimatedMultiLayerL1Fee,
     }: {
       fetchGasFeeEstimates?: () => Promise<GasFeeState | undefined>;
+      fetchEstimatedMultiLayerL1Fee?: (
+        eth: any,
+        options: {
+          txParams: Transaction;
+          chainId: string;
+        },
+      ) => Promise<string | undefined>;
     },
     config?: Partial<SwapsConfig>,
     state?: Partial<SwapsState>,
@@ -841,12 +887,14 @@ export default class SwapsController extends BaseController<
     };
 
     this.fetchGasFeeEstimates = fetchGasFeeEstimates;
+    this.fetchEstimatedMultiLayerL1Fee = fetchEstimatedMultiLayerL1Fee;
     this.initialize();
   }
 
   set provider(provider: any) {
     if (provider) {
       this.ethQuery = new EthQuery(provider);
+      this.eth = new Eth(provider);
       this.web3 = new Web3(provider);
     }
   }
