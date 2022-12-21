@@ -7,8 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [6.8.0]
-### Uncategorized
+### Added
 - Fetch an L1 fee for each quote on Optimism ([#150](https://github.com/MetaMask/swaps-controller/pull/150))
+
+### Changed
 - Bump decode-uri-component from 0.2.0 to 0.2.2 ([#148](https://github.com/MetaMask/swaps-controller/pull/148))
 - Bump qs from 6.5.2 to 6.5.3 ([#149](https://github.com/MetaMask/swaps-controller/pull/149))
 
