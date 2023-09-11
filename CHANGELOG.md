@@ -7,8 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [6.9.0]
-### Uncategorized
+### Added
 - Enable zkSync ([#160](https://github.com/MetaMask/swaps-controller/pull/160))
+
+### Changed
 - Bump cookiejar from 2.1.2 to 2.1.4 ([#154](https://github.com/MetaMask/swaps-controller/pull/154))
 - Bump json5 from 1.0.1 to 1.0.2 ([#152](https://github.com/MetaMask/swaps-controller/pull/152))
 
