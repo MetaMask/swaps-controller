@@ -6,6 +6,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.9.1]
+### Added
+- Enable zkSync ([#160](https://github.com/MetaMask/swaps-controller/pull/160))
+
+### Changed
+- Rename ZKSYNC to ZKSYNC_ERA ([#162](https://github.com/MetaMask/swaps-controller/pull/162))
+- Bump cookiejar from 2.1.2 to 2.1.4 ([#154](https://github.com/MetaMask/swaps-controller/pull/154))
+- Bump json5 from 1.0.1 to 1.0.2 ([#152](https://github.com/MetaMask/swaps-controller/pull/152))
+
 ## [6.8.0]
 ### Added
 - Fetch an L1 fee for each quote on Optimism ([#150](https://github.com/MetaMask/swaps-controller/pull/150))
@@ -72,7 +81,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use standalone gas API endpoint ([#70](https://github.com/MetaMask/swaps-controller/pull/70))
 - Bump @metamask/controllers from 14.1.0 to 14.2.0 ([#69](https://github.com/MetaMask/swaps-controller/pull/69))
 
-[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v6.8.0...HEAD
+[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v6.9.1...HEAD
+[6.9.1]: https://github.com/MetaMask/swaps-controller/compare/v6.8.0...v6.9.1
 [6.8.0]: https://github.com/MetaMask/swaps-controller/compare/v6.7.2...v6.8.0
 [6.7.2]: https://github.com/MetaMask/swaps-controller/compare/v6.7.1...v6.7.2
 [6.7.1]: https://github.com/MetaMask/swaps-controller/compare/v6.7.0...v6.7.1
