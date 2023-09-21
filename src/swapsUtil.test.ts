@@ -209,7 +209,7 @@ describe('SwapsUtil', () => {
 
       expect(
         swapsUtil.getTokenMetadataURL(swapsUtil.SWAPS_TESTNET_CHAIN_ID),
-      ).toBe('https://swap.metaswap-dev.codefi.network/networks/1/token');
+      ).toBe('https://swap.dev-api.cx.metamask.io/networks/1/token');
 
       expect(swapsUtil.getTokenMetadataURL(swapsUtil.BSC_CHAIN_ID)).toBe(
         'https://swap.metaswap.codefi.network/networks/56/token',
