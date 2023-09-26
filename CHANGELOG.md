@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [6.9.2]
-### Uncategorized
+### Changed
 - Update dev base url ([#167](https://github.com/MetaMask/swaps-controller/pull/167))
 - Update CODEOWNERS ([#156](https://github.com/MetaMask/swaps-controller/pull/156))
 
