@@ -7,8 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [6.9.3]
-### Uncategorized
-- feat: add linea constants ([#170](https://github.com/MetaMask/swaps-controller/pull/170))
+### Added
+- Add Linea constants ([#170](https://github.com/MetaMask/swaps-controller/pull/170))
+
+### Changed
 - Bump word-wrap from 1.2.3 to 1.2.5 ([#166](https://github.com/MetaMask/swaps-controller/pull/166))
 
 ## [6.9.2]
