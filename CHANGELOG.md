@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.9.3]
+### Uncategorized
+- feat: add linea constants ([#170](https://github.com/MetaMask/swaps-controller/pull/170))
+- Bump word-wrap from 1.2.3 to 1.2.5 ([#166](https://github.com/MetaMask/swaps-controller/pull/166))
+
 ## [6.9.2]
 ### Changed
 - Update dev base url ([#167](https://github.com/MetaMask/swaps-controller/pull/167))
@@ -86,7 +91,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use standalone gas API endpoint ([#70](https://github.com/MetaMask/swaps-controller/pull/70))
 - Bump @metamask/controllers from 14.1.0 to 14.2.0 ([#69](https://github.com/MetaMask/swaps-controller/pull/69))
 
-[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v6.9.2...HEAD
+[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v6.9.3...HEAD
+[6.9.3]: https://github.com/MetaMask/swaps-controller/compare/v6.9.2...v6.9.3
 [6.9.2]: https://github.com/MetaMask/swaps-controller/compare/v6.9.1...v6.9.2
 [6.9.1]: https://github.com/MetaMask/swaps-controller/compare/v6.8.0...v6.9.1
 [6.8.0]: https://github.com/MetaMask/swaps-controller/compare/v6.7.2...v6.8.0
