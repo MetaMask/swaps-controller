@@ -16,8 +16,8 @@ import {
 } from '@metamask/controllers';
 import { AbortController } from 'abort-controller';
 import { BigNumber } from 'bignumber.js';
-import EthQuery from 'eth-query';
-import Eth from 'ethjs-query';
+import EthQuery from '@metamask/eth-query';
+import Eth from '@metamask/ethjs-query';
 import abiERC20 from 'human-standard-token-abi';
 import { Mutex } from 'async-mutex';
 import Web3 from 'web3';

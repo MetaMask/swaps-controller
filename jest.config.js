@@ -21,7 +21,7 @@ module.exports = {
   // original implementations, between each test. It does not affect mocked
   // modules.
   restoreMocks: true,
-  testEnvironment: 'node',
+  testEnvironment: 'jsdom',
   testRegex: ['\\.test\\.(ts|js)$'],
   testTimeout: 2500,
 };

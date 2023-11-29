@@ -1,5 +1,5 @@
 import { ComposableController } from '@metamask/controllers';
-import EthQuery from 'eth-query';
+import EthQuery from '@metamask/eth-query';
 import Web3 from 'web3';
 import SwapsController, { INITIAL_CHAIN_DATA } from './SwapsController';
 import * as swapsUtil from './swapsUtil';
@@ -197,7 +197,7 @@ const mockFlags: { [key: string]: any } = {
   estimateGas: null,
 };
 
-jest.mock('eth-query', () =>
+jest.mock('@metamask/eth-query', () =>
   jest.fn().mockImplementation(() => {
     return {
       estimateGas: (_transaction: any, callback: any) => {
