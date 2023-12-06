@@ -14,7 +14,6 @@ import {
   Transaction,
   util,
 } from '@metamask/controllers';
-import { AbortController } from 'abort-controller';
 import { BigNumber } from 'bignumber.js';
 import EthQuery from '@metamask/eth-query';
 import Eth from '@metamask/ethjs-query';
@@ -776,7 +775,7 @@ export default class SwapsController extends BaseController<
         threshold: quotesLastFetched - timeStarted,
         usedGasEstimate: gasFeeEstimates,
       };
-    } catch (e) {
+    } catch (e: any) {
       const errorKey = Object.values(SwapsError).includes(e.message)
         ? e.message
         : SwapsError.ERROR_FETCHING_QUOTES;
