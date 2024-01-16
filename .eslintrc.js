@@ -37,6 +37,8 @@ module.exports = {
         'consistent-return': 'off',
         'no-async-promise-executor': 'off',
         '@typescript-eslint/prefer-optional-chain': 'off',
+        // ignoring this to avoid changing the controller interface
+        'no-restricted-syntax': 'off',
       },
     },
     {
@@ -46,16 +48,27 @@ module.exports = {
       },
     },
     {
+      files: ['src/swapsInterfaces.ts'],
+      rules: {
+        // disabling this since enums affected are used in other controllers/clients
+        '@typescript-eslint/naming-convention': 'off',
+      },
+    },
+    {
       files: ['src/swapsUtil.ts'],
       rules: {
         'consistent-return': 'off',
         'no-negated-condition': 'off',
+        // disabling this since enums affected are used in other controllers/clients
+        '@typescript-eslint/naming-convention': 'off',
       },
     },
     {
       files: ['src/swapsUtil.test.ts'],
       rules: {
         'jest/require-to-throw-message': 'off',
+        // disabling this since enums affected are used in other controllers/clients
+        '@typescript-eslint/naming-convention': 'off',
       },
     },
   ],

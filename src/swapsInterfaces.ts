@@ -1,5 +1,5 @@
-import { Transaction } from '@metamask/controllers';
-import { BigNumber } from 'bignumber.js';
+import type { Transaction } from '@metamask/controllers';
+import type { BigNumber } from 'bignumber.js';
 
 export enum APIType {
   TRADES = 'TRADES',
@@ -11,60 +11,52 @@ export enum APIType {
   GAS_PRICES = 'GAS_PRICES',
 }
 
-export interface SwapsAsset {
+export type SwapsAsset = {
   address: string;
   symbol: string;
   name?: string;
-}
+};
 
-export interface SwapsToken extends SwapsAsset {
+export type SwapsToken = {
   decimals: number;
   occurrences?: number;
   iconUrl?: string;
-}
+} & SwapsAsset;
 
-export interface NetworkFeatureFlags {
-  // eslint-disable-next-line camelcase
+export type NetworkFeatureFlags = {
   mobile_active: boolean;
-  // eslint-disable-next-line camelcase
   extension_active: boolean;
-  // eslint-disable-next-line camelcase
   fallback_to_v1?: boolean;
-}
+};
 
-export interface NetworksFeatureStatus {
+export type NetworksFeatureStatus = {
   [network: string]: NetworkFeatureFlags;
-}
+};
 
 /**
  * Metadata needed to fetch quotes
- *
  * @interface APIFetchQuotesMetadata
- *
  * @property sourceTokenInfo - Source token information
  * @property destinationTokenInfo - Destination token information
- *
  */
-export interface APIFetchQuotesMetadata {
+export type APIFetchQuotesMetadata = {
   sourceTokenInfo: SwapsToken;
   destinationTokenInfo: SwapsToken;
-}
+};
 
 /**
  * Parameters needed to fetch quotes
- *
  * @interface APIFetchQuotesParams
- *
  * @property slippage - Slippage
  * @property sourceToken - Source token address
  * @property sourceAmount - Source token amount
  * @property destinationToken - Destination token address
  * @property walletAddress - Address to do the swap from
- * @property exchangeList
- * @property metaData - Metadata needed to fetch quotes
- *
+ * @property timeout - Timeout
+ * @property clientId - Client id
+ * @property enableDirectWrapping - Enable direct wrapping
  */
-export interface APIFetchQuotesParams {
+export type APIFetchQuotesParams = {
   slippage: number;
   sourceToken: string;
   sourceAmount: number;
@@ -73,64 +65,62 @@ export interface APIFetchQuotesParams {
   timeout?: number;
   clientId?: string;
   enableDirectWrapping?: boolean;
-}
+};
 
 /**
  * Aggregator metadata coming from API
- *
  * @interface APIAggregatorMetadata
- *
  */
-export interface APIAggregatorMetadata {
+export type APIAggregatorMetadata = {
   color: string;
   title: string;
   icon: string;
   iconPng: string;
-}
+};
 
-interface QuoteTransaction extends Transaction {
+type QuoteTransaction = {
   value: string;
-}
+} & Transaction;
 
 /**
  * Savings of a quote
- *
  * @interface QuoteSavings
  */
-export interface QuoteSavings {
+export type QuoteSavings = {
   total: BigNumber;
   performance: BigNumber;
   fee: BigNumber;
   medianMetaMaskFee: BigNumber;
-}
+};
 
 /**
- * Trade data structure coming from API, together with savings and gas estimations.
- *
+ * Represents trade data structure coming from an API, which includes details about the trade, savings, gas estimations, and additional related information.
  * @interface Quote
- *
- * @property trade - The ethereum transaction data for the swap
- * @property approvalNeeded - Ethereum transaction to complete a ERC20 approval, if needed
- * @property sourceAmount - Amount in minimal unit to send
- * @property destinationAmount - Amount in minimal unit to receive
- * @property error - Trade error, if any
- * @property sourceToken - Source token address
- * @property destinationToken - Destination token address
- * @property maxGas - Maximum gas to use
- * @property averageGas - Average gas to use
- * @property estimatedRefund - Destination token address
- * @property fetchTime - Fetch time
- * @property fee - MetaMask fee
- * @property quoteRefreshSeconds - Refresh quotes time
- * @property gasMultiplier
- * @property aggregator - Aggregator id
- * @property aggType - Aggregator type
- * @property priceSlippage - Price slippage information object
- * @property savings - Estimation of savings
- * @property gasEstimate - Estimation of gas
- * @property gasEstimateWithRefund - Estimation of gas with refund
+ * @property {QuoteTransaction} trade - The Ethereum transaction data for the swap.
+ * @property {object|null} approvalNeeded - Ethereum transaction details required to complete an ERC20 token approval, if necessary.
+ * @property {string} sourceAmount - The amount of the source token in its minimal unit to send.
+ * @property {number} destinationAmount - The amount of the destination token in its minimal unit to receive.
+ * @property {Error|null} error - Any trade error that occurred, if any.
+ * @property {string} sourceToken - The address of the source token.
+ * @property {string} destinationToken - The address of the destination token.
+ * @property {number} maxGas - The maximum gas limit for the transaction.
+ * @property {number} averageGas - The average gas used for similar transactions.
+ * @property {number} estimatedRefund - Estimated refund in the destination token.
+ * @property {number} fetchTime - The time when the quote was fetched.
+ * @property {number} fee - The MetaMask fee for the transaction.
+ * @property {number} quoteRefreshSeconds - The time interval in seconds to refresh the quote.
+ * @property {number} gasMultiplier - A multiplier applied to the gas estimate.
+ * @property {string} aggregator - The identifier of the aggregator used.
+ * @property {string} aggType - The type of aggregator.
+ * @property {object} priceSlippage - Information about the price slippage.
+ * @property {QuoteSavings|null} savings - An estimation of savings for this trade.
+ * @property {string|null} gasEstimate - Estimated gas for the transaction.
+ * @property {string|null} gasEstimateWithRefund - Estimated gas for the transaction including any refund.
+ * @property {number|null} destinationTokenRate - The exchange rate for the destination token.
+ * @property {number|null} sourceTokenRate - The exchange rate for the source token.
+ * @property {string|undefined} multiLayerL1TradeFeeTotal - Total trade fee for multi-layer L1 trades, if applicable.
  */
-export interface Quote {
+export type Quote = {
   trade: QuoteTransaction;
   approvalNeeded: null | {
     data: string;
@@ -158,21 +148,21 @@ export interface Quote {
   destinationTokenRate: number | null;
   sourceTokenRate: number | null;
   multiLayerL1TradeFeeTotal: string | undefined;
-}
+};
 
 /**
- * Fees and values information for an aggregator
- *
+ * Represents fees and value-related information for a trade operation, specifically in the context of an aggregator.
  * @interface QuoteValues
- *
- * @property aggregator - Aggregator id
- * @property ethFee - Fee in ETH
- * @property maxEthFee - Maximum fee in ETH
- * @property ethValueOfTokens - Total value of tokens in ETH
- * @property overallValueOfQuote
- * @property metaMaskFeeInEth - MetaMask fee in ETH
+ * @property {string} aggregator - The identifier of the aggregator.
+ * @property {string} tradeGasLimit - The gas limit for the trade transaction.
+ * @property {string} tradeMaxGasLimit - The maximum gas limit that can be used for the trade.
+ * @property {string} ethFee - The fee for the transaction in ETH.
+ * @property {string} maxEthFee - The maximum possible fee for the transaction in ETH.
+ * @property {string} ethValueOfTokens - The total value of the tokens involved in the trade, denominated in ETH.
+ * @property {string} overallValueOfQuote - The overall value of the quote, including all fees and values.
+ * @property {string} metaMaskFeeInEth - The fee charged by MetaMask for processing the transaction, denominated in ETH.
  */
-export interface QuoteValues {
+export type QuoteValues = {
   aggregator: string;
   tradeGasLimit: string;
   tradeMaxGasLimit: string;
@@ -181,27 +171,24 @@ export interface QuoteValues {
   ethValueOfTokens: string;
   overallValueOfQuote: string;
   metaMaskFeeInEth: string;
-}
+};
 
 /**
- * Metadata needed to fetch quotes
- *
+ * Represents the metadata associated with a blockchain transaction receipt, detailing various aspects of the transaction's processing and execution.
  * @interface TransactionReceipt
- *
- * @property blockHash - Hash of the block where this transaction was in
- * @property blockNumber - Block number where this transaction was in
- * @property transactionHash - Hash of the transaction
- * @property transactionIndex - Integer of the transactions index position in the block
- * @property from - Address of the sender
- * @property to - Address of the receiver. null when its a contract creation transaction
- * @property cumulativeGasUsed - The total amount of gas used when this transaction was executed in the block
- * @property gasUsed - The amount of gas used by this specific transaction alone
- * @property contractAddress - The contract address created, if the transaction was a contract creation, otherwise null
- * @property logs - Array of log objects, which this transaction generate
- * @property status - '0x0' indicates transaction failure , '0x1' indicates transaction succeeded.
- *
+ * @property {string} blockHash - The hash of the block in which this transaction was included.
+ * @property {number} blockNumber - The number of the block in which this transaction was included.
+ * @property {string} transactionHash - The unique hash of the transaction.
+ * @property {number} transactionIndex - The index position of the transaction in the block.
+ * @property {string} from - The address of the sender who initiated the transaction.
+ * @property {string|null} to - The address of the receiver. This is null when it's a contract creation transaction.
+ * @property {number} cumulativeGasUsed - The total amount of gas used by all transactions in the block up to and including this one.
+ * @property {number} gasUsed - The amount of gas used by this specific transaction.
+ * @property {string|null} contractAddress - The address of the contract created, if this transaction was a contract creation; otherwise null.
+ * @property {Array} logs - An array of log objects generated by this transaction, containing event data and topics.
+ * @property {string} status - The status of the transaction, where '0x0' indicates failure and '0x1' indicates success.
  */
-export interface TransactionReceipt {
+export type TransactionReceipt = {
   blockHash: string;
   blockNumber: number;
   transactionHash: string;
@@ -213,17 +200,17 @@ export interface TransactionReceipt {
   contractAddress: string;
   logs: { data: string; topics: string[]; address: string }[];
   status: string;
-}
+};
 
-export interface ChainData {
+export type ChainData = {
   aggregatorMetadata: null | { [key: string]: APIAggregatorMetadata };
   tokens: null | SwapsToken[];
   topAssets: null | SwapsAsset[];
   aggregatorMetadataLastFetched: number;
   tokensLastFetched: number;
   topAssetsLastFetched: number;
-}
+};
 
-export interface ChainCache {
+export type ChainCache = {
   [key: string]: ChainData;
-}
+};
