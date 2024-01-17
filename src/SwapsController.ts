@@ -882,7 +882,7 @@ export default class SwapsController extends BaseController<
       usedGasEstimate: null,
       usedCustomGas: null,
       chainCache: {
-        '1': INITIAL_CHAIN_DATA,
+        '0x1': INITIAL_CHAIN_DATA,
       },
     };
 

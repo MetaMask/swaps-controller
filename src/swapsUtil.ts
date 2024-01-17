@@ -103,27 +103,30 @@ export function shouldEnableDirectWrapping(
       destinationTokenLowerCase === wrappedTokenLowerCase)
   );
 }
-
+export function convertHexToDecimal(value: string) {
+  return parseInt(value, 16).toString();
+}
 export const getBaseApiURL = function (type: APIType, chainId: string): string {
   const [apiChainId, apiBaseUrl] =
     chainId === SWAPS_TESTNET_CHAIN_ID
       ? [ETH_CHAIN_ID, DEV_BASE_URL]
       : [chainId, API_BASE_URL];
+  const apiDecimalChainId = convertHexToDecimal(apiChainId);
   switch (type) {
     case APIType.TRADES:
-      return `${apiBaseUrl}/networks/${apiChainId}/trades`;
+      return `${apiBaseUrl}/networks/${apiDecimalChainId}/trades`;
     case APIType.TOKENS:
-      return `${apiBaseUrl}/networks/${apiChainId}/tokens`;
+      return `${apiBaseUrl}/networks/${apiDecimalChainId}/tokens`;
     case APIType.TOKEN:
-      return `${apiBaseUrl}/networks/${apiChainId}/token`;
+      return `${apiBaseUrl}/networks/${apiDecimalChainId}/token`;
     case APIType.TOP_ASSETS:
-      return `${apiBaseUrl}/networks/${apiChainId}/topAssets`;
+      return `${apiBaseUrl}/networks/${apiDecimalChainId}/topAssets`;
     case APIType.FEATURE_FLAG:
       return `${apiBaseUrl}/featureFlags`;
     case APIType.AGGREGATOR_METADATA:
-      return `${apiBaseUrl}/networks/${apiChainId}/aggregatorMetadata`;
+      return `${apiBaseUrl}/networks/${apiDecimalChainId}/aggregatorMetadata`;
     case APIType.GAS_PRICES:
-      return `${GAS_API_BASE_URL}/networks/${apiChainId}/gasPrices`;
+      return `${GAS_API_BASE_URL}/networks/${apiDecimalChainId}/gasPrices`;
     default:
       throw new Error('getBaseApiURL requires an api call type');
   }
