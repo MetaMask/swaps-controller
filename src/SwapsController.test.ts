@@ -227,8 +227,9 @@ jest.mock('@metamask/eth-query', () =>
   }),
 );
 
-jest.mock('web3', () =>
-  jest.fn().mockImplementation(() => {
+// mock import of Web3 which is a constructor
+jest.mock('web3', () => {
+  const _ = jest.fn().mockImplementation(() => {
     return {
       eth: {
         contract: () => {
@@ -243,8 +244,9 @@ jest.mock('web3', () =>
         },
       },
     };
-  }),
-);
+  });
+  return { Web3: _ };
+});
 
 describe('SwapsController', () => {
   /* Setup */
