@@ -832,7 +832,7 @@ export default class SwapsController extends BaseController<
       fetchTokensThreshold: 1000 * 60 * 60 * 24,
       fetchTopAssetsThreshold: 1000 * 60 * 30,
       provider: undefined,
-      chainId: '1',
+      chainId: '0x1',
       supportedChainIds: [
         ETH_CHAIN_ID,
         BSC_CHAIN_ID,

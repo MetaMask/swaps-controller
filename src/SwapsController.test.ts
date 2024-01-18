@@ -316,8 +316,8 @@ describe('SwapsController', () => {
   it('should set default config', () => {
     expect(swapsController.config).toStrictEqual(swapsController.defaultConfig);
     expect(swapsController.config).toStrictEqual({
-      chainId: '1',
-      supportedChainIds: ['1', '56', '1337', '137', '43114'],
+      chainId: '0x1',
+      supportedChainIds: ['0x1', '0x38', '0x539', '0x89', '0xa86a'],
       maxGasLimit: 2500000,
       pollCountLimit: 3,
       fetchAggregatorMetadataThreshold: 1000 * 60 * 60 * 24 * 15,
@@ -369,7 +369,7 @@ describe('SwapsController', () => {
       usedGasEstimate: null,
       usedCustomGas: null,
       chainCache: {
-        '1': {
+        '0x1': {
           aggregatorMetadataLastFetched: 0,
           tokensLastFetched: 0,
           topAssetsLastFetched: 0,
