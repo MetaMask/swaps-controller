@@ -103,9 +103,11 @@ export function shouldEnableDirectWrapping(
       destinationTokenLowerCase === wrappedTokenLowerCase)
   );
 }
+
 export function convertHexToDecimal(value: string) {
   return parseInt(value, 16).toString();
 }
+
 export const getBaseApiURL = function (type: APIType, chainId: string): string {
   const [apiChainId, apiBaseUrl] =
     chainId === SWAPS_TESTNET_CHAIN_ID
