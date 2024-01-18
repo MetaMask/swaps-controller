@@ -90,6 +90,8 @@ interface CustomGasFee {
   selected?: 'low' | 'medium' | 'high';
 }
 
+export declare type Hex = `0x${string}`;
+
 function isEthGasPriceEstimate(object: any): object is EthGasPriceEstimate {
   return Boolean(object) && object?.gasPrice !== undefined;
 }
@@ -120,8 +122,8 @@ export interface SwapsConfig extends BaseConfig {
   fetchTokensThreshold: number;
   fetchTopAssetsThreshold: number;
   provider: any;
-  chainId: string;
-  supportedChainIds: string[];
+  chainId: Hex;
+  supportedChainIds: Hex[];
 }
 
 export interface SwapsState extends BaseState {
@@ -176,7 +178,7 @@ export const INITIAL_CHAIN_DATA: ChainData = {
  */
 function getNewChainCache(
   chainCache: ChainCache,
-  chainId: string,
+  chainId: Hex,
   data: Partial<ChainData>,
 ): ChainCache {
   return {
@@ -214,7 +216,7 @@ export default class SwapsController extends BaseController<
     eth: any,
     options: {
       txParams: Transaction;
-      chainId: string;
+      chainId: Hex;
     },
   ) => Promise<string | undefined>;
 
@@ -817,7 +819,7 @@ export default class SwapsController extends BaseController<
         eth: any,
         options: {
           txParams: Transaction;
-          chainId: string;
+          chainId: Hex;
         },
       ) => Promise<string | undefined>;
     },
@@ -899,7 +901,7 @@ export default class SwapsController extends BaseController<
     }
   }
 
-  set chainId(chainId: string) {
+  set chainId(chainId: Hex) {
     if (!this.config.supportedChainIds.includes(chainId)) {
       return;
     }

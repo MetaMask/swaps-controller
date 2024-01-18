@@ -1,7 +1,7 @@
 import { Transaction, util } from '@metamask/controllers';
 import { AbortSignal } from 'abort-controller';
 import { BigNumber } from 'bignumber.js';
-import { addHexPrefix } from 'ethereumjs-util';
+import { addHexPrefix, isHexString } from 'ethereumjs-util';
 import {
   ALLOWED_CONTRACT_ADDRESSES,
   API_BASE_URL,
@@ -29,6 +29,7 @@ import {
   NetworkFeatureFlags,
   NetworksFeatureStatus,
 } from './swapsInterfaces';
+import { Hex } from './SwapsController';
 
 export * from './constants';
 
@@ -62,16 +63,16 @@ function getClientIdHeader(clientId?: string) {
   };
 }
 
-export function getNativeSwapsToken(chainId: string): SwapsToken {
+export function getNativeSwapsToken(chainId: Hex): SwapsToken {
   return SWAPS_NATIVE_TOKEN_OBJECTS[chainId];
 }
 
-export function getSwapsContractAddress(chainId: string): string {
+export function getSwapsContractAddress(chainId: Hex): string {
   return SWAPS_CONTRACT_ADDRESSES[chainId];
 }
 
 export function isValidContractAddress(
-  chainId: string,
+  chainId: Hex,
   contract: string | undefined,
 ): boolean {
   if (!contract || !ALLOWED_CONTRACT_ADDRESSES[chainId]) {
@@ -84,7 +85,7 @@ export function isValidContractAddress(
 }
 
 export function shouldEnableDirectWrapping(
-  chainId: string,
+  chainId: Hex,
   sourceToken: string,
   destinationToken: string,
 ): boolean {
@@ -104,11 +105,23 @@ export function shouldEnableDirectWrapping(
   );
 }
 
-export function convertHexToDecimal(value: string) {
-  return parseInt(value, 16).toString();
-}
+/**
+ * Converts valid hex strings to decimal numbers, and handles unexpected arg types.
+ *
+ * @param value - a string that is either a hexadecimal with `0x` prefix or a decimal string.
+ * @returns a decimal number.
+ */
+export const convertHexToDecimal = (
+  value: string | undefined = '0x0',
+): number => {
+  if (isHexString(value)) {
+    return parseInt(value, 16);
+  }
 
-export const getBaseApiURL = function (type: APIType, chainId: string): string {
+  return Number(value) ? Number(value) : 0;
+};
+
+export const getBaseApiURL = function (type: APIType, chainId: Hex): string {
   const [apiChainId, apiBaseUrl] =
     chainId === SWAPS_TESTNET_CHAIN_ID
       ? [ETH_CHAIN_ID, DEV_BASE_URL]
@@ -134,7 +147,7 @@ export const getBaseApiURL = function (type: APIType, chainId: string): string {
   }
 };
 
-export function getTokenMetadataURL(chainId: string): string {
+export function getTokenMetadataURL(chainId: Hex): string {
   return getBaseApiURL(APIType.TOKEN, chainId);
 }
 
@@ -147,7 +160,7 @@ export async function fetchTradesInfo(
     walletAddress,
   }: APIFetchQuotesParams,
   abortSignal: AbortSignal | null,
-  chainId: string,
+  chainId: Hex,
   clientId?: string,
 ): Promise<{ [key: string]: Quote }> {
   const urlParams: APIFetchQuotesParams = {
@@ -216,7 +229,7 @@ export async function fetchTradesInfo(
 }
 
 export async function fetchTokens(
-  chainId: string,
+  chainId: Hex,
   clientId?: string,
 ): Promise<SwapsToken[]> {
   const tokenUrl = getBaseApiURL(APIType.TOKENS, chainId);
@@ -231,10 +244,7 @@ export async function fetchTokens(
   return filteredTokens;
 }
 
-export async function fetchAggregatorMetadata(
-  chainId: string,
-  clientId?: string,
-) {
+export async function fetchAggregatorMetadata(chainId: Hex, clientId?: string) {
   const aggregatorMetadataUrl = getBaseApiURL(
     APIType.AGGREGATOR_METADATA,
     chainId,
@@ -249,7 +259,7 @@ export async function fetchAggregatorMetadata(
 }
 
 export async function fetchTopAssets(
-  chainId: string,
+  chainId: Hex,
   clientId?: string,
 ): Promise<SwapsAsset[]> {
   const topAssetsUrl = getBaseApiURL(APIType.TOP_ASSETS, chainId);
@@ -261,7 +271,7 @@ export async function fetchTopAssets(
 }
 
 export async function fetchSwapsFeatureLiveness(
-  chainId: string,
+  chainId: Hex,
   clientId?: string,
 ): Promise<NetworkFeatureFlags | undefined> {
   const status: NetworksFeatureStatus = await handleFetch(
@@ -278,7 +288,7 @@ export async function fetchSwapsFeatureLiveness(
  * @returns Gas prices represented as decimal GWEI strings
  */
 export async function fetchGasPrices(
-  chainId: string,
+  chainId: Hex,
   clientId?: string,
 ): Promise<{
   safeGasPrice: string;
