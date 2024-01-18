@@ -69,6 +69,7 @@ module.exports = {
         'jest/require-to-throw-message': 'off',
         // disabling this since enums affected are used in other controllers/clients
         '@typescript-eslint/naming-convention': 'off',
+        'no-restricted-globals': 'off',
       },
     },
   ],

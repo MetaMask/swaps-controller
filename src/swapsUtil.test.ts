@@ -1,9 +1,43 @@
 import { BigNumber } from 'bignumber.js';
-import { getOnce } from 'fetch-mock';
 
 import type { SwapsToken } from './swapsInterfaces';
 import { APIType } from './swapsInterfaces';
 import * as swapsUtil from './swapsUtil';
+
+/**
+ * Mocks the fetch function for testing purposes.
+ * @param urlResponseMap - A map of base URL and corresponding response.
+ * @returns An object with a method to clear the mock.
+ */
+function mockFetch(urlResponseMap: Record<string, any>) {
+  jest.spyOn(global, 'fetch').mockImplementation(async (url, _) => {
+    const matchingUrlKey = Object.keys(urlResponseMap).find((key) =>
+      (url as string).startsWith(key),
+    );
+    if (!matchingUrlKey) {
+      console.error(`No mock response for URL: ${url as string}`);
+      return Promise.resolve({
+        json: async () => Promise.resolve({}),
+      }) as Promise<Response>;
+    }
+
+    const response = urlResponseMap[matchingUrlKey];
+
+    if (response.throws) {
+      return Promise.reject(new Error('Mock fetch error'));
+    }
+
+    return Promise.resolve({
+      json: async () => Promise.resolve(response.body),
+      ok: true,
+      url: matchingUrlKey,
+    }) as Promise<Response>;
+  });
+
+  return {
+    clearMock: () => (global.fetch as jest.Mock).mockRestore(),
+  };
+}
 
 const API_TRADES = [
   {
@@ -223,21 +257,12 @@ describe('SwapsUtil', () => {
 
   describe('fetchTradesInfo', () => {
     it('should work', async () => {
-      getOnce(
-        `https://swap.metaswap.codefi.network/networks/1/trades?destinationToken=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&sourceToken=0x6b175474e89094c44da98b954eedeac495271d0f&sourceAmount=1000000000000000000&slippage=3&timeout=10000&walletAddress=0xB0dA5965D43369968574D399dBe6374683773a65`,
-        () => ({
-          body: JSON.stringify(API_TRADES),
-        }),
-        { overwriteRoutes: true, method: 'GET' },
-      );
-
-      getOnce(
-        `https://swap.metaswap.codefi.network/networks/1/trades?destinationToken=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&sourceToken=0x6b175474e89094c44da98b954eedeac495271d0f&sourceAmount=1000000000000000000&slippage=3&timeout=10000&walletAddress=0xB0dA5965D43369968574D399dBe6374683773a65&clientId=mobile`,
-        () => ({
-          body: JSON.stringify(API_TRADES),
-        }),
-        { overwriteRoutes: true, method: 'GET' },
-      );
+      mockFetch({
+        'https://swap.metaswap.codefi.network/networks/1/trades?destinationToken=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&sourceToken=0x6b175474e89094c44da98b954eedeac495271d0f&sourceAmount=1000000000000000000&slippage=3&timeout=10000&walletAddress=0xB0dA5965D43369968574D399dBe6374683773a65':
+          { body: API_TRADES },
+        'https://swap.metaswap.codefi.network/networks/1/trades?destinationToken=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&sourceToken=0x6b175474e89094c44da98b954eedeac495271d0f&sourceAmount=1000000000000000000&slippage=3&timeout=10000&walletAddress=0xB0dA5965D43369968574D399dBe6374683773a65&clientId=mobile':
+          { body: API_TRADES },
+      });
 
       const quotes = await swapsUtil.fetchTradesInfo(
         {
@@ -330,13 +355,10 @@ describe('SwapsUtil', () => {
     });
 
     it('should work for direct wrapping', async () => {
-      getOnce(
-        `https://swap.metaswap.codefi.network/networks/1/trades?destinationToken=0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2&sourceToken=0x0000000000000000000000000000000000000000&sourceAmount=1000000000000000000&slippage=3&timeout=10000&walletAddress=0xB0dA5965D43369968574D399dBe6374683773a65&enableDirectWrapping=true`,
-        () => ({
-          body: JSON.stringify(API_TRADES),
-        }),
-        { overwriteRoutes: true, method: 'GET' },
-      );
+      mockFetch({
+        'https://swap.metaswap.codefi.network/networks/1/trades?destinationToken=0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2&sourceToken=0x0000000000000000000000000000000000000000&sourceAmount=1000000000000000000&slippage=3&timeout=10000&walletAddress=0xB0dA5965D43369968574D399dBe6374683773a65&enableDirectWrapping=true':
+          { body: API_TRADES },
+      });
 
       const quotes = await swapsUtil.fetchTradesInfo(
         {
@@ -417,13 +439,11 @@ describe('SwapsUtil', () => {
 
   describe('fetchTokens', () => {
     it('should work', async () => {
-      getOnce(
-        `https://swap.metaswap.codefi.network/networks/1/tokens`,
-        () => ({
-          body: JSON.stringify(API_TOKENS.concat([FAKE_SWAPS_TOKEN])),
-        }),
-        { overwriteRoutes: true, method: 'GET' },
-      );
+      mockFetch({
+        'https://swap.metaswap.codefi.network/networks/1/tokens': {
+          body: API_TOKENS.concat([FAKE_SWAPS_TOKEN]),
+        },
+      });
       const tokens = await swapsUtil.fetchTokens('1');
       expect(tokens).toStrictEqual(
         API_TOKENS.concat([swapsUtil.ETH_SWAPS_TOKEN_OBJECT]),
@@ -433,13 +453,11 @@ describe('SwapsUtil', () => {
 
   describe('fetchAggregatorMetadata', () => {
     it('should work', async () => {
-      getOnce(
-        `https://swap.metaswap.codefi.network/networks/1/aggregatorMetadata`,
-        () => ({
-          body: JSON.stringify(API_TRADES),
-        }),
-        { overwriteRoutes: true, method: 'GET' },
-      );
+      mockFetch({
+        'https://swap.metaswap.codefi.network/networks/1/aggregatorMetadata': {
+          body: API_TRADES,
+        },
+      });
       const aggregatorsMetadata = await swapsUtil.fetchAggregatorMetadata('1');
       expect(aggregatorsMetadata).toBeInstanceOf(Object);
     });
@@ -447,13 +465,11 @@ describe('SwapsUtil', () => {
 
   describe('fetchTopAssets', () => {
     it('should work', async () => {
-      getOnce(
-        `https://swap.metaswap.codefi.network/networks/1/topAssets`,
-        () => ({
-          body: JSON.stringify(API_TRADES),
-        }),
-        { overwriteRoutes: true, method: 'GET' },
-      );
+      mockFetch({
+        'https://swap.metaswap.codefi.network/networks/1/topAssets': {
+          body: API_TRADES,
+        },
+      });
       const assets = await swapsUtil.fetchTopAssets('1');
       expect(assets).toBeDefined();
       expect(assets).toBeInstanceOf(Array);
@@ -462,10 +478,9 @@ describe('SwapsUtil', () => {
 
   describe('fetchSwapsFeatureLiveness', () => {
     it('should work', async () => {
-      getOnce(
-        `https://swap.metaswap.codefi.network/featureFlags`,
-        () => ({
-          body: JSON.stringify({
+      mockFetch({
+        'https://swap.metaswap.codefi.network/featureFlags': {
+          body: {
             bsc: {
               mobile_active: false,
               extension_active: true,
@@ -481,19 +496,17 @@ describe('SwapsUtil', () => {
               extension_active: true,
               fallback_to_v1: false,
             },
-          }),
-        }),
-        { overwriteRoutes: true, method: 'GET' },
-      );
+          },
+        },
+      });
       const featureLiveness = await swapsUtil.fetchSwapsFeatureLiveness('1');
       expect(featureLiveness).toBeInstanceOf(Object);
     });
 
     it('should return undefined on unsupported networks', async () => {
-      getOnce(
-        `https://swap.metaswap.codefi.network/featureFlags`,
-        () => ({
-          body: JSON.stringify({
+      mockFetch({
+        'https://swap.metaswap.codefi.network/featureFlags': {
+          body: {
             bsc: {
               mobile_active: false,
               extension_active: true,
@@ -509,25 +522,19 @@ describe('SwapsUtil', () => {
               extension_active: true,
               fallback_to_v1: false,
             },
-          }),
-        }),
-        { overwriteRoutes: true, method: 'GET' },
-      );
+          },
+        },
+      });
       const featureLiveness = await swapsUtil.fetchSwapsFeatureLiveness('321');
       expect(featureLiveness).toBeUndefined();
     });
 
     it('should throw on exception', async () => {
-      getOnce(
-        `https://swap.metaswap.codefi.network/featureFlags`,
-        {
-          throws: new Error('this is an error'),
+      mockFetch({
+        'https://swap.metaswap.codefi.network/featureFlags': {
+          throws: true,
         },
-        {
-          overwriteRoutes: true,
-          method: 'GET',
-        },
-      );
+      });
 
       await expect(async () =>
         swapsUtil.fetchSwapsFeatureLiveness('1'),
@@ -537,29 +544,22 @@ describe('SwapsUtil', () => {
 
   describe('fetchGasPrices', () => {
     it('should work', async () => {
-      getOnce(
-        `https://gas.metaswap.codefi.network/networks/1/gasPrices`,
-        () => ({
-          body: JSON.stringify({
+      mockFetch({
+        'https://gas.metaswap.codefi.network/networks/1/gasPrices': {
+          body: {
             SafeGasPrice: '1',
             ProposeGasPrice: '2',
             FastGasPrice: '3',
-          }),
-        }),
-        { overwriteRoutes: true, method: 'GET' },
-      );
-
-      getOnce(
-        `https://gas.metaswap.codefi.network/networks/56/gasPrices`,
-        () => ({
-          body: JSON.stringify({
+          },
+        },
+        'https://gas.metaswap.codefi.network/networks/56/gasPrices': {
+          body: {
             SafeGasPrice: '4',
             ProposeGasPrice: '5',
             FastGasPrice: '6',
-          }),
-        }),
-        { overwriteRoutes: true, method: 'GET' },
-      );
+          },
+        },
+      });
       const gasPrices = await swapsUtil.fetchGasPrices('1');
       const gasPricesBSC = await swapsUtil.fetchGasPrices('56');
       expect(gasPrices).toStrictEqual({
