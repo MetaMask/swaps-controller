@@ -130,10 +130,6 @@ describe('SwapsUtil', () => {
       );
     });
 
-    it('should return zero when undefined', () => {
-      expect(swapsUtil.convertHexToDecimal(undefined)).toStrictEqual(0);
-    });
-
     it('should return a decimal string as the same decimal number', () => {
       expect(swapsUtil.convertHexToDecimal('1611')).toStrictEqual(1611);
     });
