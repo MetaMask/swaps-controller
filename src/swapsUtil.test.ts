@@ -542,7 +542,7 @@ describe('SwapsUtil', () => {
   describe('fetchGasPrices', () => {
     it('should work', async () => {
       getOnce(
-        `https://gas.metaswap.codefi.network/networks/1/gasPrices`,
+        `https://gas.api.cx.metamask.io/networks/1/gasPrices`,
         () => ({
           body: JSON.stringify({
             SafeGasPrice: '1',
@@ -554,7 +554,7 @@ describe('SwapsUtil', () => {
       );
 
       getOnce(
-        `https://gas.metaswap.codefi.network/networks/56/gasPrices`,
+        `https://gas.api.cx.metamask.io/networks/56/gasPrices`,
         () => ({
           body: JSON.stringify({
             SafeGasPrice: '4',
