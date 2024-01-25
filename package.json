@@ -9,7 +9,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "engines": {
-    "node": "^16.20 || ^18.16 || >=20"
+    "node": "^18.18 || >=20"
   },
   "files": [
     "dist/"
@@ -41,7 +41,7 @@
     "@types/ethereumjs-util": "^6.1.0",
     "@types/fetch-mock": "^7.3.3",
     "@types/jest": "^26.0.22",
-    "@types/node": "^16.6.2",
+    "@types/node": "^18.18.0",
     "@typescript-eslint/eslint-plugin": "^4.21.0",
     "@typescript-eslint/parser": "^4.21.0",
     "eslint": "^7.25.0",
