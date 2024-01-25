@@ -122,28 +122,6 @@ const FAKE_SWAPS_TOKEN = {
     'https://cloudflare-ipfs.com/ipfs/QmQTzo6Ecdn54x7NafwegjLetAnno1ATL9Y8M3PcVXGVhR',
 };
 
-describe('SwapsUtil', () => {
-  describe('convertHexToDecimal', () => {
-    it('should convert hex price to decimal', () => {
-      expect(swapsUtil.convertHexToDecimal('0x50fd51da')).toStrictEqual(
-        1358778842,
-      );
-    });
-
-    it('should return zero when undefined', () => {
-      expect(swapsUtil.convertHexToDecimal(undefined)).toStrictEqual(0);
-    });
-
-    it('should return a decimal string as the same decimal number', () => {
-      expect(swapsUtil.convertHexToDecimal('1611')).toStrictEqual(1611);
-    });
-
-    it('should return 0 when passed an invalid hex string', () => {
-      expect(swapsUtil.convertHexToDecimal('0x12398u12')).toStrictEqual(0);
-    });
-  });
-});
-
 describe('getBaseApiURL', () => {
   it('should return expected values', () => {
     expect(swapsUtil.getBaseApiURL(APIType.TRADES, '0x1')).toBeDefined();

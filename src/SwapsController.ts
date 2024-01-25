@@ -22,6 +22,7 @@ import abiERC20 from 'human-standard-token-abi';
 import { Mutex } from 'async-mutex';
 import Web3 from 'web3';
 
+import { Hex } from '@metamask/utils';
 import {
   calcTokenAmount,
   calculateGasEstimateWithRefund,
@@ -89,8 +90,6 @@ interface CustomGasFee {
   estimatedBaseFee?: string; // a GWEI dec string
   selected?: 'low' | 'medium' | 'high';
 }
-
-export declare type Hex = `0x${string}`;
 
 function isEthGasPriceEstimate(object: any): object is EthGasPriceEstimate {
   return Boolean(object) && object?.gasPrice !== undefined;

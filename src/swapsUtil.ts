@@ -1,7 +1,9 @@
 import { Transaction, util } from '@metamask/controllers';
 import { AbortSignal } from 'abort-controller';
 import { BigNumber } from 'bignumber.js';
-import { addHexPrefix, isHexString } from 'ethereumjs-util';
+import { addHexPrefix } from 'ethereumjs-util';
+import { Hex } from '@metamask/utils';
+import { convertHexToDecimal } from '@metamask/controller-utils';
 import {
   ALLOWED_CONTRACT_ADDRESSES,
   API_BASE_URL,
@@ -29,7 +31,6 @@ import {
   NetworkFeatureFlags,
   NetworksFeatureStatus,
 } from './swapsInterfaces';
-import { Hex } from './SwapsController';
 
 export * from './constants';
 
@@ -104,22 +105,6 @@ export function shouldEnableDirectWrapping(
       destinationTokenLowerCase === wrappedTokenLowerCase)
   );
 }
-
-/**
- * Converts valid hex strings to decimal numbers, and handles unexpected arg types.
- *
- * @param value - a string that is either a hexadecimal with `0x` prefix or a decimal string.
- * @returns a decimal number.
- */
-export const convertHexToDecimal = (
-  value: string | undefined = '0x0',
-): number => {
-  if (isHexString(value)) {
-    return parseInt(value, 16);
-  }
-
-  return Number(value) ? Number(value) : 0;
-};
 
 export const getBaseApiURL = function (type: APIType, chainId: Hex): string {
   const [apiChainId, apiBaseUrl] =
