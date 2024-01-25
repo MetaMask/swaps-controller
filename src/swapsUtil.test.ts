@@ -132,6 +132,7 @@ describe('SwapsUtil', () => {
       expect(
         swapsUtil.getBaseApiURL(APIType.FEATURE_FLAG, '0x1'),
       ).toBeDefined();
+
       expect(
         swapsUtil.getBaseApiURL(APIType.AGGREGATOR_METADATA, '0x1'),
       ).toBeDefined();
