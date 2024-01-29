@@ -545,14 +545,14 @@ describe('SwapsUtil', () => {
   describe('fetchGasPrices', () => {
     it('should work', async () => {
       mockFetch({
-        'https://gas.metaswap.codefi.network/networks/1/gasPrices': {
+        'https://gas.api.cx.metamask.io/networks/1/gasPrices': {
           body: {
             SafeGasPrice: '1',
             ProposeGasPrice: '2',
             FastGasPrice: '3',
           },
         },
-        'https://gas.metaswap.codefi.network/networks/56/gasPrices': {
+        'https://gas.api.cx.metamask.io/networks/56/gasPrices': {
           body: {
             SafeGasPrice: '4',
             ProposeGasPrice: '5',

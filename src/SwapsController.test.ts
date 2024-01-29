@@ -1,6 +1,4 @@
 import { ComposableController } from '@metamask/controllers';
-import EthQuery from '@metamask/eth-query';
-import { Web3 } from 'web3';
 
 import SwapsController, { INITIAL_CHAIN_DATA } from './SwapsController';
 import * as swapsUtil from './swapsUtil';
@@ -378,14 +376,13 @@ describe('SwapsController', () => {
   });
 
   describe('provider', () => {
-    it('should create ethQuery and web3 when provider changes', () => {
+    it('should set provider', () => {
       const provider = { name: 'foo provider' };
-      expect(swapsController.provider).toBeUndefined();
+      expect(swapsController.defaultConfig.provider).toBeUndefined();
       swapsController.configure({
         provider,
       });
-      expect(EthQuery).toHaveBeenLastCalledWith(provider);
-      expect(Web3).toHaveBeenLastCalledWith(provider);
+      expect(swapsController.defaultConfig.provider.name).toBe(provider.name);
     });
   });
 
