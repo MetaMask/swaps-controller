@@ -316,8 +316,8 @@ describe('SwapsController', () => {
   it('should set default config', () => {
     expect(swapsController.config).toStrictEqual(swapsController.defaultConfig);
     expect(swapsController.config).toStrictEqual({
-      chainId: '1',
-      supportedChainIds: ['1', '56', '1337', '137', '43114'],
+      chainId: '0x1',
+      supportedChainIds: ['0x1', '0x38', '0x539', '0x89', '0xa86a'],
       maxGasLimit: 2500000,
       pollCountLimit: 3,
       fetchAggregatorMetadataThreshold: 1000 * 60 * 60 * 24 * 15,
@@ -369,7 +369,7 @@ describe('SwapsController', () => {
       usedGasEstimate: null,
       usedCustomGas: null,
       chainCache: {
-        '1': {
+        '0x1': {
           aggregatorMetadataLastFetched: 0,
           tokensLastFetched: 0,
           topAssetsLastFetched: 0,
@@ -415,43 +415,45 @@ describe('SwapsController', () => {
     });
 
     it('should update chainId configuration', () => {
-      swapsController.configure({ chainId: '23' });
-      expect(swapsController.config.chainId).toBe('23');
+      swapsController.configure({ chainId: '0x23' });
+      expect(swapsController.config.chainId).toBe('0x23');
 
-      swapsController.configure({ chainId: '24' });
-      expect(swapsController.config.chainId).toBe('24');
+      swapsController.configure({ chainId: '0x24' });
+      expect(swapsController.config.chainId).toBe('0x24');
 
-      swapsController.configure({ chainId: '291' });
-      expect(swapsController.config.chainId).toBe('291');
+      swapsController.configure({ chainId: '0x291' });
+      expect(swapsController.config.chainId).toBe('0x291');
     });
 
     it('should create default cache for supported chainIds', () => {
-      swapsController.configure({ supportedChainIds: ['23', '24', '291'] });
-      swapsController.configure({ chainId: '23' });
-      expect(swapsController.state.chainCache['23']).toStrictEqual(
+      swapsController.configure({
+        supportedChainIds: ['0x23', '0x24', '0x291'],
+      });
+      swapsController.configure({ chainId: '0x23' });
+      expect(swapsController.state.chainCache['0x23']).toStrictEqual(
         INITIAL_CHAIN_DATA,
       );
 
-      swapsController.configure({ chainId: '24' });
-      expect(swapsController.state.chainCache['24']).toStrictEqual(
+      swapsController.configure({ chainId: '0x24' });
+      expect(swapsController.state.chainCache['0x24']).toStrictEqual(
         INITIAL_CHAIN_DATA,
       );
 
-      swapsController.configure({ chainId: '291' });
-      expect(swapsController.state.chainCache['291']).toStrictEqual(
+      swapsController.configure({ chainId: '0x291' });
+      expect(swapsController.state.chainCache['0x291']).toStrictEqual(
         INITIAL_CHAIN_DATA,
       );
     });
 
     it('should not create default cache for supported chainIds', () => {
-      swapsController.configure({ chainId: '23' });
-      expect(swapsController.state.chainCache['23']).toBeUndefined();
+      swapsController.configure({ chainId: '0x23' });
+      expect(swapsController.state.chainCache['0x23']).toBeUndefined();
 
-      swapsController.configure({ chainId: '24' });
-      expect(swapsController.state.chainCache['24']).toBeUndefined();
+      swapsController.configure({ chainId: '0x24' });
+      expect(swapsController.state.chainCache['0x24']).toBeUndefined();
 
-      swapsController.configure({ chainId: '291' });
-      expect(swapsController.state.chainCache['291']).toBeUndefined();
+      swapsController.configure({ chainId: '0x291' });
+      expect(swapsController.state.chainCache['0x291']).toBeUndefined();
     });
 
     it('should load existing cache for chainId', () => {
@@ -476,20 +478,24 @@ describe('SwapsController', () => {
 
       swapsController.update({
         chainCache: {
-          '23': chainData23,
-          '24': chainData24,
-          '291': chainData0x123,
+          '0x23': chainData23,
+          '0x24': chainData24,
+          '0x291': chainData0x123,
         },
       });
 
-      swapsController.configure({ chainId: '23' });
-      expect(swapsController.state.chainCache['23']).toStrictEqual(chainData23);
+      swapsController.configure({ chainId: '0x23' });
+      expect(swapsController.state.chainCache['0x23']).toStrictEqual(
+        chainData23,
+      );
 
-      swapsController.configure({ chainId: '24' });
-      expect(swapsController.state.chainCache['24']).toStrictEqual(chainData24);
+      swapsController.configure({ chainId: '0x24' });
+      expect(swapsController.state.chainCache['0x24']).toStrictEqual(
+        chainData24,
+      );
 
-      swapsController.configure({ chainId: '291' });
-      expect(swapsController.state.chainCache['291']).toStrictEqual(
+      swapsController.configure({ chainId: '0x291' });
+      expect(swapsController.state.chainCache['0x291']).toStrictEqual(
         chainData0x123,
       );
     });

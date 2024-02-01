@@ -22,6 +22,7 @@ import abiERC20 from 'human-standard-token-abi';
 import { Mutex } from 'async-mutex';
 import Web3 from 'web3';
 
+import { Hex } from '@metamask/utils';
 import {
   calcTokenAmount,
   calculateGasEstimateWithRefund,
@@ -120,8 +121,8 @@ export interface SwapsConfig extends BaseConfig {
   fetchTokensThreshold: number;
   fetchTopAssetsThreshold: number;
   provider: any;
-  chainId: string;
-  supportedChainIds: string[];
+  chainId: Hex;
+  supportedChainIds: Hex[];
 }
 
 export interface SwapsState extends BaseState {
@@ -176,7 +177,7 @@ export const INITIAL_CHAIN_DATA: ChainData = {
  */
 function getNewChainCache(
   chainCache: ChainCache,
-  chainId: string,
+  chainId: Hex,
   data: Partial<ChainData>,
 ): ChainCache {
   return {
@@ -214,7 +215,7 @@ export default class SwapsController extends BaseController<
     eth: any,
     options: {
       txParams: Transaction;
-      chainId: string;
+      chainId: Hex;
     },
   ) => Promise<string | undefined>;
 
@@ -817,7 +818,7 @@ export default class SwapsController extends BaseController<
         eth: any,
         options: {
           txParams: Transaction;
-          chainId: string;
+          chainId: Hex;
         },
       ) => Promise<string | undefined>;
     },
@@ -832,7 +833,7 @@ export default class SwapsController extends BaseController<
       fetchTokensThreshold: 1000 * 60 * 60 * 24,
       fetchTopAssetsThreshold: 1000 * 60 * 30,
       provider: undefined,
-      chainId: '1',
+      chainId: '0x1',
       supportedChainIds: [
         ETH_CHAIN_ID,
         BSC_CHAIN_ID,
@@ -882,7 +883,7 @@ export default class SwapsController extends BaseController<
       usedGasEstimate: null,
       usedCustomGas: null,
       chainCache: {
-        '1': INITIAL_CHAIN_DATA,
+        '0x1': INITIAL_CHAIN_DATA,
       },
     };
 
@@ -899,7 +900,7 @@ export default class SwapsController extends BaseController<
     }
   }
 
-  set chainId(chainId: string) {
+  set chainId(chainId: Hex) {
     if (!this.config.supportedChainIds.includes(chainId)) {
       return;
     }

@@ -1,16 +1,17 @@
+import { toHex } from '@metamask/controller-utils';
 import { SwapsToken } from './swapsInterfaces';
 
 //* Chain IDs and names
 
-export const ETH_CHAIN_ID = '1';
-export const BSC_CHAIN_ID = '56';
-export const POLYGON_CHAIN_ID = '137';
-export const AVALANCHE_CHAIN_ID = '43114';
-export const ARBITRUM_CHAIN_ID = '42161';
-export const OPTIMISM_CHAIN_ID = '10';
-export const ZKSYNC_ERA_CHAIN_ID = '324';
-export const LINEA_CHAIN_ID = '59144';
-export const SWAPS_TESTNET_CHAIN_ID = '1337';
+export const ETH_CHAIN_ID = toHex('1');
+export const BSC_CHAIN_ID = toHex('56');
+export const POLYGON_CHAIN_ID = toHex('137');
+export const AVALANCHE_CHAIN_ID = toHex('43114');
+export const ARBITRUM_CHAIN_ID = toHex('42161');
+export const OPTIMISM_CHAIN_ID = toHex('10');
+export const ZKSYNC_ERA_CHAIN_ID = toHex('324');
+export const LINEA_CHAIN_ID = toHex('59144');
+export const SWAPS_TESTNET_CHAIN_ID = toHex('1337');
 
 export const CHAIN_ID_TO_NAME_MAP: { [key: string]: string } = {
   [ETH_CHAIN_ID]: 'ethereum',
