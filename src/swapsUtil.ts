@@ -1,5 +1,7 @@
+import { convertHexToDecimal } from '@metamask/controller-utils';
 import type { Transaction } from '@metamask/controllers';
 import { util } from '@metamask/controllers';
+import type { Hex } from '@metamask/utils';
 import { BigNumber } from 'bignumber.js';
 import { addHexPrefix } from 'ethereumjs-util';
 
@@ -20,14 +22,14 @@ import {
 } from './constants';
 import type {
   APIAggregatorMetadata,
-  SwapsAsset,
-  SwapsToken,
-  Quote,
   APIFetchQuotesParams,
-  QuoteValues,
-  TransactionReceipt,
   NetworkFeatureFlags,
   NetworksFeatureStatus,
+  Quote,
+  QuoteValues,
+  SwapsAsset,
+  SwapsToken,
+  TransactionReceipt,
 } from './swapsInterfaces';
 import { APIType } from './swapsInterfaces';
 
@@ -72,7 +74,7 @@ function getClientIdHeader(clientId?: string) {
  * @param chainId - The chain ID.
  * @returns The native swaps token.
  */
-export function getNativeSwapsToken(chainId: string): SwapsToken {
+export function getNativeSwapsToken(chainId: Hex): SwapsToken {
   return SWAPS_NATIVE_TOKEN_OBJECTS[chainId];
 }
 
@@ -81,7 +83,7 @@ export function getNativeSwapsToken(chainId: string): SwapsToken {
  * @param chainId - The chain ID.
  * @returns The swaps contract address.
  */
-export function getSwapsContractAddress(chainId: string): string {
+export function getSwapsContractAddress(chainId: Hex): string {
   return SWAPS_CONTRACT_ADDRESSES[chainId];
 }
 
@@ -92,7 +94,7 @@ export function getSwapsContractAddress(chainId: string): string {
  * @returns True if the contract address is valid, false otherwise.
  */
 export function isValidContractAddress(
-  chainId: string,
+  chainId: Hex,
   contract: string | undefined,
 ): boolean {
   if (!contract || !ALLOWED_CONTRACT_ADDRESSES[chainId]) {
@@ -112,7 +114,7 @@ export function isValidContractAddress(
  * @returns True if direct wrapping should be enabled, false otherwise.
  */
 export function shouldEnableDirectWrapping(
-  chainId: string,
+  chainId: Hex,
   sourceToken: string,
   destinationToken: string,
 ): boolean {
@@ -136,26 +138,27 @@ export function shouldEnableDirectWrapping(
  * @param chainId - The chain ID.
  * @returns The base API URL.
  */
-export const getBaseApiURL = function (type: APIType, chainId: string): string {
+export const getBaseApiURL = function (type: APIType, chainId: Hex): string {
   const [apiChainId, apiBaseUrl] =
     chainId === SWAPS_TESTNET_CHAIN_ID
       ? [ETH_CHAIN_ID, DEV_BASE_URL]
       : [chainId, API_BASE_URL];
+  const apiDecimalChainId: number = convertHexToDecimal(apiChainId);
   switch (type) {
     case APIType.TRADES:
-      return `${apiBaseUrl}/networks/${apiChainId}/trades`;
+      return `${apiBaseUrl}/networks/${apiDecimalChainId}/trades`;
     case APIType.TOKENS:
-      return `${apiBaseUrl}/networks/${apiChainId}/tokens`;
+      return `${apiBaseUrl}/networks/${apiDecimalChainId}/tokens`;
     case APIType.TOKEN:
-      return `${apiBaseUrl}/networks/${apiChainId}/token`;
+      return `${apiBaseUrl}/networks/${apiDecimalChainId}/token`;
     case APIType.TOP_ASSETS:
-      return `${apiBaseUrl}/networks/${apiChainId}/topAssets`;
+      return `${apiBaseUrl}/networks/${apiDecimalChainId}/topAssets`;
     case APIType.FEATURE_FLAG:
       return `${apiBaseUrl}/featureFlags`;
     case APIType.AGGREGATOR_METADATA:
-      return `${apiBaseUrl}/networks/${apiChainId}/aggregatorMetadata`;
+      return `${apiBaseUrl}/networks/${apiDecimalChainId}/aggregatorMetadata`;
     case APIType.GAS_PRICES:
-      return `${GAS_API_BASE_URL}/networks/${apiChainId}/gasPrices`;
+      return `${GAS_API_BASE_URL}/networks/${apiDecimalChainId}/gasPrices`;
     default:
       throw new Error('getBaseApiURL requires an api call type');
   }
@@ -166,7 +169,7 @@ export const getBaseApiURL = function (type: APIType, chainId: string): string {
  * @param chainId - The chain ID.
  * @returns The token metadata URL.
  */
-export function getTokenMetadataURL(chainId: string): string {
+export function getTokenMetadataURL(chainId: Hex): string {
   return getBaseApiURL(APIType.TOKEN, chainId);
 }
 
@@ -192,7 +195,7 @@ export async function fetchTradesInfo(
     walletAddress,
   }: APIFetchQuotesParams,
   abortSignal: AbortSignal | null,
-  chainId: string,
+  chainId: Hex,
   clientId?: string,
 ): Promise<{ [key: string]: Quote }> {
   const urlParams: APIFetchQuotesParams = {
@@ -267,7 +270,7 @@ export async function fetchTradesInfo(
  * @returns Promise resolving to an object containing token metadata.
  */
 export async function fetchTokens(
-  chainId: string,
+  chainId: Hex,
   clientId?: string,
 ): Promise<SwapsToken[]> {
   const tokenUrl = getBaseApiURL(APIType.TOKENS, chainId);
@@ -288,10 +291,7 @@ export async function fetchTokens(
  * @param clientId - Client id.
  * @returns Promise resolving to an object containing aggregators metadata.
  */
-export async function fetchAggregatorMetadata(
-  chainId: string,
-  clientId?: string,
-) {
+export async function fetchAggregatorMetadata(chainId: Hex, clientId?: string) {
   const aggregatorMetadataUrl = getBaseApiURL(
     APIType.AGGREGATOR_METADATA,
     chainId,
@@ -312,7 +312,7 @@ export async function fetchAggregatorMetadata(
  * @returns Promise resolving to an object containing top assets.
  */
 export async function fetchTopAssets(
-  chainId: string,
+  chainId: Hex,
   clientId?: string,
 ): Promise<SwapsAsset[]> {
   const topAssetsUrl = getBaseApiURL(APIType.TOP_ASSETS, chainId);
@@ -330,7 +330,7 @@ export async function fetchTopAssets(
  * @returns Promise resolving to an object containing feature flags.
  */
 export async function fetchSwapsFeatureLiveness(
-  chainId: string,
+  chainId: Hex,
   clientId?: string,
 ): Promise<NetworkFeatureFlags | undefined> {
   const status: NetworksFeatureStatus = await handleFetch(
@@ -348,7 +348,7 @@ export async function fetchSwapsFeatureLiveness(
  * @returns Gas prices represented as decimal GWEI strings.
  */
 export async function fetchGasPrices(
-  chainId: string,
+  chainId: Hex,
   clientId?: string,
 ): Promise<{
   safeGasPrice: string;

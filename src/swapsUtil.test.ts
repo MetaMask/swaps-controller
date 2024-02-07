@@ -159,17 +159,20 @@ const FAKE_SWAPS_TOKEN = {
 describe('SwapsUtil', () => {
   describe('getBaseApiURL', () => {
     it('should return expected values', () => {
-      expect(swapsUtil.getBaseApiURL(APIType.TRADES, '1')).toBeDefined();
-      expect(swapsUtil.getBaseApiURL(APIType.TOKENS, '1')).toBeDefined();
-      expect(swapsUtil.getBaseApiURL(APIType.TOKEN, '1')).toBeDefined();
-      expect(swapsUtil.getBaseApiURL(APIType.TOP_ASSETS, '1')).toBeDefined();
-      expect(swapsUtil.getBaseApiURL(APIType.FEATURE_FLAG, '1')).toBeDefined();
+      expect(swapsUtil.getBaseApiURL(APIType.TRADES, '0x1')).toBeDefined();
+      expect(swapsUtil.getBaseApiURL(APIType.TOKENS, '0x1')).toBeDefined();
+      expect(swapsUtil.getBaseApiURL(APIType.TOKEN, '0x1')).toBeDefined();
+      expect(swapsUtil.getBaseApiURL(APIType.TOP_ASSETS, '0x1')).toBeDefined();
       expect(
-        swapsUtil.getBaseApiURL(APIType.AGGREGATOR_METADATA, '1'),
+        swapsUtil.getBaseApiURL(APIType.FEATURE_FLAG, '0x1'),
       ).toBeDefined();
-      expect(swapsUtil.getBaseApiURL(APIType.GAS_PRICES, '1')).toBeDefined();
+
+      expect(
+        swapsUtil.getBaseApiURL(APIType.AGGREGATOR_METADATA, '0x1'),
+      ).toBeDefined();
+      expect(swapsUtil.getBaseApiURL(APIType.GAS_PRICES, '0x1')).toBeDefined();
       expect(() =>
-        swapsUtil.getBaseApiURL('error value' as APIType, '1'),
+        swapsUtil.getBaseApiURL('error value' as APIType, '0x1'),
       ).toThrow();
     });
   });
@@ -233,7 +236,7 @@ describe('SwapsUtil', () => {
 
   describe('getTokenMetadataURL', () => {
     it('should work', () => {
-      expect(swapsUtil.getTokenMetadataURL('1')).toBe(
+      expect(swapsUtil.getTokenMetadataURL('0x1')).toBe(
         'https://swap.metaswap.codefi.network/networks/1/token',
       );
 
@@ -273,7 +276,7 @@ describe('SwapsUtil', () => {
           walletAddress: '0xB0dA5965D43369968574D399dBe6374683773a65',
         },
         null,
-        '1',
+        '0x1',
       );
 
       const quotesWithClientId = await swapsUtil.fetchTradesInfo(
@@ -285,7 +288,7 @@ describe('SwapsUtil', () => {
           walletAddress: '0xB0dA5965D43369968574D399dBe6374683773a65',
         },
         null,
-        '1',
+        '0x1',
         'mobile',
       );
 
@@ -369,7 +372,7 @@ describe('SwapsUtil', () => {
           walletAddress: '0xB0dA5965D43369968574D399dBe6374683773a65',
         },
         null,
-        '1',
+        '0x1',
       );
 
       const response = {
@@ -444,7 +447,7 @@ describe('SwapsUtil', () => {
           body: API_TOKENS.concat([FAKE_SWAPS_TOKEN]),
         },
       });
-      const tokens = await swapsUtil.fetchTokens('1');
+      const tokens = await swapsUtil.fetchTokens('0x1');
       expect(tokens).toStrictEqual(
         API_TOKENS.concat([swapsUtil.ETH_SWAPS_TOKEN_OBJECT]),
       );
@@ -458,7 +461,9 @@ describe('SwapsUtil', () => {
           body: API_TRADES,
         },
       });
-      const aggregatorsMetadata = await swapsUtil.fetchAggregatorMetadata('1');
+      const aggregatorsMetadata = await swapsUtil.fetchAggregatorMetadata(
+        '0x1',
+      );
       expect(aggregatorsMetadata).toBeInstanceOf(Object);
     });
   });
@@ -470,7 +475,7 @@ describe('SwapsUtil', () => {
           body: API_TRADES,
         },
       });
-      const assets = await swapsUtil.fetchTopAssets('1');
+      const assets = await swapsUtil.fetchTopAssets('0x1');
       expect(assets).toBeDefined();
       expect(assets).toBeInstanceOf(Array);
     });
@@ -499,7 +504,7 @@ describe('SwapsUtil', () => {
           },
         },
       });
-      const featureLiveness = await swapsUtil.fetchSwapsFeatureLiveness('1');
+      const featureLiveness = await swapsUtil.fetchSwapsFeatureLiveness('0x1');
       expect(featureLiveness).toBeInstanceOf(Object);
     });
 
@@ -525,7 +530,9 @@ describe('SwapsUtil', () => {
           },
         },
       });
-      const featureLiveness = await swapsUtil.fetchSwapsFeatureLiveness('321');
+      const featureLiveness = await swapsUtil.fetchSwapsFeatureLiveness(
+        '0x321',
+      );
       expect(featureLiveness).toBeUndefined();
     });
 
@@ -537,7 +544,7 @@ describe('SwapsUtil', () => {
       });
 
       await expect(async () =>
-        swapsUtil.fetchSwapsFeatureLiveness('1'),
+        swapsUtil.fetchSwapsFeatureLiveness('0x1'),
       ).rejects.toThrow();
     });
   });
@@ -560,8 +567,8 @@ describe('SwapsUtil', () => {
           },
         },
       });
-      const gasPrices = await swapsUtil.fetchGasPrices('1');
-      const gasPricesBSC = await swapsUtil.fetchGasPrices('56');
+      const gasPrices = await swapsUtil.fetchGasPrices('0x1');
+      const gasPricesBSC = await swapsUtil.fetchGasPrices('0x38');
       expect(gasPrices).toStrictEqual({
         safeGasPrice: '1',
         proposedGasPrice: '2',
