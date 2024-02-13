@@ -23,6 +23,15 @@ export interface SwapsToken extends SwapsAsset {
   iconUrl?: string;
 }
 
+export interface FeatureFlags {
+  smartTransactions: {
+    mobileActive: boolean;
+    extensionActive: boolean;
+    mobileActiveIOS: boolean;
+    mobileActiveAndroid: boolean;
+  };
+}
+
 export interface NetworkFeatureFlags {
   // eslint-disable-next-line camelcase
   mobile_active: boolean;

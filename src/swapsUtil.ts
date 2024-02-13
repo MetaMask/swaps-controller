@@ -30,6 +30,7 @@ import {
   TransactionReceipt,
   NetworkFeatureFlags,
   NetworksFeatureStatus,
+  FeatureFlags,
 } from './swapsInterfaces';
 
 export * from './constants';
@@ -265,6 +266,17 @@ export async function fetchSwapsFeatureLiveness(
   );
   const networkName = CHAIN_ID_TO_NAME_MAP[chainId];
   return status[networkName];
+}
+
+export async function fetchSwapsFeatureFlags(
+  clientId?: string,
+): Promise<FeatureFlags | undefined> {
+  const featureFlags: FeatureFlags = await handleFetch(
+    getBaseApiURL(APIType.FEATURE_FLAG, '0x1'), // chainId doesn't matter for feature flags
+    { method: 'GET', headers: getClientIdHeader(clientId) },
+  );
+
+  return featureFlags;
 }
 
 /**
