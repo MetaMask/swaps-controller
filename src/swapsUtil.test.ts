@@ -546,6 +546,127 @@ describe('SwapsUtil', () => {
     });
   });
 
+  describe('fetchSwapsFeatureFlags', () => {
+    it('should work', async () => {
+      getOnce(
+        `https://swap.metaswap.codefi.network/featureFlags`,
+        () => ({
+          body: JSON.stringify({
+            ethereum: {
+              mobile_active: true,
+              extension_active: true,
+              fallback_to_v1: false,
+              fallbackToV1: false,
+              mobileActive: true,
+              extensionActive: true,
+              mobileActiveIOS: true,
+              mobileActiveAndroid: true,
+            },
+            bsc: {
+              mobile_active: true,
+              extension_active: true,
+              fallback_to_v1: false,
+              fallbackToV1: false,
+              mobileActive: true,
+              extensionActive: true,
+              mobileActiveIOS: true,
+              mobileActiveAndroid: true,
+            },
+            polygon: {
+              mobile_active: true,
+              extension_active: true,
+              fallback_to_v1: false,
+              fallbackToV1: false,
+              mobileActive: true,
+              extensionActive: true,
+              mobileActiveIOS: true,
+              mobileActiveAndroid: true,
+            },
+            avalanche: {
+              mobile_active: true,
+              extension_active: true,
+              fallback_to_v1: false,
+              fallbackToV1: false,
+              mobileActive: true,
+              extensionActive: true,
+              mobileActiveIOS: true,
+              mobileActiveAndroid: true,
+            },
+            arbitrum: {
+              mobile_active: true,
+              extension_active: true,
+              fallback_to_v1: false,
+              fallbackToV1: false,
+              mobileActive: true,
+              extensionActive: true,
+              mobileActiveIOS: true,
+              mobileActiveAndroid: true,
+            },
+            optimism: {
+              mobile_active: true,
+              extension_active: true,
+              fallback_to_v1: false,
+              fallbackToV1: false,
+              mobileActive: true,
+              extensionActive: true,
+              mobileActiveIOS: true,
+              mobileActiveAndroid: true,
+            },
+            zksync: {
+              mobile_active: true,
+              extension_active: true,
+              fallback_to_v1: false,
+              fallbackToV1: false,
+              mobileActive: true,
+              extensionActive: true,
+              mobileActiveIOS: true,
+              mobileActiveAndroid: true,
+            },
+            linea: {
+              mobile_active: true,
+              extension_active: true,
+              fallback_to_v1: false,
+              fallbackToV1: false,
+              mobileActive: true,
+              extensionActive: true,
+              mobileActiveIOS: true,
+              mobileActiveAndroid: true,
+            },
+            smart_transactions: {
+              mobile_active: false,
+              extension_active: true,
+            },
+            smartTransactions: {
+              mobileActive: false,
+              extensionActive: true,
+              mobileActiveIOS: false,
+              mobileActiveAndroid: false,
+            },
+            swapRedesign: { mobileActive: false, extensionActive: true },
+          }),
+        }),
+        { overwriteRoutes: true, method: 'GET' },
+      );
+      const featureFlags = await swapsUtil.fetchSwapsFeatureFlags();
+      expect(featureFlags).toBeInstanceOf(Object);
+    });
+
+    it('should throw on exception', async () => {
+      getOnce(
+        `https://swap.metaswap.codefi.network/featureFlags`,
+        {
+          throws: new Error('this is an error'),
+        },
+        {
+          overwriteRoutes: true,
+          method: 'GET',
+        },
+      );
+
+      await expect(() => swapsUtil.fetchSwapsFeatureFlags()).rejects.toThrow();
+    });
+  });
+
   describe('fetchGasPrices', () => {
     it('should work', async () => {
       getOnce(
