@@ -1,5 +1,6 @@
 import { toHex } from '@metamask/controller-utils';
-import { SwapsToken } from './swapsInterfaces';
+
+import type { SwapsToken } from './swapsInterfaces';
 
 //* Chain IDs and names
 

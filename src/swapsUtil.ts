@@ -1,9 +1,10 @@
-import { Transaction, util } from '@metamask/controllers';
-import { AbortSignal } from 'abort-controller';
+import { convertHexToDecimal } from '@metamask/controller-utils';
+import type { Transaction } from '@metamask/controllers';
+import { util } from '@metamask/controllers';
+import type { Hex } from '@metamask/utils';
 import { BigNumber } from 'bignumber.js';
 import { addHexPrefix } from 'ethereumjs-util';
-import { Hex } from '@metamask/utils';
-import { convertHexToDecimal } from '@metamask/controller-utils';
+
 import {
   ALLOWED_CONTRACT_ADDRESSES,
   API_BASE_URL,
@@ -19,28 +20,23 @@ import {
   SWAPS_WRAPPED_TOKENS_ADDRESSES,
   TOKEN_TRANSFER_LOG_TOPIC_HASH,
 } from './constants';
-import {
+import type {
   APIAggregatorMetadata,
-  SwapsAsset,
-  SwapsToken,
-  APIType,
-  Quote,
   APIFetchQuotesParams,
-  QuoteValues,
-  TransactionReceipt,
   NetworkFeatureFlags,
   NetworksFeatureStatus,
+  Quote,
+  QuoteValues,
+  SwapsAsset,
+  SwapsToken,
+  TransactionReceipt,
 } from './swapsInterfaces';
+import { APIType } from './swapsInterfaces';
 
 export * from './constants';
 
-const {
-  handleFetch,
-  timeoutFetch,
-  BNToHex,
-  query,
-  normalizeTransaction,
-} = util;
+const { handleFetch, timeoutFetch, BNToHex, query, normalizeTransaction } =
+  util;
 
 export enum SwapsError {
   QUOTES_EXPIRED_ERROR = 'quotes-expired',
@@ -53,8 +49,17 @@ export enum SwapsError {
   SWAPS_ALLOWANCE_TIMEOUT = 'swaps-allowance-timeout',
   SWAPS_ALLOWANCE_ERROR = 'swaps-allowance-error',
 }
-
 // Functions
+/**
+ * Returns the client ID header.
+ * @param clientId - The client ID.
+ * @returns The client ID header.
+ */
+/**
+ * Returns the client ID header if provided.
+ * @param clientId - The client ID.
+ * @returns The client ID header.
+ */
 function getClientIdHeader(clientId?: string) {
   if (!clientId) {
     return undefined;
@@ -64,14 +69,30 @@ function getClientIdHeader(clientId?: string) {
   };
 }
 
+/**
+ * Gets the native swaps token for the given chain ID.
+ * @param chainId - The chain ID.
+ * @returns The native swaps token.
+ */
 export function getNativeSwapsToken(chainId: Hex): SwapsToken {
   return SWAPS_NATIVE_TOKEN_OBJECTS[chainId];
 }
 
+/**
+ * Gets the swaps contract address for the given chain ID.
+ * @param chainId - The chain ID.
+ * @returns The swaps contract address.
+ */
 export function getSwapsContractAddress(chainId: Hex): string {
   return SWAPS_CONTRACT_ADDRESSES[chainId];
 }
 
+/**
+ * Checks if the given contract address is valid for the given chain ID.
+ * @param chainId - The chain ID.
+ * @param contract - The contract address.
+ * @returns True if the contract address is valid, false otherwise.
+ */
 export function isValidContractAddress(
   chainId: Hex,
   contract: string | undefined,
@@ -85,17 +106,22 @@ export function isValidContractAddress(
   );
 }
 
+/**
+ * Checks if direct wrapping should be enabled for the given chain ID, source token, and destination token.
+ * @param chainId - The chain ID.
+ * @param sourceToken - The source token.
+ * @param destinationToken - The destination token.
+ * @returns True if direct wrapping should be enabled, false otherwise.
+ */
 export function shouldEnableDirectWrapping(
   chainId: Hex,
   sourceToken: string,
   destinationToken: string,
 ): boolean {
-  const wrappedTokenLowerCase = SWAPS_WRAPPED_TOKENS_ADDRESSES[
-    chainId
-  ]?.toLowerCase();
-  const nativeTokenLowerCase = SWAPS_NATIVE_TOKEN_OBJECTS[
-    chainId
-  ].address?.toLowerCase();
+  const wrappedTokenLowerCase =
+    SWAPS_WRAPPED_TOKENS_ADDRESSES[chainId]?.toLowerCase();
+  const nativeTokenLowerCase =
+    SWAPS_NATIVE_TOKEN_OBJECTS[chainId].address?.toLowerCase();
   const sourceTokenLowerCase = sourceToken?.toLowerCase();
   const destinationTokenLowerCase = destinationToken?.toLowerCase();
   return (
@@ -106,12 +132,18 @@ export function shouldEnableDirectWrapping(
   );
 }
 
+/**
+ * Gets the base API URL for the given API type and chain ID.
+ * @param type - The API type.
+ * @param chainId - The chain ID.
+ * @returns The base API URL.
+ */
 export const getBaseApiURL = function (type: APIType, chainId: Hex): string {
   const [apiChainId, apiBaseUrl] =
     chainId === SWAPS_TESTNET_CHAIN_ID
       ? [ETH_CHAIN_ID, DEV_BASE_URL]
       : [chainId, API_BASE_URL];
-  const apiDecimalChainId = convertHexToDecimal(apiChainId);
+  const apiDecimalChainId: number = convertHexToDecimal(apiChainId);
   switch (type) {
     case APIType.TRADES:
       return `${apiBaseUrl}/networks/${apiDecimalChainId}/trades`;
@@ -132,10 +164,28 @@ export const getBaseApiURL = function (type: APIType, chainId: Hex): string {
   }
 };
 
+/**
+ * Gets the token metadata URL for the given chain ID.
+ * @param chainId - The chain ID.
+ * @returns The token metadata URL.
+ */
 export function getTokenMetadataURL(chainId: Hex): string {
   return getBaseApiURL(APIType.TOKEN, chainId);
 }
 
+/**
+ * Fetches quotes from API URL.
+ * @param quoteParams - Quote parameters.
+ * @param quoteParams.slippage - Slippage.
+ * @param quoteParams.sourceToken - Source token address.
+ * @param quoteParams.sourceAmount - Source token amount.
+ * @param quoteParams.destinationToken - Destination token address.
+ * @param quoteParams.walletAddress - Address to do the swap from.
+ * @param abortSignal - Abort signal.
+ * @param chainId - Current chainId.
+ * @param clientId - Client id.
+ * @returns Promise resolving to an object containing trades info.
+ */
 export async function fetchTradesInfo(
   {
     slippage,
@@ -213,6 +263,12 @@ export async function fetchTradesInfo(
   return newQuotes;
 }
 
+/**
+ * Fetches token metadata from API URL.
+ * @param chainId - Current chainId.
+ * @param clientId - Client id.
+ * @returns Promise resolving to an object containing token metadata.
+ */
 export async function fetchTokens(
   chainId: Hex,
   clientId?: string,
@@ -229,6 +285,12 @@ export async function fetchTokens(
   return filteredTokens;
 }
 
+/**
+ * Fetches aggregators metadata from API URL.
+ * @param chainId - Current chainId.
+ * @param clientId - Client id.
+ * @returns Promise resolving to an object containing aggregators metadata.
+ */
 export async function fetchAggregatorMetadata(chainId: Hex, clientId?: string) {
   const aggregatorMetadataUrl = getBaseApiURL(
     APIType.AGGREGATOR_METADATA,
@@ -243,6 +305,12 @@ export async function fetchAggregatorMetadata(chainId: Hex, clientId?: string) {
   return aggregators;
 }
 
+/**
+ * Fetches top assets from API URL.
+ * @param chainId - Current chainId.
+ * @param clientId - Client id.
+ * @returns Promise resolving to an object containing top assets.
+ */
 export async function fetchTopAssets(
   chainId: Hex,
   clientId?: string,
@@ -255,6 +323,12 @@ export async function fetchTopAssets(
   return response;
 }
 
+/**
+ * Fetches feature flags from API URL.
+ * @param chainId - Current chainId.
+ * @param clientId - Client id.
+ * @returns Promise resolving to an object containing feature flags.
+ */
 export async function fetchSwapsFeatureLiveness(
   chainId: Hex,
   clientId?: string,
@@ -268,9 +342,10 @@ export async function fetchSwapsFeatureLiveness(
 }
 
 /**
- * Fetches gas prices from API URL
- * @param chainId Current chainId
- * @returns Gas prices represented as decimal GWEI strings
+ * Fetches gas prices from API URL.
+ * @param chainId - Current chainId.
+ * @param clientId - Client id.
+ * @returns Gas prices represented as decimal GWEI strings.
  */
 export async function fetchGasPrices(
   chainId: Hex,
@@ -294,16 +369,23 @@ export async function fetchGasPrices(
   };
 }
 
+/**
+ * Calculates the gas estimate with refund.
+ * @param maxGas - The max gas.
+ * @param estimatedRefund - The estimated refund.
+ * @param estimatedGas - The estimated gas.
+ * @returns The gas estimate with refund.
+ */
 export function calculateGasEstimateWithRefund(
   maxGas: number | null,
   estimatedRefund: number | null,
   estimatedGas: string | null,
 ): BigNumber {
   const estimated = estimatedGas && addHexPrefix(estimatedGas);
-  const maxGasMinusRefund = new BigNumber(maxGas || MAX_GAS_LIMIT, 10).minus(
-    estimatedRefund || 0,
+  const maxGasMinusRefund = new BigNumber(maxGas ?? MAX_GAS_LIMIT, 10).minus(
+    estimatedRefund ?? 0,
   );
-  const estimatedGasBN = new BigNumber(estimated || '0x0');
+  const estimatedGasBN = new BigNumber(estimated ?? '0x0');
   const gasEstimateWithRefund = maxGasMinusRefund.lt(estimatedGasBN)
     ? maxGasMinusRefund
     : estimatedGasBN;
@@ -311,16 +393,15 @@ export function calculateGasEstimateWithRefund(
 }
 
 /**
- * Calculates token received from a transaction receipt together with an approval transaction receipt
- *
- * @param receipt - Swap transaction receipt
- * @param approvalReceipt - Approval transaction receipt needed for swaps if any
- * @param transaction - Swap transaction object
- * @param approvalTransaction - Approval transaction object needed for swaps if any
- * @param destinationToken - Destination token object
- * @param previousBalance - Previous swap ETH balance
- * @param postBalance - Post swap ETH balance
- * @returns - Tokens received in hex minimal unit
+ * Calculates token received from a transaction receipt together with an approval transaction receipt.
+ * @param receipt - Swap transaction receipt.
+ * @param approvalReceipt - Approval transaction receipt needed for swaps if any.
+ * @param transaction - Swap transaction object.
+ * @param approvalTransaction - Approval transaction object needed for swaps if any.
+ * @param destinationToken - Destination token object.
+ * @param previousBalance - Previous swap ETH balance.
+ * @param postBalance - Post swap ETH balance.
+ * @returns Tokens received in hex minimal unit.
  */
 export function getSwapsTokensReceived(
   receipt: TransactionReceipt,
@@ -333,10 +414,10 @@ export function getSwapsTokensReceived(
 ): string | undefined {
   if (destinationToken.address === NATIVE_SWAPS_TOKEN_ADDRESS) {
     const approvalTransactionGasCost = new BigNumber(
-      approvalTransaction?.gasPrice || '0x0',
-    ).times(approvalReceipt?.gasUsed || '0x0');
-    const transactionGas = new BigNumber(transaction?.gasPrice || '0x0').times(
-      receipt?.gasUsed || '0x0',
+      approvalTransaction?.gasPrice ?? '0x0',
+    ).times(approvalReceipt?.gasUsed ?? '0x0');
+    const transactionGas = new BigNumber(transaction?.gasPrice ?? '0x0').times(
+      receipt?.gasUsed ?? '0x0',
     );
     const totalGasCost = transactionGas.plus(approvalTransactionGasCost);
 
@@ -376,9 +457,8 @@ export function getSwapsTokensReceived(
 
 /**
  * Calculates the median of a sample of BigNumber values.
- *
- * @param {BigNumber[]} values - A sample of BigNumber values.
- * @returns {BigNumber} The median of the sample.
+ * @param values - A sample of BigNumber values.
+ * @returns The median of the sample.
  */
 export function getMedian(values: BigNumber[]) {
   if (!Array.isArray(values) || values.length === 0) {
@@ -397,11 +477,9 @@ export function getMedian(values: BigNumber[]) {
 
 /**
  * Calculates the median overallValueOfQuote of a sample of quotes.
- *
- * @param {Array} quotes - A sample of quote objects with overallValueOfQuote, ethFee, metaMaskFeeInEth, and ethValueOfTokens properties
- * @returns {Object} An object with the ethValueOfTokens, ethFee, and metaMaskFeeInEth of the quote with the median overallValueOfQuote
+ * @param quotes - A sample of quote objects with overallValueOfQuote, ethFee, metaMaskFeeInEth, and ethValueOfTokens properties.
+ * @returns An object with the ethValueOfTokens, ethFee, and metaMaskFeeInEth of the quote with the median overallValueOfQuote.
  */
-
 export function getMedianEthValueQuote(quotes: QuoteValues[]) {
   if (!Array.isArray(quotes) || quotes.length === 0) {
     throw new Error('Expected non-empty array param.');
@@ -469,11 +547,10 @@ export function getMedianEthValueQuote(quotes: QuoteValues[]) {
 /**
  * Calculates the arithmetic mean for each of three properties - ethFee, metaMaskFeeInEth and ethValueOfTokens - across
  * an array of objects containing those properties.
- *
- * @param {Array} quotes - A sample of quote objects with overallValueOfQuote, ethFee, metaMaskFeeInEth and
- * ethValueOfTokens properties
- * @returns {Object} An object with the arithmetic mean each of the ethFee, metaMaskFeeInEth and ethValueOfTokens of
- * the passed quote objects
+ * @param quotes - A sample of quote objects with overallValueOfQuote, ethFee, metaMaskFeeInEth and
+ * ethValueOfTokens properties.
+ * @returns An object with the arithmetic mean each of the ethFee, metaMaskFeeInEth and ethValueOfTokens of
+ * the passed quote objects.
  */
 function meansOfQuotesFeesAndValue(quotes: QuoteValues[]) {
   const feeAndValueSumsAsBigNumbers = quotes.reduce(
@@ -508,6 +585,17 @@ function meansOfQuotesFeesAndValue(quotes: QuoteValues[]) {
   };
 }
 
+/**
+ * Calculates the gas limit and max gas limit for a given transaction.
+ * @param approvalNeeded - Whether or not an approval transaction is needed.
+ * @param gasEstimateWithRefund - The gas estimate with refund.
+ * @param gasEstimate - The gas estimate.
+ * @param averageGas - The average gas.
+ * @param maxGas - The max gas.
+ * @param gasMultiplier - The gas multiplier.
+ * @param gasLimit - The gas limit.
+ * @returns An object containing the tradeGasLimit and tradeMaxGasLimit.
+ */
 export function calculateGasLimits(
   approvalNeeded: boolean,
   gasEstimateWithRefund: string | null,
@@ -527,26 +615,32 @@ export function calculateGasLimits(
   ) {
     tradeGasLimit = new BigNumber(gasEstimateWithRefund, 16);
     tradeMaxGasLimit =
-      customGasLimit ||
+      customGasLimit ??
       new BigNumber(gasEstimate).times(gasMultiplier).integerValue();
   } else {
     tradeGasLimit = new BigNumber(averageGas || MAX_GAS_LIMIT, 10);
     tradeMaxGasLimit =
-      customGasLimit || new BigNumber(maxGas || MAX_GAS_LIMIT, 10);
+      customGasLimit ?? new BigNumber(maxGas || MAX_GAS_LIMIT, 10);
   }
   return { tradeGasLimit, tradeMaxGasLimit };
 }
 
+/**
+ * Calculates the token amount for a given value and decimals.
+ * @param value - The value.
+ * @param decimals - The decimals.
+ * @returns The token amount.
+ */
 export function calcTokenAmount(value: number | BigNumber, decimals: number) {
   const multiplier = Math.pow(10, Number(decimals || 0));
   return new BigNumber(value).div(multiplier);
 }
 
 /**
- * Estimates required gas for a given transaction
- *
- * @param transaction - Transaction object to estimate gas for
- * @returns - Promise resolving to an object containing gas and gasPrice
+ * Estimates required gas for a given transaction.
+ * @param transaction - Transaction object to estimate gas for.
+ * @param ethQuery - The ethQuery object.
+ * @returns Promise resolving to an object containing gas and gasPrice.
  */
 export async function estimateGas(transaction: Transaction, ethQuery: any) {
   const estimatedTransaction = { ...transaction };
@@ -568,16 +662,16 @@ export async function estimateGas(transaction: Transaction, ethQuery: any) {
 
 /**
  * Given the standard set of information about a transaction, returns a transaction properly formatted for
- * publishing via JSON RPC and web3
- *
- * @param {boolean} [sendToken] - Indicates whether or not the transaciton is a token transaction
- * @param {string} data - A hex string containing the data to include in the transaction
- * @param {string} to - A hex address of the tx recipient address
- * @param {string} amount - A hex amount, in case of a token tranaction will be set to Tx value
- * @param {string} from - A hex address of the tx sender address
- * @param {string} gas - A hex representation of the gas value for the transaction
- * @param {string} gasPrice - A hex representation of the gas price for the transaction
- * @returns {object} An object ready for submission to the blockchain, with all values appropriately hex prefixed
+ * publishing via JSON RPC and web3.
+ * @param txParams - The transaction parameters.
+ * @param txParams.sendToken - Indicates whether or not the transaciton is a token transaction.
+ * @param txParams.data - A hex string containing the data to include in the transaction.
+ * @param txParams.to - A hex address of the tx recipient address.
+ * @param txParams.amount - A hex amount, in case of a token tranaction will be set to Tx value.
+ * @param txParams.from - A hex address of the tx sender address.
+ * @param txParams.gas - A hex representation of the gas value for the transaction.
+ * @param txParams.gasPrice - A hex representation of the gas price for the transaction.
+ * @returns An object ready for submission to the blockchain, with all values appropriately hex prefixed.
  */
 export function constructTxParams({
   sendToken,
