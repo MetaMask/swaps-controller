@@ -6,6 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [7.0.0]
+### Uncategorized
+- Bump @metamask/controllers from 26.0.0 to 33.0.0 ([#139](https://github.com/MetaMask/swaps-controller/pull/139))
+- update chain id values to hexadecimal format ([#184](https://github.com/MetaMask/swaps-controller/pull/184))
+- Bump minimum Node version to 18 and use LTS for development ([#186](https://github.com/MetaMask/swaps-controller/pull/186))
+- Update Gas API URL ([#185](https://github.com/MetaMask/swaps-controller/pull/185))
+- Set minimum Node.js version to 16 ([#173](https://github.com/MetaMask/swaps-controller/pull/173))
+- Bump @babel/traverse from 7.13.17 to 7.23.2 ([#172](https://github.com/MetaMask/swaps-controller/pull/172))
+- Bump @metamask/contract-metadata from 1.31.0 to 1.36.0 ([#155](https://github.com/MetaMask/swaps-controller/pull/155))
+
 ## [6.9.3]
 ### Added
 - Add Linea constants ([#170](https://github.com/MetaMask/swaps-controller/pull/170))
@@ -93,7 +103,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use standalone gas API endpoint ([#70](https://github.com/MetaMask/swaps-controller/pull/70))
 - Bump @metamask/controllers from 14.1.0 to 14.2.0 ([#69](https://github.com/MetaMask/swaps-controller/pull/69))
 
-[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v6.9.3...HEAD
+[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v7.0.0...HEAD
+[7.0.0]: https://github.com/MetaMask/swaps-controller/compare/v6.9.3...v7.0.0
 [6.9.3]: https://github.com/MetaMask/swaps-controller/compare/v6.9.2...v6.9.3
 [6.9.2]: https://github.com/MetaMask/swaps-controller/compare/v6.9.1...v6.9.2
 [6.9.1]: https://github.com/MetaMask/swaps-controller/compare/v6.8.0...v6.9.1
