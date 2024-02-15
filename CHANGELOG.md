@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [7.0.0]
-### Uncategorized
+### Changed
 - Bump @metamask/controllers from 26.0.0 to 33.0.0 ([#139](https://github.com/MetaMask/swaps-controller/pull/139))
 - update chain id values to hexadecimal format ([#184](https://github.com/MetaMask/swaps-controller/pull/184))
 - Bump minimum Node version to 18 and use LTS for development ([#186](https://github.com/MetaMask/swaps-controller/pull/186))
