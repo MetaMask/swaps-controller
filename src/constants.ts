@@ -27,7 +27,7 @@ export const CHAIN_ID_TO_NAME_MAP: { [key: string]: string } = {
 
 //* APIs base urls
 
-export const API_BASE_URL = 'https://swap.metaswap.codefi.network';
+export const API_BASE_URL = 'https://swap.api.cx.metamask.io';
 export const DEV_BASE_URL = 'https://swap.dev-api.cx.metamask.io';
 export const GAS_API_BASE_URL = 'https://gas.api.cx.metamask.io';
 
