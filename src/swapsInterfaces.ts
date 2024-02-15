@@ -23,14 +23,15 @@ export interface SwapsToken extends SwapsAsset {
   iconUrl?: string;
 }
 
-export interface FeatureFlags {
+type NetworkNames = Exclude<string, 'smartTransactions'>;
+export type FeatureFlags = Record<NetworkNames, NetworkFeatureFlags> & {
   smartTransactions: {
     mobileActive: boolean;
     extensionActive: boolean;
     mobileActiveIOS: boolean;
     mobileActiveAndroid: boolean;
   };
-}
+};
 
 export interface NetworkFeatureFlags {
   // eslint-disable-next-line camelcase

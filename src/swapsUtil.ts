@@ -29,7 +29,6 @@ import {
   QuoteValues,
   TransactionReceipt,
   NetworkFeatureFlags,
-  NetworksFeatureStatus,
   FeatureFlags,
 } from './swapsInterfaces';
 
@@ -256,18 +255,6 @@ export async function fetchTopAssets(
   return response;
 }
 
-export async function fetchSwapsFeatureLiveness(
-  chainId: Hex,
-  clientId?: string,
-): Promise<NetworkFeatureFlags | undefined> {
-  const status: NetworksFeatureStatus = await handleFetch(
-    getBaseApiURL(APIType.FEATURE_FLAG, chainId),
-    { method: 'GET', headers: getClientIdHeader(clientId) },
-  );
-  const networkName = CHAIN_ID_TO_NAME_MAP[chainId];
-  return status[networkName];
-}
-
 export async function fetchSwapsFeatureFlags(
   clientId?: string,
 ): Promise<FeatureFlags | undefined> {
@@ -277,6 +264,14 @@ export async function fetchSwapsFeatureFlags(
   );
 
   return featureFlags;
+}
+
+export function getSwapsFeatureFlagsByChainId(
+  featureFlags: FeatureFlags | undefined,
+  chainId: Hex,
+): NetworkFeatureFlags | undefined {
+  const networkName = CHAIN_ID_TO_NAME_MAP[chainId];
+  return featureFlags?.[networkName];
 }
 
 /**
