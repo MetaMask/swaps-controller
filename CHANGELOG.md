@@ -8,7 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [7.0.0]
 ### Changed
-- Bump @metamask/controllers from 26.0.0 to 33.0.0 ([#139](https://github.com/MetaMask/swaps-controller/pull/139))
+- **BREAKING:** Bump `@metamask/controllers` from 26.0.0 to 33.0.0 ([#139](https://github.com/MetaMask/swaps-controller/pull/139))
+  - This is breaking because it changes the type of the state property `usedGasEstimate`. Specifically, it is now possible for the `historicalBaseFeeRange`, `baseFeeTrend`, `latestPriorityFeeRange`, `historicalPriorityFeeRange`, `priorityFeeTrend`, and `networkCongestion` properties in this object to be `null`.
 - **BREAKING:** Change `chainId` and `supportedChainIds` config options so that they must be `0x`-prefixed hex strings ([#184](https://github.com/MetaMask/swaps-controller/pull/184))
 - **BREAKING:** Change `fetchEstimatedMultiLayerL1Fee` constructor option so that the `chainId` option must be an `0x`-prefixed hex string ([#184](https://github.com/MetaMask/swaps-controller/pull/184))
 - **BREAKING:** Change `getNewChainCache` method so that `chainId` must be an `0x`-prefixed hex string ([#184](https://github.com/MetaMask/swaps-controller/pull/184))
