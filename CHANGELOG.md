@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Bump @metamask/controllers from 26.0.0 to 33.0.0 ([#139](https://github.com/MetaMask/swaps-controller/pull/139))
 - update chain id values to hexadecimal format ([#184](https://github.com/MetaMask/swaps-controller/pull/184))
-- Bump minimum Node version to 18 and use LTS for development ([#186](https://github.com/MetaMask/swaps-controller/pull/186))
+- **BREAKING:** Bump minimum Node version to 18 ([#186](https://github.com/MetaMask/swaps-controller/pull/186))
 - Update Gas API URL ([#185](https://github.com/MetaMask/swaps-controller/pull/185))
 - Set minimum Node.js version to 16 ([#173](https://github.com/MetaMask/swaps-controller/pull/173))
 - Bump @babel/traverse from 7.13.17 to 7.23.2 ([#172](https://github.com/MetaMask/swaps-controller/pull/172))
