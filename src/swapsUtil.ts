@@ -1,6 +1,11 @@
-import { convertHexToDecimal } from '@metamask/controller-utils';
-import type { Transaction } from '@metamask/controllers';
-import { util } from '@metamask/controllers';
+import {
+  convertHexToDecimal,
+  handleFetch,
+  timeoutFetch,
+  BNToHex,
+  query,
+} from '@metamask/controller-utils';
+import type { Transaction } from '@metamask/transaction-controller';
 import type { Hex } from '@metamask/utils';
 import { add0x } from '@metamask/utils';
 import { BigNumber } from 'bignumber.js';
@@ -33,10 +38,47 @@ import type {
 } from './swapsInterfaces';
 import { APIType } from './swapsInterfaces';
 
-export * from './constants';
+// /
+// / BEGIN: Lifted from now unexported normalizeTransaction in @metamask/transaction-controller@3.0.0
+// /
+const TX_NORMALIZERS: { [param in keyof Transaction]: any } = {
+  data: (data: string) => addHexPrefix(data),
+  from: (from: string) => addHexPrefix(from).toLowerCase(),
+  gas: (gas: string) => addHexPrefix(gas),
+  gasPrice: (gasPrice: string) => addHexPrefix(gasPrice),
+  nonce: (nonce: string) => addHexPrefix(nonce),
+  to: (to: string) => addHexPrefix(to).toLowerCase(),
+  value: (value: string) => addHexPrefix(value),
+  maxFeePerGas: (maxFeePerGas: string) => addHexPrefix(maxFeePerGas),
+  maxPriorityFeePerGas: (maxPriorityFeePerGas: string) =>
+    addHexPrefix(maxPriorityFeePerGas),
+  estimatedBaseFee: (maxPriorityFeePerGas: string) =>
+    addHexPrefix(maxPriorityFeePerGas),
+};
 
-const { handleFetch, timeoutFetch, BNToHex, query, normalizeTransaction } =
-  util;
+/**
+ * Normalizes properties on a Transaction object.
+ * @param transaction - Transaction object to normalize.
+ * @returns Normalized Transaction object.
+ */
+export function normalizeTransaction(transaction: Transaction) {
+  const normalizedTransaction: Transaction = { from: '' };
+  let key: keyof Transaction;
+  for (key in TX_NORMALIZERS) {
+    if (transaction[key]) {
+      normalizedTransaction[key] = TX_NORMALIZERS[key](
+        transaction[key],
+      ) as never;
+    }
+  }
+  return normalizedTransaction;
+}
+
+// /
+// / END: Lifted from now unexported normalizeTransaction in @metamask/transaction-controller@3.0.0
+// /
+
+export * from './constants';
 
 export enum SwapsError {
   QUOTES_EXPIRED_ERROR = 'quotes-expired',
