@@ -9,7 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [7.0.0]
 ### Changed
 - Bump @metamask/controllers from 26.0.0 to 33.0.0 ([#139](https://github.com/MetaMask/swaps-controller/pull/139))
-- update chain id values to hexadecimal format ([#184](https://github.com/MetaMask/swaps-controller/pull/184))
+- **BREAKING:** Change `chainId` and `supportedChainIds` config options so that they must be `0x`-prefixed hex strings ([#184](https://github.com/MetaMask/swaps-controller/pull/184))
+- **BREAKING:** Change `fetchEstimatedMultiLayerL1Fee` constructor option so that the `chainId` option must be an `0x`-prefixed hex string ([#184](https://github.com/MetaMask/swaps-controller/pull/184))
+- **BREAKING:** Change `getNewChainCache` method so that `chainId` must be an `0x`-prefixed hex string ([#184](https://github.com/MetaMask/swaps-controller/pull/184))
+- **BREAKING:** Change `chainId` setter so that the value must be an `0x`-prefixed hex string ([#184](https://github.com/MetaMask/swaps-controller/pull/184))
+- **BREAKING:** Change `chainCache` state property so that it is keyed by a `0x`-prefixed chain ID ([#184](https://github.com/MetaMask/swaps-controller/pull/184))
+- **BREAKING:** Change various utility functions so that their `chainId` argument must be an `0x`-prefixed hex string ([#184](https://github.com/MetaMask/swaps-controller/pull/184))
+  - `getNativeSwapsToken`
+  - `getSwapsContractAddress`
+  - `isValidContractAddress`
+  - `shouldEnableDirectWrapping`
+  - `getBaseApiURL`
+  - `getTokenMetadataURL`
+  - `fetchTradesInfo`
+  - `fetchTokens`
+  - `fetchAggregatorMetadata`
+  - `fetchTopAssets`
+  - `fetchSwapsFeatureLiveness`
+  - `fetchGasPrices`
 - **BREAKING:** Bump minimum Node version to 18 ([#186](https://github.com/MetaMask/swaps-controller/pull/186))
 - Update Gas API URL ([#185](https://github.com/MetaMask/swaps-controller/pull/185))
 - Set minimum Node.js version to 16 ([#173](https://github.com/MetaMask/swaps-controller/pull/173))
