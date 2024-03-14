@@ -64,7 +64,7 @@
   "dependencies": {
     "@metamask/controllers": "^33.0.0",
     "@metamask/eth-query": "^4.0.0",
-    "@metamask/controller-utils": "^8.0.2",
+    "@metamask/controller-utils": "^9.0.1",
     "@metamask/utils": "^8.3.0",
     "abort-controller": "^3.0.0",
     "async-mutex": "^0.3.1",
