@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [7.0.1]
+### Added
+- Add Base constants ([#206](https://github.com/MetaMask/swaps-controller/pull/206))
+
 ## [7.0.0]
 ### Changed
 - **BREAKING:** Bump `@metamask/controllers` from 26.0.0 to 33.0.0 ([#139](https://github.com/MetaMask/swaps-controller/pull/139))
@@ -118,7 +122,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use standalone gas API endpoint ([#70](https://github.com/MetaMask/swaps-controller/pull/70))
 - Bump @metamask/controllers from 14.1.0 to 14.2.0 ([#69](https://github.com/MetaMask/swaps-controller/pull/69))
 
-[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v7.0.0...HEAD
+[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v7.0.1...HEAD
+[7.0.1]: https://github.com/MetaMask/swaps-controller/compare/v7.0.0...v7.0.1
 [7.0.0]: https://github.com/MetaMask/swaps-controller/compare/v6.9.3...v7.0.0
 [6.9.3]: https://github.com/MetaMask/swaps-controller/compare/v6.9.2...v6.9.3
 [6.9.2]: https://github.com/MetaMask/swaps-controller/compare/v6.9.1...v6.9.2
