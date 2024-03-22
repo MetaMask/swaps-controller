@@ -7,8 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [7.0.1]
-### Uncategorized
-- feat: add base constants ([#206](https://github.com/MetaMask/swaps-controller/pull/206))
+### Added
+- Add Base constants ([#206](https://github.com/MetaMask/swaps-controller/pull/206))
 
 ## [7.0.0]
 ### Changed
