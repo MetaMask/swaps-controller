@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 import { Transaction } from '@metamask/controllers';
 import { BigNumber } from 'bignumber.js';
 
@@ -30,11 +31,32 @@ export interface NetworkFeatureFlags {
   extension_active: boolean;
   // eslint-disable-next-line camelcase
   fallback_to_v1?: boolean;
+
+  smartTransactions: {
+    expectedDeadline: number;
+    maxDeadline: number;
+    returnTxHashAsap: boolean;
+  };
 }
 
 export interface NetworksFeatureStatus {
   [network: string]: NetworkFeatureFlags;
 }
+
+export interface GlobalFeatureFlags {
+  smart_transactions: {
+    mobile_active: boolean;
+    extension_active: boolean;
+  };
+  smartTransactions: {
+    mobileActive: boolean;
+    extensionActive: boolean;
+    mobileActiveIOS: boolean;
+    mobileActiveAndroid: boolean;
+  };
+}
+
+export type FeatureFlags = NetworksFeatureStatus & GlobalFeatureFlags;
 
 /**
  * Metadata needed to fetch quotes
