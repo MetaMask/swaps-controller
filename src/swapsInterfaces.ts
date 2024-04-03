@@ -25,12 +25,14 @@ export interface SwapsToken extends SwapsAsset {
 }
 
 export interface NetworkFeatureFlags {
-  // eslint-disable-next-line camelcase
   mobile_active: boolean;
-  // eslint-disable-next-line camelcase
   extension_active: boolean;
-  // eslint-disable-next-line camelcase
-  fallback_to_v1?: boolean;
+  fallback_to_v1: boolean;
+  fallbackToV1: boolean;
+  mobileActive: boolean;
+  extensionActive: boolean;
+  mobileActiveIOS: boolean;
+  mobileActiveAndroid: boolean;
 
   smartTransactions: {
     expectedDeadline: number;
