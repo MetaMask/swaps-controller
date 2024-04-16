@@ -7,8 +7,8 @@ import {
 } from '@metamask/controller-utils';
 import type { Transaction } from '@metamask/transaction-controller';
 import type { Hex } from '@metamask/utils';
+import { add0x } from '@metamask/utils';
 import { BigNumber } from 'bignumber.js';
-import { addHexPrefix } from 'ethereumjs-util';
 
 import {
   ALLOWED_CONTRACT_ADDRESSES,
@@ -42,18 +42,18 @@ import { APIType } from './swapsInterfaces';
 // / BEGIN: Lifted from now unexported normalizeTransaction in @metamask/transaction-controller@3.0.0
 // /
 const TX_NORMALIZERS: { [param in keyof Transaction]: any } = {
-  data: (data: string) => addHexPrefix(data),
-  from: (from: string) => addHexPrefix(from).toLowerCase(),
-  gas: (gas: string) => addHexPrefix(gas),
-  gasPrice: (gasPrice: string) => addHexPrefix(gasPrice),
-  nonce: (nonce: string) => addHexPrefix(nonce),
-  to: (to: string) => addHexPrefix(to).toLowerCase(),
-  value: (value: string) => addHexPrefix(value),
-  maxFeePerGas: (maxFeePerGas: string) => addHexPrefix(maxFeePerGas),
+  data: (data: string) => add0x(data),
+  from: (from: string) => add0x(from).toLowerCase(),
+  gas: (gas: string) => add0x(gas),
+  gasPrice: (gasPrice: string) => add0x(gasPrice),
+  nonce: (nonce: string) => add0x(nonce),
+  to: (to: string) => add0x(to).toLowerCase(),
+  value: (value: string) => add0x(value),
+  maxFeePerGas: (maxFeePerGas: string) => add0x(maxFeePerGas),
   maxPriorityFeePerGas: (maxPriorityFeePerGas: string) =>
-    addHexPrefix(maxPriorityFeePerGas),
+    add0x(maxPriorityFeePerGas),
   estimatedBaseFee: (maxPriorityFeePerGas: string) =>
-    addHexPrefix(maxPriorityFeePerGas),
+    add0x(maxPriorityFeePerGas),
 };
 
 /**
@@ -423,11 +423,11 @@ export function calculateGasEstimateWithRefund(
   estimatedRefund: number | null,
   estimatedGas: string | null,
 ): BigNumber {
-  const estimated = estimatedGas && addHexPrefix(estimatedGas);
+  const estimated = estimatedGas ? add0x(estimatedGas) : '0x0';
   const maxGasMinusRefund = new BigNumber(maxGas ?? MAX_GAS_LIMIT, 10).minus(
     estimatedRefund ?? 0,
   );
-  const estimatedGasBN = new BigNumber(estimated ?? '0x0');
+  const estimatedGasBN = new BigNumber(estimated);
   const gasEstimateWithRefund = maxGasMinusRefund.lt(estimatedGasBN)
     ? maxGasMinusRefund
     : estimatedGasBN;
@@ -693,13 +693,13 @@ export async function estimateGas(transaction: Transaction, ethQuery: any) {
   ]);
   estimatedTransaction.data = !data
     ? data
-    : /* istanbul ignore next */ addHexPrefix(data);
+    : /* istanbul ignore next */ add0x(data);
 
   // 3. If this is a contract address, safely estimate gas using RPC
   estimatedTransaction.value =
     typeof value === 'undefined' ? '0x0' : /* istanbul ignore next */ value;
   const gasHex = await query(ethQuery, 'estimateGas', [estimatedTransaction]);
-  return { blockGasLimit: gasLimit, gas: addHexPrefix(gasHex) };
+  return { blockGasLimit: gasLimit, gas: add0x(gasHex) };
 }
 
 /**
