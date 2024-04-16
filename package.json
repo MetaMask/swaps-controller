@@ -80,7 +80,10 @@
       "@lavamoat/preinstall-always-fail": false,
       "@metamask/ethjs-query>babel-runtime>core-js": false,
       "ethereumjs-util>ethereum-cryptography>keccak": true,
-      "ethereumjs-util>ethereum-cryptography>secp256k1": true
+      "ethereumjs-util>ethereum-cryptography>secp256k1": true,
+      "@metamask/controllers>babel-runtime>core-js": false,
+      "@metamask/controllers>ethereumjs-util>ethereum-cryptography>keccak": true,
+      "@metamask/controllers>ethereumjs-util>ethereum-cryptography>secp256k1": true
     }
   }
 }
