@@ -1,4 +1,4 @@
-import type { Transaction } from '@metamask/controllers';
+import type { Transaction } from '@metamask/transaction-controller';
 import type { BigNumber } from 'bignumber.js';
 
 export enum APIType {
