@@ -6,6 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [8.0.0]
+### Uncategorized
+- chore: bump auto-changelog ([#213](https://github.com/MetaMask/swaps-controller/pull/213))
+- deps: async-mutex@^0.3.1->^0.4.1 ([#194](https://github.com/MetaMask/swaps-controller/pull/194))
+- deps: replace @metamask/controllers with individual controller packages ([#193](https://github.com/MetaMask/swaps-controller/pull/193))
+- deps: remove ethereumjs-util ([#192](https://github.com/MetaMask/swaps-controller/pull/192))
+- deps: replace @metamask/ethjs-query usage with @metamask/eth-query ([#191](https://github.com/MetaMask/swaps-controller/pull/191))
+- Bump @metamask/utils from 8.3.0 to 8.4.0 ([#202](https://github.com/MetaMask/swaps-controller/pull/202))
+- Bump web3-utils from 4.1.1 to 4.2.1 ([#209](https://github.com/MetaMask/swaps-controller/pull/209))
+
 ## [7.0.1]
 ### Added
 - Add Base constants ([#206](https://github.com/MetaMask/swaps-controller/pull/206))
@@ -122,7 +132,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use standalone gas API endpoint ([#70](https://github.com/MetaMask/swaps-controller/pull/70))
 - Bump @metamask/controllers from 14.1.0 to 14.2.0 ([#69](https://github.com/MetaMask/swaps-controller/pull/69))
 
-[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v7.0.1...HEAD
+[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v8.0.0...HEAD
+[8.0.0]: https://github.com/MetaMask/swaps-controller/compare/v7.0.1...v8.0.0
 [7.0.1]: https://github.com/MetaMask/swaps-controller/compare/v7.0.0...v7.0.1
 [7.0.0]: https://github.com/MetaMask/swaps-controller/compare/v6.9.3...v7.0.0
 [6.9.3]: https://github.com/MetaMask/swaps-controller/compare/v6.9.2...v6.9.3
