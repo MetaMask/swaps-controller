@@ -32,6 +32,7 @@
     "build": "tsc --project ."
   },
   "peerDependencies": {
+    "@metamask/composable-controller": "^1.0.2",
     "@metamask/network-controller": "^3.0.0"
   },
   "devDependencies": {
