@@ -70,7 +70,7 @@
     "@metamask/eth-query": "^4.0.0",
     "@metamask/utils": "^8.3.0",
     "abort-controller": "^3.0.0",
-    "async-mutex": "^0.3.1",
+    "async-mutex": "^0.4.1",
     "bignumber.js": "^9.0.1",
     "human-standard-token-abi": "^2.0.0",
     "web3": "^4.2.2"
