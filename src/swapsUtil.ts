@@ -2,8 +2,8 @@ import { convertHexToDecimal } from '@metamask/controller-utils';
 import type { Transaction } from '@metamask/controllers';
 import { util } from '@metamask/controllers';
 import type { Hex } from '@metamask/utils';
+import { add0x } from '@metamask/utils';
 import { BigNumber } from 'bignumber.js';
-import { addHexPrefix } from 'ethereumjs-util';
 
 import {
   ALLOWED_CONTRACT_ADDRESSES,
@@ -381,11 +381,11 @@ export function calculateGasEstimateWithRefund(
   estimatedRefund: number | null,
   estimatedGas: string | null,
 ): BigNumber {
-  const estimated = estimatedGas && addHexPrefix(estimatedGas);
+  const estimated = estimatedGas ? add0x(estimatedGas) : '0x0';
   const maxGasMinusRefund = new BigNumber(maxGas ?? MAX_GAS_LIMIT, 10).minus(
     estimatedRefund ?? 0,
   );
-  const estimatedGasBN = new BigNumber(estimated ?? '0x0');
+  const estimatedGasBN = new BigNumber(estimated);
   const gasEstimateWithRefund = maxGasMinusRefund.lt(estimatedGasBN)
     ? maxGasMinusRefund
     : estimatedGasBN;
@@ -651,13 +651,13 @@ export async function estimateGas(transaction: Transaction, ethQuery: any) {
   ]);
   estimatedTransaction.data = !data
     ? data
-    : /* istanbul ignore next */ addHexPrefix(data);
+    : /* istanbul ignore next */ add0x(data);
 
   // 3. If this is a contract address, safely estimate gas using RPC
   estimatedTransaction.value =
     typeof value === 'undefined' ? '0x0' : /* istanbul ignore next */ value;
   const gasHex = await query(ethQuery, 'estimateGas', [estimatedTransaction]);
-  return { blockGasLimit: gasLimit, gas: addHexPrefix(gasHex) };
+  return { blockGasLimit: gasLimit, gas: add0x(gasHex) };
 }
 
 /**
