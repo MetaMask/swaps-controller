@@ -22,7 +22,7 @@ import type { Hex } from '@metamask/utils';
 import { Mutex } from 'async-mutex';
 import { BigNumber } from 'bignumber.js';
 import abiERC20 from 'human-standard-token-abi';
-import { Web3 } from 'web3';
+import * as web3 from 'web3';
 
 import type {
   APIAggregatorMetadata,
@@ -58,6 +58,9 @@ import {
   OPTIMISM_CHAIN_ID,
   shouldEnableDirectWrapping,
 } from './swapsUtil';
+
+// hack to fix web3 import issue after transpiling
+const Web3 = web3.Web3 === undefined ? web3.default : web3.Web3;
 
 // Functions to determine type of the return value from GasFeeController
 
