@@ -9,6 +9,7 @@ import type { Transaction } from '@metamask/transaction-controller';
 import type { Hex } from '@metamask/utils';
 import { add0x } from '@metamask/utils';
 import { BigNumber } from 'bignumber.js';
+import { BN } from 'bn.js';
 
 import {
   ALLOWED_CONTRACT_ADDRESSES,
@@ -283,8 +284,8 @@ export async function fetchTradesInfo(
           to: quote.trade.to,
           from: quote.trade.from,
           data: quote.trade.data,
-          amount: BNToHex(new BigNumber(quote.trade.value)),
-          gas: BNToHex(quote.maxGas || new BigNumber(MAX_GAS_LIMIT)),
+          amount: BNToHex(new BN(quote.trade.value)),
+          gas: BNToHex(new BN(quote.maxGas) || new BN(MAX_GAS_LIMIT)),
         });
 
         return {
