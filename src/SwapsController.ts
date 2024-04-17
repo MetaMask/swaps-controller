@@ -1,5 +1,5 @@
 import type { BaseConfig, BaseState } from '@metamask/base-controller';
-import { BaseController } from '@metamask/base-controller';
+import { BaseControllerV1 } from '@metamask/base-controller';
 import {
   gweiDecToWEIBN,
   query,
@@ -214,7 +214,7 @@ function getNewChainCache(
   };
 }
 
-export default class SwapsController extends BaseController<
+export default class SwapsController extends BaseControllerV1<
   SwapsConfig,
   SwapsState
 > {
