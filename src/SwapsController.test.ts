@@ -1,4 +1,4 @@
-import { ComposableController } from '@metamask/controllers';
+import { ComposableController } from '@metamask/composable-controller';
 
 import SwapsController, { INITIAL_CHAIN_DATA } from './SwapsController';
 import * as swapsUtil from './swapsUtil';

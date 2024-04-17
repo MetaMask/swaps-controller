@@ -1,7 +1,12 @@
+import type { BaseConfig, BaseState } from '@metamask/base-controller';
+import { BaseController } from '@metamask/base-controller';
+import {
+  gweiDecToWEIBN,
+  query,
+  weiHexToGweiDec,
+} from '@metamask/controller-utils';
+import EthQuery from '@metamask/eth-query';
 import type {
-  BaseConfig,
-  BaseState,
-  BN,
   EthGasPriceEstimate,
   FetchGasFeeEstimateOptions,
   GasFeeEstimates,
@@ -9,15 +14,9 @@ import type {
   GasFeeStateEthGasPrice,
   GasFeeStateFeeMarket,
   GasFeeStateLegacy,
-  Transaction,
-} from '@metamask/controllers';
-import {
-  BaseController,
-  GAS_ESTIMATE_TYPES,
-  util,
-} from '@metamask/controllers';
-import EthQuery from '@metamask/eth-query';
-import Eth from '@metamask/ethjs-query';
+} from '@metamask/gas-fee-controller';
+import { GAS_ESTIMATE_TYPES } from '@metamask/gas-fee-controller';
+import type { Transaction } from '@metamask/transaction-controller';
 import type { Hex } from '@metamask/utils';
 import { Mutex } from 'async-mutex';
 import { BigNumber } from 'bignumber.js';
@@ -141,15 +140,6 @@ function isCustomGasFee(object: any): object is CustomGasFee {
   );
 }
 
-/**
- * Converts a GWEI dec string to a WEI BN.
- * @param gwei - The GWEI dec string to be converted.
- * @returns The WEI BN.
- */
-function gweiDecToWEIBN(gwei: string): BN {
-  return util.gweiDecToWEIBN(gwei);
-}
-
 export type SwapsConfig = {
   clientId?: string;
   maxGasLimit: number;
@@ -236,8 +226,6 @@ export default class SwapsController extends BaseController<
 
   private ethQuery: any;
 
-  private eth: any;
-
   private pollCount = 0;
 
   private readonly mutex = new Mutex();
@@ -293,9 +281,9 @@ export default class SwapsController extends BaseController<
     }
 
     try {
-      const gasPrice = await util.query(this.ethQuery, 'gasPrice');
+      const gasPrice = await query(this.ethQuery, 'gasPrice');
       return {
-        gasPrice: util.weiHexToGweiDec(gasPrice).toString(),
+        gasPrice: weiHexToGweiDec(gasPrice).toString(),
       };
     } catch (error) {
       //
@@ -497,7 +485,7 @@ export default class SwapsController extends BaseController<
       gweiDecToWEIBN(gasPrice).toString(16),
       16,
     );
-    const maxTotalInWei = maxTotalGasInWei.plus(trade.value, 16);
+    const maxTotalInWei = maxTotalGasInWei.plus(trade.value ?? '0x0', 16);
     const maxWeiFee =
       sourceToken === NATIVE_SWAPS_TOKEN_ADDRESS
         ? maxTotalInWei.minus(sourceAmount, 10)
@@ -623,7 +611,7 @@ export default class SwapsController extends BaseController<
       this.handle = undefined;
     }
 
-    if (this.pollCount < this.config.pollCountLimit + 1) {
+    if (this.pollCount < Number(this.config.pollCountLimit) + 1) {
       if (!this.state.isInPolling) {
         this.update({ isInPolling: true });
       }
@@ -719,7 +707,7 @@ export default class SwapsController extends BaseController<
           Object.values(quotes).map(async (quote) => {
             if (quote.trade && this.fetchEstimatedMultiLayerL1Fee) {
               const multiLayerL1TradeFeeTotal =
-                await this.fetchEstimatedMultiLayerL1Fee(this.eth, {
+                await this.fetchEstimatedMultiLayerL1Fee(this.ethQuery, {
                   txParams: quote.trade,
                   chainId,
                 });
@@ -845,7 +833,7 @@ export default class SwapsController extends BaseController<
     }: {
       fetchGasFeeEstimates?: () => Promise<GasFeeState | undefined>;
       fetchEstimatedMultiLayerL1Fee?: (
-        eth: any,
+        eth: EthQuery,
         options: {
           txParams: Transaction;
           chainId: Hex;
@@ -925,7 +913,6 @@ export default class SwapsController extends BaseController<
   set provider(provider: any) {
     if (provider) {
       this.ethQuery = new EthQuery(provider);
-      this.eth = new Eth(provider);
       this.web3 = new Web3(provider);
     }
   }
@@ -1131,7 +1118,7 @@ export default class SwapsController extends BaseController<
   }) {
     this.abortController && this.abortController.abort();
     this.handle && clearTimeout(this.handle);
-    this.pollCount = this.config.pollCountLimit + 1;
+    this.pollCount = Number(this.config.pollCountLimit) + 1;
     this.update({
       ...this.defaultState,
       isInPolling: false,
