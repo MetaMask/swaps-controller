@@ -88,7 +88,9 @@
       "@metamask/gas-fee-controller>ethereumjs-util>ethereum-cryptography>keccak": false,
       "@metamask/gas-fee-controller>ethereumjs-util>ethereum-cryptography>secp256k1": false,
       "@metamask/transaction-controller>babel-runtime>core-js": false,
-      "babel-runtime>core-js": false
+      "babel-runtime>core-js": false,
+      "@metamask/controller-utils>ethereumjs-util>ethereum-cryptography>keccak": false,
+      "@metamask/controller-utils>ethereumjs-util>ethereum-cryptography>secp256k1": false
     }
   }
 }
