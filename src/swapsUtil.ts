@@ -5,7 +5,7 @@ import {
   BNToHex,
   query,
 } from '@metamask/controller-utils';
-import type { Transaction } from '@metamask/transaction-controller';
+import type { TransactionParams } from '@metamask/transaction-controller';
 import type { Hex } from '@metamask/utils';
 import { add0x } from '@metamask/utils';
 import { BigNumber } from 'bignumber.js';
@@ -42,7 +42,7 @@ import { APIType } from './swapsInterfaces';
 // /
 // / BEGIN: Lifted from now unexported normalizeTransaction in @metamask/transaction-controller@3.0.0
 // /
-const TX_NORMALIZERS: { [param in keyof Transaction]: any } = {
+const TX_NORMALIZERS: { [param in keyof TransactionParams]: any } = {
   data: (data: string) => add0x(data),
   from: (from: string) => add0x(from).toLowerCase(),
   gas: (gas: string) => add0x(gas),
@@ -62,9 +62,9 @@ const TX_NORMALIZERS: { [param in keyof Transaction]: any } = {
  * @param transaction - Transaction object to normalize.
  * @returns Normalized Transaction object.
  */
-export function normalizeTransaction(transaction: Transaction) {
-  const normalizedTransaction: Transaction = { from: '' };
-  let key: keyof Transaction;
+export function normalizeTransaction(transaction: TransactionParams) {
+  const normalizedTransaction: TransactionParams = { from: '' };
+  let key: keyof TransactionParams;
   for (key in TX_NORMALIZERS) {
     if (transaction[key]) {
       normalizedTransaction[key] = TX_NORMALIZERS[key](
@@ -449,8 +449,8 @@ export function calculateGasEstimateWithRefund(
 export function getSwapsTokensReceived(
   receipt: TransactionReceipt,
   approvalReceipt: TransactionReceipt | null,
-  transaction: Transaction,
-  approvalTransaction: Transaction,
+  transaction: TransactionParams,
+  approvalTransaction: TransactionParams,
   destinationToken: SwapsToken,
   previousBalance: string,
   postBalance: string,
@@ -685,7 +685,10 @@ export function calcTokenAmount(value: number | BigNumber, decimals: number) {
  * @param ethQuery - The ethQuery object.
  * @returns Promise resolving to an object containing gas and gasPrice.
  */
-export async function estimateGas(transaction: Transaction, ethQuery: any) {
+export async function estimateGas(
+  transaction: TransactionParams,
+  ethQuery: any,
+) {
   const estimatedTransaction = { ...transaction };
   const { value, data } = estimatedTransaction;
   const { gasLimit } = await query(ethQuery, 'getBlockByNumber', [
@@ -733,7 +736,7 @@ export function constructTxParams({
   gasPrice?: string;
   amount?: string;
 }): any {
-  const txParams: Transaction = {
+  const txParams: TransactionParams = {
     data,
     from,
     value: '0',
