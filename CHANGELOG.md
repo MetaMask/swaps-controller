@@ -10,7 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **BREAKING**: Replace `@metamask/controllers` with individual controller packages ([#193](https://github.com/MetaMask/swaps-controller/pull/193)) ([#214](https://github.com/MetaMask/swaps-controller/pull/214)) ([#215](https://github.com/MetaMask/swaps-controller/pull/215))
 - Bump `async-mutex` from `^0.3.1` to `^0.4.1` ([#194](https://github.com/MetaMask/swaps-controller/pull/194))
+- Bump `@metamask/auto-changelog` from `^2.5.0` to `^3.4.4` ([#194](https://github.com/MetaMask/swaps-controller/pull/194))
 - Replace `@metamask/ethjs-query` with `@metamask/eth-query` ([#191](https://github.com/MetaMask/swaps-controller/pull/191))
+- Move dependencies from/to devDependencies ([#215](https://github.com/MetaMask/swaps-controller/pull/215)) ([#217](https://github.com/MetaMask/swaps-controller/pull/217))
+- Fix web3 import ([#212](https://github.com/MetaMask/swaps-controller/pull/212))
+- Exclude tests from `dist` and change target on `tsconfig.json`  ([#212](https://github.com/MetaMask/swaps-controller/pull/212))
 
 ### Removed
 - Remove dependency `ethereumjs-util` ([#192](https://github.com/MetaMask/swaps-controller/pull/192))
