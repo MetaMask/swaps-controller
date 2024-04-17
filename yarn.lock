@@ -1055,6 +1055,14 @@
     "@metamask/controller-utils" "^2.0.0"
     immer "^9.0.6"
 
+"@metamask/base-controller@^5.0.1":
+  version "5.0.1"
+  resolved "https://registry.yarnpkg.com/@metamask/base-controller/-/base-controller-5.0.1.tgz#bab34653bb4ffe6f7871bd4c22b7771feecf49fe"
+  integrity sha512-p8Y0rMKd4hepRX3Qv3QcOZ2tFlk9Ir0OGageThgh33kSCkh/EnjUEqsYN43vQX1s29zNYgnXs6bJHIlCkmwv4w==
+  dependencies:
+    "@metamask/utils" "^8.3.0"
+    immer "^9.0.6"
+
 "@metamask/bip39@^4.0.0":
   version "4.0.0"
   resolved "https://registry.yarnpkg.com/@metamask/bip39/-/bip39-4.0.0.tgz#1cb867a8454e3d45d065107b4e070d58bdb64aac"
@@ -1065,12 +1073,12 @@
     pbkdf2 "^3.0.9"
     randombytes "^2.0.1"
 
-"@metamask/composable-controller@^1.0.2":
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/@metamask/composable-controller/-/composable-controller-1.0.2.tgz#d6c7528084e34c17df3009efe1d9cd58bdf69187"
-  integrity sha512-nDFlFKsajuiw/HaeLqBUuEfpgUpRZenY0a0atiWwNQ2B3EETPATICaPT179owgXiXUI3rhQdRmLn7sX6WEs5GQ==
+"@metamask/composable-controller@^6.0.1":
+  version "6.0.1"
+  resolved "https://registry.yarnpkg.com/@metamask/composable-controller/-/composable-controller-6.0.1.tgz#90ea0159df84c98f3f71127a50b5874e7258b7f2"
+  integrity sha512-bEdMBOMCvbwuta469VJCu4EFOcTImGjeDs384l/jyZndzayy+64Ai9mZ0Fh2IGO8wqNhVgSVCHWRX2LdCENwAw==
   dependencies:
-    "@metamask/base-controller" "^1.1.2"
+    "@metamask/base-controller" "^5.0.1"
 
 "@metamask/contract-metadata@^1.35.0":
   version "1.36.0"
