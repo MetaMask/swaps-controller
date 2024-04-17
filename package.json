@@ -36,6 +36,7 @@
     "@metamask/network-controller": "^3.0.0"
   },
   "devDependencies": {
+    "@babel/runtime": "^7.0.0",
     "@lavamoat/allow-scripts": "^3.0.0",
     "@metamask/auto-changelog": "^3.4.4",
     "@metamask/composable-controller": "^1.0.2",
@@ -43,11 +44,14 @@
     "@metamask/eslint-config-jest": "^12.1.0",
     "@metamask/eslint-config-nodejs": "^12.1.0",
     "@metamask/eslint-config-typescript": "^12.1.0",
-    "@metamask/transaction-controller": "^3.0.0",
+    "@metamask/approval-controller": "^3.5.1",
+    "@metamask/network-controller": "^12.2.0",
+    "@metamask/transaction-controller": "^11.0.0",
     "@types/jest": "^26.0.22",
     "@types/node": "^20.10.4",
     "@typescript-eslint/eslint-plugin": "^5.42.1",
     "@typescript-eslint/parser": "^5.42.1",
+    "babel-runtime": "^6.26.0",
     "eslint": "^8.55.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-import": "~2.26.0",
