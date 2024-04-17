@@ -1,4 +1,4 @@
-import type { Transaction } from '@metamask/transaction-controller';
+import type { TransactionParams } from '@metamask/transaction-controller';
 import type { BigNumber } from 'bignumber.js';
 
 export enum APIType {
@@ -116,7 +116,7 @@ export type APIAggregatorMetadata = {
 
 type QuoteTransaction = {
   value: string;
-} & Transaction;
+} & TransactionParams;
 
 /**
  * Savings of a quote
