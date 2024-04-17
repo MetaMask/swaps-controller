@@ -63,7 +63,7 @@
     "typescript": "^5.1.0"
   },
   "dependencies": {
-    "@metamask/base-controller": "^1.1.2",
+    "@metamask/base-controller": "^5.0.1",
     "@metamask/composable-controller": "^1.0.2",
     "@metamask/controller-utils": "^8.0.2",
     "@metamask/controllers": "^33.0.0",
