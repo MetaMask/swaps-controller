@@ -13,7 +13,7 @@
     "outDir": "dist",
     "sourceMap": true,
     "strict": true,
-    "target": "ESNext"
+    "target": "ES2020"
   },
   "include": ["src/**/*.ts"],
   "exclude": ["src/**/*.test.ts", "node_modules"]
