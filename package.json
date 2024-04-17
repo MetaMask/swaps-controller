@@ -32,14 +32,14 @@
     "build": "tsc --project ."
   },
   "peerDependencies": {
-    "@metamask/composable-controller": "^1.0.2",
+    "@metamask/composable-controller": "^3.0.3",
     "@metamask/network-controller": "^3.0.0"
   },
   "devDependencies": {
     "@babel/runtime": "^7.0.0",
     "@lavamoat/allow-scripts": "^3.0.0",
     "@metamask/auto-changelog": "^3.4.4",
-    "@metamask/composable-controller": "^1.0.2",
+    "@metamask/composable-controller": "^3.0.3",
     "@metamask/eslint-config": "^12.2.0",
     "@metamask/eslint-config-jest": "^12.1.0",
     "@metamask/eslint-config-nodejs": "^12.1.0",
@@ -70,7 +70,7 @@
     "typescript": "^5.1.0"
   },
   "dependencies": {
-    "@metamask/base-controller": "^1.1.2",
+    "@metamask/base-controller": "^3.2.1",
     "@metamask/controller-utils": "^8.0.2",
     "@metamask/eth-query": "^4.0.0",
     "@metamask/gas-fee-controller": "^6.1.2",
