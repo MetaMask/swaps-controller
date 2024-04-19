@@ -13,7 +13,7 @@
     "outDir": "dist",
     "sourceMap": true,
     "strict": true,
-    "target": "ES2020"
+    "target": "es2022"
   },
   "include": ["src/**/*.ts"],
   "exclude": ["src/**/*.test.ts", "node_modules"]
