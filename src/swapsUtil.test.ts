@@ -1,4 +1,5 @@
-import { BigNumber } from 'bignumber.js';
+import BN from 'bn.js';
+import { remove0x } from '@metamask/utils';
 
 import type { SwapsToken } from './swapsInterfaces';
 import { APIType } from './swapsInterfaces';
@@ -727,24 +728,24 @@ describe('SwapsUtil', () => {
   });
 
   describe('getMedian', () => {
-    const numbers = [...Array(9).keys()].map((i) => new BigNumber(i + 1));
-    const largeNumbers = numbers.map((i) => i.multipliedBy(100));
+    const numbers = [...Array(9).keys()].map((i) => new BN(i + 1));
+    const largeNumbers = numbers.map((i) => i.muln(100));
 
     it.each([
       [numbers, '5'],
       [largeNumbers, '500'],
     ])('returns the middle value', (values, result) => {
       const middleValue = swapsUtil.getMedian(values);
-      expect(middleValue).toBeInstanceOf(BigNumber);
+      expect(middleValue).toBeInstanceOf(BN);
       expect(middleValue.toString(10)).toBe(result);
     });
 
     it.each([
-      [[...numbers, new BigNumber(10)], '5.5'],
-      [[...largeNumbers, new BigNumber(1000)], '550'],
+      [[...numbers, new BN(10)], '5.5'],
+      [[...largeNumbers, new BN(1000)], '550'],
     ])('returns the median value', (values, result) => {
       const medianValue = swapsUtil.getMedian(values);
-      expect(medianValue).toBeInstanceOf(BigNumber);
+      expect(medianValue).toBeInstanceOf(BN);
       expect(medianValue.toString(10)).toBe(result);
     });
 
@@ -803,10 +804,10 @@ describe('SwapsUtil', () => {
         gasMultiplier,
         null,
       );
-      const limit: BigNumber = new BigNumber(gasEstimateWithRefund);
+      const limit: BN = new BN(gasEstimateWithRefund);
       expect(tradeGasLimit.toString(16)).toStrictEqual(limit.toString(16));
       expect(tradeMaxGasLimit.toString(16)).toStrictEqual(
-        new BigNumber(gasEstimate).times(gasMultiplier).toString(16),
+        new BN(gasEstimate).muln(gasMultiplier).toString(16),
       );
     });
 
@@ -822,7 +823,7 @@ describe('SwapsUtil', () => {
       );
       expect(tradeGasLimit.toString()).toStrictEqual(averageGas.toString());
       expect(tradeMaxGasLimit.toString(16)).toStrictEqual(
-        new BigNumber(customGasLimit).toString(16),
+        new BN(customGasLimit).toString(16),
       );
     });
 
@@ -836,10 +837,10 @@ describe('SwapsUtil', () => {
         gasMultiplier,
         customGasLimit,
       );
-      const limit: BigNumber = new BigNumber(gasEstimateWithRefund);
+      const limit: BN = new BN(remove0x(gasEstimateWithRefund));
       expect(tradeGasLimit.toString(16)).toStrictEqual(limit.toString(16));
       expect(tradeMaxGasLimit.toString(16)).toStrictEqual(
-        new BigNumber(customGasLimit).toString(16),
+        new BN(remove0x(customGasLimit)).toString(16),
       );
     });
   });

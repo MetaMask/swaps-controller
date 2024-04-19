@@ -19,7 +19,7 @@ import { GAS_ESTIMATE_TYPES } from '@metamask/gas-fee-controller';
 import type { TransactionParams } from '@metamask/transaction-controller';
 import type { Hex } from '@metamask/utils';
 import { Mutex } from 'async-mutex';
-import { BigNumber } from 'bignumber.js';
+import BN from 'bn.js';
 import abiERC20 from 'human-standard-token-abi';
 import * as web3 from 'web3';
 import type { Web3 as Web3Type } from 'web3';
@@ -335,27 +335,25 @@ export default class SwapsController extends BaseControllerV1<
       gasLimit,
     );
 
-    let totalGasInWei: BigNumber;
-    let maxTotalGasInWei: BigNumber;
+    let totalGasInWei: BN;
+    let maxTotalGasInWei: BN;
 
     if (isEthGasPriceEstimate(gasFeeEstimates)) {
       const gasPrice = isCustomEthGasPriceEstimate(customGasFee)
         ? customGasFee.gasPrice
         : gasFeeEstimates.gasPrice;
 
-      totalGasInWei = tradeGasLimit.times(
-        gweiDecToWEIBN(gasPrice).toString(16),
-        16,
-      );
+      totalGasInWei = tradeGasLimit.mul(gweiDecToWEIBN(gasPrice));
 
-      maxTotalGasInWei = new BigNumber(tradeMaxGasLimit).times(
-        gweiDecToWEIBN(gasPrice).toString(16),
-        16,
-      );
+      maxTotalGasInWei = new BN(tradeMaxGasLimit).mul(gweiDecToWEIBN(gasPrice));
 
       if (multiLayerL1TradeFeeTotal) {
-        totalGasInWei = totalGasInWei.plus(multiLayerL1TradeFeeTotal, 16);
-        maxTotalGasInWei = maxTotalGasInWei.plus(multiLayerL1TradeFeeTotal, 16);
+        totalGasInWei = totalGasInWei.add(
+          new BN(multiLayerL1TradeFeeTotal, 16),
+        );
+        maxTotalGasInWei = maxTotalGasInWei.add(
+          new BN(multiLayerL1TradeFeeTotal, 16),
+        );
       }
     } else {
       const estimatedBaseFee =
@@ -369,16 +367,14 @@ export default class SwapsController extends BaseControllerV1<
             gasFeeEstimates.high.suggestedMaxPriorityFeePerGas,
           ];
 
-      totalGasInWei = tradeGasLimit.times(
-        gweiDecToWEIBN(estimatedBaseFee)
-          .add(gweiDecToWEIBN(maxPriorityFeePerGas))
-          .toString(16),
-        16,
+      totalGasInWei = tradeGasLimit.mul(
+        gweiDecToWEIBN(estimatedBaseFee).add(
+          gweiDecToWEIBN(maxPriorityFeePerGas),
+        ),
       );
 
-      maxTotalGasInWei = new BigNumber(tradeMaxGasLimit).times(
-        gweiDecToWEIBN(maxFeePerGas).toString(16),
-        16,
+      maxTotalGasInWei = new BN(tradeMaxGasLimit).mul(
+        gweiDecToWEIBN(maxFeePerGas),
       );
     }
 
@@ -387,17 +383,17 @@ export default class SwapsController extends BaseControllerV1<
     // It always includes any external fees charged by the quote source. In
     // addition, if the source asset is NATIVE, trade.value includes the amount
     // of swapped NATIVE.
-    const totalInWei = totalGasInWei.plus(trade.value, 16);
-    const maxTotalInWei = maxTotalGasInWei.plus(trade.value, 16);
+    const totalInWei = totalGasInWei.add(new BN(trade.value, 16));
+    const maxTotalInWei = maxTotalGasInWei.add(new BN(trade.value, 16));
 
     // if value in trade, NATIVE fee will be the gas, if not it will be the total wei
     const weiFee =
       sourceToken === NATIVE_SWAPS_TOKEN_ADDRESS
-        ? totalInWei.minus(sourceAmount, 10)
+        ? totalInWei.sub(new BN(sourceAmount, 10))
         : totalInWei; // sourceAmount is in wei : totalInWei;
     const maxWeiFee =
       sourceToken === NATIVE_SWAPS_TOKEN_ADDRESS
-        ? maxTotalInWei.minus(sourceAmount, 10)
+        ? maxTotalInWei.sub(new BN(sourceAmount, 10))
         : maxTotalInWei; // sourceAmount is in wei : totalInWei;
     const ethFee = calcTokenAmount(weiFee, 18);
     const maxEthFee = calcTokenAmount(maxWeiFee, 18);
@@ -408,34 +404,34 @@ export default class SwapsController extends BaseControllerV1<
     );
 
     // fees
-    const tokenPercentageOfPreFeeDestAmount = new BigNumber(100, 10)
-      .minus(metaMaskFee, 10)
-      .div(100);
+    const tokenPercentageOfPreFeeDestAmount = new BN(100, 10)
+      .subn(metaMaskFee)
+      .divn(100);
     const destinationAmountBeforeMetaMaskFee =
       decimalAdjustedDestinationAmount.div(tokenPercentageOfPreFeeDestAmount);
-    const metaMaskFeeInTokens = destinationAmountBeforeMetaMaskFee.minus(
+    const metaMaskFeeInTokens = destinationAmountBeforeMetaMaskFee.sub(
       decimalAdjustedDestinationAmount,
     );
 
     const conversionRate = destinationTokenRate ?? 1;
 
-    const ethValueOfTokens = decimalAdjustedDestinationAmount.times(
-      conversionRate,
-      10,
-    );
+    const ethValueOfTokens =
+      decimalAdjustedDestinationAmount.muln(conversionRate);
 
     // the more tokens the better
-    const overallValueOfQuote = ethValueOfTokens.minus(ethFee, 10);
+    const overallValueOfQuote = ethValueOfTokens.sub(ethFee);
 
     const quoteValues: QuoteValues = {
       aggregator,
       tradeGasLimit: tradeGasLimit.toString(10),
       tradeMaxGasLimit: tradeMaxGasLimit.toString(10),
-      ethFee: ethFee.toFixed(18),
-      maxEthFee: maxEthFee.toFixed(18),
-      ethValueOfTokens: ethValueOfTokens.toFixed(18),
-      overallValueOfQuote: overallValueOfQuote.toFixed(18),
-      metaMaskFeeInEth: metaMaskFeeInTokens.times(conversionRate).toFixed(18),
+      ethFee: ethFee.toString(10, 18),
+      maxEthFee: maxEthFee.toString(10, 18),
+      ethValueOfTokens: ethValueOfTokens.toString(10, 18),
+      overallValueOfQuote: overallValueOfQuote.toString(10, 18),
+      metaMaskFeeInEth: metaMaskFeeInTokens
+        .muln(conversionRate)
+        .toString(10, 18),
     };
 
     return quoteValues;
@@ -482,16 +478,17 @@ export default class SwapsController extends BaseControllerV1<
       gasPrice = gasFee.high.suggestedMaxFeePerGas;
     }
 
-    const maxTotalGasInWei = new BigNumber(tradeMaxGasLimit).times(
-      gweiDecToWEIBN(gasPrice).toString(16),
-      16,
+    const maxTotalGasInWei = new BN(tradeMaxGasLimit).mul(
+      gweiDecToWEIBN(gasPrice),
     );
-    const maxTotalInWei = maxTotalGasInWei.plus(trade.value ?? '0x0', 16);
+    const maxTotalInWei = maxTotalGasInWei.add(
+      new BN(trade.value ?? '0x0', 16),
+    );
     const maxWeiFee =
       sourceToken === NATIVE_SWAPS_TOKEN_ADDRESS
-        ? maxTotalInWei.minus(sourceAmount, 10)
+        ? maxTotalInWei.sub(new BN(sourceAmount, 10))
         : maxTotalInWei;
-    const maxEthFee = calcTokenAmount(maxWeiFee, 18).toFixed(18);
+    const maxEthFee = calcTokenAmount(maxWeiFee, 18).toString(10, 18);
     return maxEthFee;
   }
 
@@ -507,7 +504,7 @@ export default class SwapsController extends BaseControllerV1<
     customGasFee?: CustomEthGasPriceEstimate | CustomGasFee,
   ): { topAggId: string; quoteValues: { [key: string]: QuoteValues } } {
     let topAggId = '';
-    let overallValueOfBestQuoteForSorting: BigNumber | null = null;
+    let overallValueOfBestQuoteForSorting: BN | null = null;
 
     const quoteValues: { [key: string]: QuoteValues } = {};
 
@@ -520,9 +517,7 @@ export default class SwapsController extends BaseControllerV1<
       );
       quoteValues[quoteValue.aggregator] = quoteValue;
 
-      const bnOverallValueOfQuote = new BigNumber(
-        quoteValue.overallValueOfQuote,
-      );
+      const bnOverallValueOfQuote = new BN(quoteValue.overallValueOfQuote);
       if (
         !overallValueOfBestQuoteForSorting ||
         bnOverallValueOfQuote.gt(overallValueOfBestQuoteForSorting)

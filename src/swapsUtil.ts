@@ -7,9 +7,8 @@ import {
 } from '@metamask/controller-utils';
 import type { TransactionParams } from '@metamask/transaction-controller';
 import type { Hex } from '@metamask/utils';
-import { add0x } from '@metamask/utils';
-import { BigNumber } from 'bignumber.js';
-import { BN } from 'bn.js';
+import { add0x, remove0x } from '@metamask/utils';
+import BN from 'bn.js';
 
 import {
   ALLOWED_CONTRACT_ADDRESSES,
@@ -442,12 +441,12 @@ export function calculateGasEstimateWithRefund(
   maxGas: number | null,
   estimatedRefund: number | null,
   estimatedGas: string | null,
-): BigNumber {
-  const estimated = estimatedGas ? add0x(estimatedGas) : '0x0';
-  const maxGasMinusRefund = new BigNumber(maxGas ?? MAX_GAS_LIMIT, 10).minus(
-    estimatedRefund ?? 0,
+): BN {
+  const estimated = estimatedGas ? remove0x(estimatedGas) : '0';
+  const maxGasMinusRefund = new BN(maxGas ?? MAX_GAS_LIMIT, 10).sub(
+    new BN(estimatedRefund ?? 0),
   );
-  const estimatedGasBN = new BigNumber(estimated);
+  const estimatedGasBN = new BN(estimated, 16);
   const gasEstimateWithRefund = maxGasMinusRefund.lt(estimatedGasBN)
     ? maxGasMinusRefund
     : estimatedGasBN;
@@ -475,20 +474,18 @@ export function getSwapsTokensReceived(
   postBalance: string,
 ): string | undefined {
   if (destinationToken.address === NATIVE_SWAPS_TOKEN_ADDRESS) {
-    const approvalTransactionGasCost = new BigNumber(
+    const approvalTransactionGasCost = new BN(
       approvalTransaction?.gasPrice ?? '0x0',
-    ).times(approvalReceipt?.gasUsed ?? '0x0');
-    const transactionGas = new BigNumber(transaction?.gasPrice ?? '0x0').times(
-      receipt?.gasUsed ?? '0x0',
+    ).mul(new BN(approvalReceipt?.gasUsed ?? '0x0'));
+    const transactionGas = new BN(transaction?.gasPrice ?? '0x0').mul(
+      new BN(receipt?.gasUsed ?? '0x0'),
     );
-    const totalGasCost = transactionGas.plus(approvalTransactionGasCost);
+    const totalGasCost = transactionGas.add(approvalTransactionGasCost);
 
-    const previousBalanceMinusGas = new BigNumber(previousBalance).minus(
-      totalGasCost,
-    );
-    const postBalanceMinusGas = new BigNumber(postBalance);
+    const previousBalanceMinusGas = new BN(previousBalance).mul(totalGasCost);
+    const postBalanceMinusGas = new BN(postBalance);
 
-    return postBalanceMinusGas.minus(previousBalanceMinusGas).toString(16);
+    return postBalanceMinusGas.sub(previousBalanceMinusGas).toString(16);
   }
 
   if (!receipt?.logs || receipt.status === '0x0') {
@@ -518,15 +515,15 @@ export function getSwapsTokensReceived(
 }
 
 /**
- * Calculates the median of a sample of BigNumber values.
- * @param values - A sample of BigNumber values.
+ * Calculates the median of a sample of BN values.
+ * @param values - A sample of BN values.
  * @returns The median of the sample.
  */
-export function getMedian(values: BigNumber[]) {
+export function getMedian(values: BN[]) {
   if (!Array.isArray(values) || values.length === 0) {
     throw new Error('Expected non-empty array param.');
   }
-  const sorted = [...values].sort((a, b) => a.comparedTo(b));
+  const sorted = [...values].sort((a, b) => a.cmp(b));
 
   if (sorted.length % 2 === 1) {
     // return middle value
@@ -534,7 +531,7 @@ export function getMedian(values: BigNumber[]) {
   }
   // return mean of middle two values
   const upperIndex = sorted.length / 2;
-  return sorted[upperIndex].plus(sorted[upperIndex - 1]).div(2);
+  return sorted[upperIndex].add(sorted[upperIndex - 1]).div(new BN(2));
 }
 
 /**
@@ -548,9 +545,9 @@ export function getMedianEthValueQuote(quotes: QuoteValues[]) {
   }
 
   quotes.sort((quoteA, quoteB) => {
-    const overallValueOfQuoteA = new BigNumber(quoteA.overallValueOfQuote, 10);
-    const overallValueOfQuoteB = new BigNumber(quoteB.overallValueOfQuote, 10);
-    return overallValueOfQuoteA.comparedTo(overallValueOfQuoteB);
+    const overallValueOfQuoteA = new BN(quoteA.overallValueOfQuote, 10);
+    const overallValueOfQuoteB = new BN(quoteB.overallValueOfQuote, 10);
+    return overallValueOfQuoteA.cmp(overallValueOfQuoteB);
   });
 
   if (quotes.length % 2 === 1) {
@@ -585,23 +582,17 @@ export function getMedianEthValueQuote(quotes: QuoteValues[]) {
   );
 
   return {
-    ethFee: new BigNumber(feesAndValueAtUpperIndex.ethFee, 10)
-      .plus(feesAndValueAtLowerIndex.ethFee, 10)
-      .dividedBy(2)
+    ethFee: new BN(feesAndValueAtUpperIndex.ethFee, 10)
+      .add(new BN(feesAndValueAtLowerIndex.ethFee, 10))
+      .div(new BN(2))
       .toString(10),
-    metaMaskFeeInEth: new BigNumber(
-      feesAndValueAtUpperIndex.metaMaskFeeInEth,
-      10,
-    )
-      .plus(feesAndValueAtLowerIndex.metaMaskFeeInEth, 10)
-      .dividedBy(2)
+    metaMaskFeeInEth: new BN(feesAndValueAtUpperIndex.metaMaskFeeInEth, 10)
+      .add(new BN(feesAndValueAtLowerIndex.metaMaskFeeInEth, 10))
+      .div(new BN(2))
       .toString(10),
-    ethValueOfTokens: new BigNumber(
-      feesAndValueAtUpperIndex.ethValueOfTokens,
-      10,
-    )
-      .plus(feesAndValueAtLowerIndex.ethValueOfTokens, 10)
-      .dividedBy(2)
+    ethValueOfTokens: new BN(feesAndValueAtUpperIndex.ethValueOfTokens, 10)
+      .add(new BN(feesAndValueAtLowerIndex.ethValueOfTokens, 10))
+      .div(new BN(2))
       .toString(10),
   };
 }
@@ -615,34 +606,32 @@ export function getMedianEthValueQuote(quotes: QuoteValues[]) {
  * the passed quote objects.
  */
 function meansOfQuotesFeesAndValue(quotes: QuoteValues[]) {
-  const feeAndValueSumsAsBigNumbers = quotes.reduce(
+  const feeAndValueSumsAsBNs = quotes.reduce(
     (feeAndValueSums, quote) => ({
-      ethFee: feeAndValueSums.ethFee.plus(quote.ethFee, 10),
-      metaMaskFeeInEth: feeAndValueSums.metaMaskFeeInEth.plus(
-        quote.metaMaskFeeInEth,
-        10,
+      ethFee: feeAndValueSums.ethFee.add(new BN(quote.ethFee, 10)),
+      metaMaskFeeInEth: feeAndValueSums.metaMaskFeeInEth.add(
+        new BN(quote.metaMaskFeeInEth, 10),
       ),
-      ethValueOfTokens: feeAndValueSums.ethValueOfTokens.plus(
-        quote.ethValueOfTokens,
-        10,
+      ethValueOfTokens: feeAndValueSums.ethValueOfTokens.add(
+        new BN(quote.ethValueOfTokens, 10),
       ),
     }),
     {
-      ethFee: new BigNumber(0, 10),
-      metaMaskFeeInEth: new BigNumber(0, 10),
-      ethValueOfTokens: new BigNumber(0, 10),
+      ethFee: new BN(0, 10),
+      metaMaskFeeInEth: new BN(0, 10),
+      ethValueOfTokens: new BN(0, 10),
     },
   );
 
   return {
-    ethFee: feeAndValueSumsAsBigNumbers.ethFee
-      .div(quotes.length, 10)
+    ethFee: feeAndValueSumsAsBNs.ethFee
+      .div(new BN(quotes.length, 10))
       .toString(10),
-    metaMaskFeeInEth: feeAndValueSumsAsBigNumbers.metaMaskFeeInEth
-      .div(quotes.length, 10)
+    metaMaskFeeInEth: feeAndValueSumsAsBNs.metaMaskFeeInEth
+      .div(new BN(quotes.length, 10))
       .toString(10),
-    ethValueOfTokens: feeAndValueSumsAsBigNumbers.ethValueOfTokens
-      .div(quotes.length, 10)
+    ethValueOfTokens: feeAndValueSumsAsBNs.ethValueOfTokens
+      .div(new BN(quotes.length, 10))
       .toString(10),
   };
 }
@@ -668,21 +657,19 @@ export function calculateGasLimits(
   gasLimit: string | null,
 ) {
   let tradeGasLimit, tradeMaxGasLimit;
-  const customGasLimit = gasLimit && new BigNumber(gasLimit, 16);
+  const customGasLimit = gasLimit && new BN(remove0x(gasLimit), 16);
   if (
     !approvalNeeded &&
     gasEstimate &&
     gasEstimateWithRefund &&
     gasEstimateWithRefund !== '0'
   ) {
-    tradeGasLimit = new BigNumber(gasEstimateWithRefund, 16);
+    tradeGasLimit = new BN(remove0x(gasEstimateWithRefund), 16);
     tradeMaxGasLimit =
-      customGasLimit ??
-      new BigNumber(gasEstimate).times(gasMultiplier).integerValue();
+      customGasLimit ?? new BN(gasEstimate).muln(gasMultiplier);
   } else {
-    tradeGasLimit = new BigNumber(averageGas || MAX_GAS_LIMIT, 10);
-    tradeMaxGasLimit =
-      customGasLimit ?? new BigNumber(maxGas || MAX_GAS_LIMIT, 10);
+    tradeGasLimit = new BN(averageGas || MAX_GAS_LIMIT, 10);
+    tradeMaxGasLimit = customGasLimit ?? new BN(maxGas || MAX_GAS_LIMIT, 10);
   }
   return { tradeGasLimit, tradeMaxGasLimit };
 }
@@ -693,9 +680,9 @@ export function calculateGasLimits(
  * @param decimals - The decimals.
  * @returns The token amount.
  */
-export function calcTokenAmount(value: number | BigNumber, decimals: number) {
+export function calcTokenAmount(value: number | BN, decimals: number) {
   const multiplier = Math.pow(10, Number(decimals || 0));
-  return new BigNumber(value).div(multiplier);
+  return new BN(value).divn(multiplier);
 }
 
 /**
