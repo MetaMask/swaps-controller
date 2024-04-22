@@ -9,8 +9,10 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "engines": {
-    "node": "^18.18 || >=20"
+    "node": "^18.18 || >=20",
+    "yarn": "^1.22.19"
   },
+  "packageManager": "yarn@1.22.22",
   "files": [
     "dist/"
   ],
@@ -30,6 +32,9 @@
     "lint:fix": "yarn lint:eslint --fix && yarn lint:misc --write",
     "build:clean": "rimraf dist && yarn build",
     "build": "tsc --project ."
+  },
+  "resolutions": {
+    "web3-provider-engine": "16.0.8"
   },
   "peerDependencies": {
     "@metamask/composable-controller": "^1.0.2",
