@@ -644,7 +644,7 @@ describe('SwapsUtil', () => {
       });
 
       await expect(async () =>
-        swapsUtil.fetchSwapsFeatureLiveness('0x1'),
+        swapsUtil.fetchSwapsFeatureFlags('0x1'),
       ).rejects.toThrow();
     });
   });
