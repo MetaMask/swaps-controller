@@ -368,7 +368,7 @@ export async function fetchTopAssets(
 }
 
 /**
- * Fetches feature flags from API URL.
+ * Fetches chainId specific feature flags from API URL.
  * @param chainId - Current chainId.
  * @param clientId - Client id.
  * @returns Promise resolving to an object containing feature flags for the chainId.
@@ -386,9 +386,9 @@ export async function fetchSwapsFeatureLiveness(
 }
 
 /**
- * 
- * @param chainId Current chainId.
- * @param clientId Client id.
+ * Fetches global and chainId specific feature flags from API URL.
+ * @param chainId - Current chainId.
+ * @param clientId - Client id.
  * @returns Promise resolving to an object containing global and chainId specific feature flags.
  */
 export async function fetchSwapsFeatureFlags(

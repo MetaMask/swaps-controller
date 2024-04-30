@@ -23,7 +23,7 @@ export type SwapsToken = {
   iconUrl?: string;
 } & SwapsAsset;
 
-export interface NetworkFeatureFlags {
+export type NetworkFeatureFlags = {
   mobile_active: boolean;
   extension_active: boolean;
   fallback_to_v1: boolean;
@@ -44,7 +44,7 @@ export type NetworksFeatureStatus = {
   [network: string]: NetworkFeatureFlags;
 };
 
-export interface GlobalFeatureFlags {
+export type GlobalFeatureFlags = {
   smart_transactions: {
     mobile_active: boolean;
     extension_active: boolean;
