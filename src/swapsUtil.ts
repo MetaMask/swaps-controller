@@ -29,6 +29,7 @@ import {
 import type {
   APIAggregatorMetadata,
   APIFetchQuotesParams,
+  FeatureFlags,
   NetworkFeatureFlags,
   NetworksFeatureStatus,
   Quote,
@@ -370,7 +371,7 @@ export async function fetchTopAssets(
  * Fetches feature flags from API URL.
  * @param chainId - Current chainId.
  * @param clientId - Client id.
- * @returns Promise resolving to an object containing feature flags.
+ * @returns Promise resolving to an object containing feature flags for the chainId.
  */
 export async function fetchSwapsFeatureLiveness(
   chainId: Hex,
@@ -382,6 +383,24 @@ export async function fetchSwapsFeatureLiveness(
   );
   const networkName = CHAIN_ID_TO_NAME_MAP[chainId];
   return status[networkName];
+}
+
+/**
+ * 
+ * @param chainId Current chainId.
+ * @param clientId Client id.
+ * @returns Promise resolving to an object containing global and chainId specific feature flags.
+ */
+export async function fetchSwapsFeatureFlags(
+  chainId: Hex,
+  clientId?: string,
+): Promise<FeatureFlags | undefined> {
+  const status: FeatureFlags = await handleFetch(
+    getBaseApiURL(APIType.FEATURE_FLAG, chainId),
+    { method: 'GET', headers: getClientIdHeader(clientId) },
+  );
+
+  return status;
 }
 
 /**

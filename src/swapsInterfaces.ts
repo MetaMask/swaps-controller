@@ -23,15 +23,41 @@ export type SwapsToken = {
   iconUrl?: string;
 } & SwapsAsset;
 
-export type NetworkFeatureFlags = {
+export interface NetworkFeatureFlags {
   mobile_active: boolean;
   extension_active: boolean;
-  fallback_to_v1?: boolean;
-};
+  fallback_to_v1: boolean;
+  fallbackToV1: boolean;
+  mobileActive: boolean;
+  extensionActive: boolean;
+  mobileActiveIOS: boolean;
+  mobileActiveAndroid: boolean;
+
+  smartTransactions: {
+    expectedDeadline: number;
+    maxDeadline: number;
+    returnTxHashAsap: boolean;
+  };
+}
 
 export type NetworksFeatureStatus = {
   [network: string]: NetworkFeatureFlags;
 };
+
+export interface GlobalFeatureFlags {
+  smart_transactions: {
+    mobile_active: boolean;
+    extension_active: boolean;
+  };
+  smartTransactions: {
+    mobileActive: boolean;
+    extensionActive: boolean;
+    mobileActiveIOS: boolean;
+    mobileActiveAndroid: boolean;
+  };
+}
+
+export type FeatureFlags = NetworksFeatureStatus & GlobalFeatureFlags;
 
 /**
  * Metadata needed to fetch quotes
