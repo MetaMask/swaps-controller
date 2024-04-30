@@ -38,7 +38,7 @@ export type NetworkFeatureFlags = {
     maxDeadline: number;
     returnTxHashAsap: boolean;
   };
-}
+};
 
 export type NetworksFeatureStatus = {
   [network: string]: NetworkFeatureFlags;
@@ -55,7 +55,7 @@ export type GlobalFeatureFlags = {
     mobileActiveIOS: boolean;
     mobileActiveAndroid: boolean;
   };
-}
+};
 
 export type FeatureFlags = NetworksFeatureStatus & GlobalFeatureFlags;
 
