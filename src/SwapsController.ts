@@ -931,7 +931,7 @@ export default class SwapsController extends BaseController<
       return;
     }
 
-    const cachedData = chainCache?.[chainId] || INITIAL_CHAIN_DATA;
+    const cachedData = chainCache?.[chainId] ?? INITIAL_CHAIN_DATA;
     this.update({
       ...cachedData,
     });

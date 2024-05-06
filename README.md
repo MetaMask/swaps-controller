@@ -20,11 +20,18 @@ import SwapsController, { swapsUtils } from '@metamask/swaps-controller';
 
 > TODO
 
-## Testing
+### Setup
 
-Run `yarn test` to run the tests once.
+- Install the current LTS version of [Node.js](https://nodejs.org)
+  - If you are using [nvm](https://github.com/creationix/nvm#installation) (recommended) running `nvm install` will install the latest version and running `nvm use` will automatically choose the right node version for you.
+- Install [Yarn v3](https://yarnpkg.com/getting-started/install)
+- Run `yarn install` to install dependencies and run any required post-install scripts
 
-To run tests on file changes, run `yarn test:watch`.
+### Testing and Linting
+
+Run `yarn test` to run the tests once. To run tests on file changes, run `yarn test:watch`.
+
+Run `yarn lint` to run the linter, or run `yarn lint:fix` to run the linter and fix any automatically fixable issues.
 
 ### Release & Publishing
 
@@ -60,6 +67,6 @@ The project follows the same release process as the other libraries in the MetaM
 
 7. Publish the release on npm.
 
-   - Be very careful to use a clean local environment to publish the release, and follow exactly the same steps used during CI.
-   - Use `npm publish --dry-run` to examine the release contents to ensure the correct files are included. Compare to previous releases if necessary (e.g. using `https://unpkg.com/browse/[package name]@[package version]/`).
-   - Once you are confident the release contents are correct, publish the release using `npm publish`.
+   - Wait for the `publish-release` GitHub Action workflow to finish. This should trigger a second job (`publish-npm`), which will wait for a run approval by the [`npm publishers`](https://github.com/orgs/MetaMask/teams/npm-publishers) team.
+   - Approve the `publish-npm` job (or ask somebody on the npm publishers team to approve it for you).
+   - Once the `publish-npm` job has finished, check npm to verify that it has been published.
