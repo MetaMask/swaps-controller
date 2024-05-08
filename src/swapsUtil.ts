@@ -747,19 +747,6 @@ export function constructTxParams({
   gasPrice?: string;
   amount?: string;
 }): any {
-  if (!data) {
-    throw new Error('Data is required to construct tx params.');
-  }
-  if (!from) {
-    throw new Error('From address is required to construct tx params.');
-  }
-  if (!gas) {
-    throw new Error('Gas is required to construct tx params.');
-  }
-  if (!gasPrice) {
-    throw new Error('Gas price is required to construct tx params.');
-  }
-
   const txParams: Transaction = {
     data,
     from,
@@ -769,12 +756,6 @@ export function constructTxParams({
   };
 
   if (!sendToken) {
-    if (!to) {
-      throw new Error('To address is required to construct tx params.');
-    }
-    if (!amount) {
-      throw new Error('Amount is required to construct tx params.');
-    }
     txParams.value = amount;
     txParams.to = to;
   }
