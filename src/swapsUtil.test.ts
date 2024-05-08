@@ -10,7 +10,11 @@ import * as swapsUtil from './swapsUtil';
  * @returns An object with a method to clear the mock.
  */
 function mockFetch(urlResponseMap: Record<string, any>) {
-  jest.spyOn(global, 'fetch').mockImplementation(async (url, _) => {
+  Object.defineProperty(globalThis, 'fetch', {
+    writable: true,
+    value: jest.fn(),
+  });
+  jest.spyOn(globalThis, 'fetch').mockImplementation(async (url, _) => {
     const matchingUrlKey = Object.keys(urlResponseMap).find((key) =>
       (url as string).startsWith(key),
     );
@@ -35,7 +39,7 @@ function mockFetch(urlResponseMap: Record<string, any>) {
   });
 
   return {
-    clearMock: () => (global.fetch as jest.Mock).mockRestore(),
+    clearMock: () => (globalThis.fetch as jest.Mock).mockRestore(),
   };
 }
 
