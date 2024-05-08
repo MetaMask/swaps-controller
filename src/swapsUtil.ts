@@ -118,7 +118,11 @@ function getClientIdHeader(clientId?: string) {
  * @returns The native swaps token.
  */
 export function getNativeSwapsToken(chainId: Hex): SwapsToken {
-  return SWAPS_NATIVE_TOKEN_OBJECTS[chainId];
+  const nativeToken = SWAPS_NATIVE_TOKEN_OBJECTS[chainId];
+  if (!nativeToken) {
+    throw new Error('Native token not found for chain ID');
+  }
+  return nativeToken;
 }
 
 /**
@@ -126,8 +130,12 @@ export function getNativeSwapsToken(chainId: Hex): SwapsToken {
  * @param chainId - The chain ID.
  * @returns The swaps contract address.
  */
-export function getSwapsContractAddress(chainId: Hex): string {
-  return SWAPS_CONTRACT_ADDRESSES[chainId];
+export function getSwapsContractAddress(chainId: Hex): `0x${string}` {
+  const address = SWAPS_CONTRACT_ADDRESSES[chainId];
+  if (typeof address === 'undefined') {
+    throw new Error(`Contract address for ${chainId} is undefined.`);
+  }
+  return address;
 }
 
 /**
@@ -164,7 +172,7 @@ export function shouldEnableDirectWrapping(
   const wrappedTokenLowerCase =
     SWAPS_WRAPPED_TOKENS_ADDRESSES[chainId]?.toLowerCase();
   const nativeTokenLowerCase =
-    SWAPS_NATIVE_TOKEN_OBJECTS[chainId].address?.toLowerCase();
+    SWAPS_NATIVE_TOKEN_OBJECTS[chainId]?.address?.toLowerCase();
   const sourceTokenLowerCase = sourceToken?.toLowerCase();
   const destinationTokenLowerCase = destinationToken?.toLowerCase();
   return (
@@ -275,16 +283,15 @@ export async function fetchTradesInfo(
   const trades = (await tradesResponse.json()) as Quote[];
   const newQuotes = trades.reduce(
     (aggIdTradeMap: { [key: string]: Quote }, quote: Quote) => {
-      if (
-        !quote.error &&
-        quote.trade &&
-        isValidContractAddress(chainId, quote.trade?.to)
-      ) {
+      const { trade, error } = quote;
+      const isValid = isValidContractAddress(chainId, trade?.to);
+
+      if (!error && trade?.data && trade?.to && isValid) {
         const constructedTrade = constructTxParams({
-          to: quote.trade.to,
-          from: quote.trade.from,
-          data: quote.trade.data,
-          amount: BNToHex(new BN(quote.trade.value)),
+          to: trade.to,
+          from: trade.from,
+          data: trade.data,
+          amount: BNToHex(new BN(trade.value)),
           gas: BNToHex(new BN(quote.maxGas) || new BN(MAX_GAS_LIMIT)),
         });
 
@@ -381,6 +388,9 @@ export async function fetchSwapsFeatureLiveness(
     { method: 'GET', headers: getClientIdHeader(clientId) },
   );
   const networkName = CHAIN_ID_TO_NAME_MAP[chainId];
+  if (!networkName) {
+    return undefined;
+  }
   return status[networkName];
 }
 
@@ -515,7 +525,10 @@ export function getMedian(values: BigNumber[]) {
   }
   // return mean of middle two values
   const upperIndex = sorted.length / 2;
-  return sorted[upperIndex].plus(sorted[upperIndex - 1]).div(2);
+
+  return (sorted[upperIndex] ?? new BigNumber(0))
+    .plus(sorted[upperIndex - 1] ?? new BigNumber(0))
+    .div(2);
 }
 
 /**
@@ -537,7 +550,7 @@ export function getMedianEthValueQuote(quotes: QuoteValues[]) {
   if (quotes.length % 2 === 1) {
     // return middle values
     const medianOverallValue =
-      quotes[(quotes.length - 1) / 2].overallValueOfQuote;
+      quotes[(quotes.length - 1) / 2]?.overallValueOfQuote ?? 0;
     const quotesMatchingMedianQuoteValue = quotes.filter(
       (quote) => medianOverallValue === quote.overallValueOfQuote,
     );
@@ -548,8 +561,8 @@ export function getMedianEthValueQuote(quotes: QuoteValues[]) {
   const upperIndex = quotes.length / 2;
   const lowerIndex = upperIndex - 1;
 
-  const overallValueAtUpperIndex = quotes[upperIndex].overallValueOfQuote;
-  const overallValueAtLowerIndex = quotes[lowerIndex].overallValueOfQuote;
+  const overallValueAtUpperIndex = quotes[upperIndex]?.overallValueOfQuote;
+  const overallValueAtLowerIndex = quotes[lowerIndex]?.overallValueOfQuote;
 
   const quotesMatchingUpperIndexValue = quotes.filter(
     (quote) => overallValueAtUpperIndex === quote.overallValueOfQuote,
@@ -692,8 +705,9 @@ export async function estimateGas(transaction: Transaction, ethQuery: any) {
     'latest',
     false,
   ]);
+
   estimatedTransaction.data = !data
-    ? data
+    ? ''
     : /* istanbul ignore next */ add0x(data);
 
   // 3. If this is a contract address, safely estimate gas using RPC
@@ -733,6 +747,19 @@ export function constructTxParams({
   gasPrice?: string;
   amount?: string;
 }): any {
+  if (!data) {
+    throw new Error('Data is required to construct tx params.');
+  }
+  if (!from) {
+    throw new Error('From address is required to construct tx params.');
+  }
+  if (!gas) {
+    throw new Error('Gas is required to construct tx params.');
+  }
+  if (!gasPrice) {
+    throw new Error('Gas price is required to construct tx params.');
+  }
+
   const txParams: Transaction = {
     data,
     from,
@@ -742,6 +769,12 @@ export function constructTxParams({
   };
 
   if (!sendToken) {
+    if (!to) {
+      throw new Error('To address is required to construct tx params.');
+    }
+    if (!amount) {
+      throw new Error('Amount is required to construct tx params.');
+    }
     txParams.value = amount;
     txParams.to = to;
   }

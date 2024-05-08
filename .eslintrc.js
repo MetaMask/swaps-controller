@@ -5,6 +5,12 @@ module.exports = {
 
   overrides: [
     {
+      files: ['*.d.ts'],
+      rules: {
+        'import/unambiguous': 'off',
+      },
+    },
+    {
       files: ['*.ts'],
       extends: ['@metamask/eslint-config-typescript'],
     },

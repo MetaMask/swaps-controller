@@ -141,7 +141,7 @@ function isCustomGasFee(object: any): object is CustomGasFee {
 }
 
 export type SwapsConfig = {
-  clientId?: string;
+  clientId?: string | undefined;
   maxGasLimit: number;
   pollCountLimit: number;
   fetchAggregatorMetadataThreshold: number;
@@ -158,7 +158,7 @@ export type SwapsState = {
   fetchParamsMetaData: APIFetchQuotesMetadata;
   topAggSavings: QuoteSavings | null;
   quotesLastFetched: null | number;
-  error: { key: null | SwapsError; description: null | string };
+  error: { key: null | SwapsError; description: null | string } | undefined;
   topAggId: null | string;
   isInPolling: boolean;
   pollingCyclesLeft: number;
@@ -210,9 +210,9 @@ function getNewChainCache(
   return {
     ...chainCache,
     [chainId]: {
-      ...chainCache?.[chainId],
+      ...(chainCache?.[chainId] ?? {}),
       ...data,
-    },
+    } as ChainData,
   };
 }
 
@@ -220,7 +220,7 @@ export default class SwapsController extends BaseController<
   SwapsConfig,
   SwapsState
 > {
-  private handle?: NodeJS.Timeout;
+  private handle?: NodeJS.Timeout | null;
 
   private web3: any;
 
@@ -232,17 +232,17 @@ export default class SwapsController extends BaseController<
 
   private abortController?: AbortController;
 
-  private readonly fetchGasFeeEstimates?: (
+  private readonly fetchGasFeeEstimates: (
     options?: FetchGasFeeEstimateOptions,
-  ) => Promise<GasFeeState | undefined>;
+  ) => Promise<GasFeeState | undefined> | undefined;
 
-  private readonly fetchEstimatedMultiLayerL1Fee?: (
+  private readonly fetchEstimatedMultiLayerL1Fee: (
     eth: any,
     options: {
       txParams: Transaction;
       chainId: Hex;
     },
-  ) => Promise<string | undefined>;
+  ) => Promise<string | undefined> | undefined;
 
   /**
    * Fetch current gas price
@@ -575,7 +575,13 @@ export default class SwapsController extends BaseController<
   private async timedoutGasReturn(
     tradeTxParams: Transaction | null,
   ): Promise<{ gas: string | null }> {
-    if (!tradeTxParams) {
+    if (
+      !tradeTxParams ||
+      !tradeTxParams.data ||
+      !tradeTxParams.from ||
+      !tradeTxParams.to ||
+      !tradeTxParams.value
+    ) {
       return { gas: null };
     }
 
@@ -608,7 +614,7 @@ export default class SwapsController extends BaseController<
     this.pollCount += 1;
     if (this.handle) {
       clearTimeout(this.handle);
-      this.handle = undefined;
+      this.handle = null;
     }
 
     if (this.pollCount < Number(this.config.pollCountLimit) + 1) {
@@ -664,15 +670,17 @@ export default class SwapsController extends BaseController<
 
     const newQuotes: { [key: string]: Quote } = {};
     quoteGasData.forEach(({ gas, aggId }) => {
-      newQuotes[aggId] = {
-        ...trades[aggId],
-        gasEstimate: gas,
-        gasEstimateWithRefund: calculateGasEstimateWithRefund(
-          trades[aggId].maxGas,
-          trades[aggId].estimatedRefund,
-          gas,
-        ).toString(16),
-      };
+      if (trades[aggId]?.trade) {
+        newQuotes[aggId] = {
+          ...trades[aggId],
+          gasEstimate: gas,
+          gasEstimateWithRefund: calculateGasEstimateWithRefund(
+            trades[aggId].maxGas,
+            trades[aggId].estimatedRefund,
+            gas,
+          ).toString(16),
+        };
+      }
     });
     return newQuotes;
   }
@@ -734,8 +742,12 @@ export default class SwapsController extends BaseController<
 
       const quotesArray = Object.values(quotes);
 
+      if (quotesArray.length === 0) {
+        throw new Error(SwapsError.QUOTES_NOT_AVAILABLE_ERROR);
+      }
+
       const onlyContractQuote =
-        quotesArray.length === 1 && quotesArray[0].aggType === 'CONTRACT';
+        quotesArray.length === 1 && quotesArray[0]?.aggType === 'CONTRACT';
 
       const enableDirectWrapping =
         enableDirectWrappingParam && onlyContractQuote;
@@ -754,7 +766,12 @@ export default class SwapsController extends BaseController<
             quotesArray.find((quote) => quote.approvalNeeded)?.approvalNeeded ??
             null;
 
-          if (!approvalTransaction) {
+          if (
+            !approvalTransaction ||
+            !approvalTransaction.data ||
+            !approvalTransaction.from ||
+            !approvalTransaction.to
+          ) {
             throw new Error(SwapsError.SWAPS_ALLOWANCE_ERROR);
           }
           const { gas: approvalGas } = await this.timedoutGasReturn({
@@ -786,9 +803,9 @@ export default class SwapsController extends BaseController<
         quotes,
         quotesLastFetched,
         approvalTransaction,
-        topAggId: quotes[topAggId]?.aggregator,
+        topAggId: quotes[topAggId]?.aggregator ?? null,
         quoteValues,
-        quoteRefreshSeconds: quotes[topAggId]?.quoteRefreshSeconds,
+        quoteRefreshSeconds: quotes[topAggId]?.quoteRefreshSeconds ?? null,
       };
       return {
         nextQuotesState,
@@ -831,14 +848,16 @@ export default class SwapsController extends BaseController<
       fetchGasFeeEstimates,
       fetchEstimatedMultiLayerL1Fee,
     }: {
-      fetchGasFeeEstimates?: () => Promise<GasFeeState | undefined>;
-      fetchEstimatedMultiLayerL1Fee?: (
+      fetchGasFeeEstimates: (
+        options?: FetchGasFeeEstimateOptions | undefined,
+      ) => Promise<GasFeeState | undefined> | undefined;
+      fetchEstimatedMultiLayerL1Fee: (
         eth: EthQuery,
         options: {
           txParams: Transaction;
           chainId: Hex;
         },
-      ) => Promise<string | undefined>;
+      ) => Promise<string | undefined> | undefined;
     },
     config?: Partial<SwapsConfig>,
     state?: Partial<SwapsState>,
@@ -963,7 +982,7 @@ export default class SwapsController extends BaseController<
   updateSelectedQuoteWithGasLimit(customGasLimit: string): void {
     const { topAggId, quotes, quoteValues, usedGasEstimate, usedCustomGas } =
       this.state;
-    if (!topAggId || !quoteValues || !usedGasEstimate) {
+    if (!topAggId || !quoteValues || !usedGasEstimate || !quotes[topAggId]) {
       return;
     }
     const selectedQuote = quotes[topAggId];
@@ -972,8 +991,14 @@ export default class SwapsController extends BaseController<
       usedCustomGas ?? usedGasEstimate,
       customGasLimit,
     );
-    quoteValues[selectedQuote.aggregator].maxEthFee = maxEthFee;
-    this.update({ topAggId, quoteValues });
+    const aggregator: string = selectedQuote?.aggregator;
+    if (
+      quoteValues[aggregator] &&
+      quoteValues[aggregator].maxEthFee !== maxEthFee
+    ) {
+      quoteValues[aggregator].maxEthFee = maxEthFee;
+      this.update({ topAggId, quoteValues });
+    }
   }
 
   startFetchAndSetQuotes(

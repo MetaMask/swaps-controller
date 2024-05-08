@@ -1,4 +1,5 @@
 import { toHex } from '@metamask/controller-utils';
+import type { Hex } from '@metamask/utils';
 
 import type { SwapsToken } from './swapsInterfaces';
 
@@ -15,7 +16,7 @@ export const LINEA_CHAIN_ID = toHex('59144');
 export const SWAPS_TESTNET_CHAIN_ID = toHex('1337');
 export const BASE_CHAIN_ID = toHex('8453');
 
-export const CHAIN_ID_TO_NAME_MAP: { [key: string]: string } = {
+export const CHAIN_ID_TO_NAME_MAP: { [key: Hex]: string } = {
   [ETH_CHAIN_ID]: 'ethereum',
   [BSC_CHAIN_ID]: 'bsc',
   [POLYGON_CHAIN_ID]: 'polygon',
@@ -74,7 +75,7 @@ export const WETH_LINEA_CONTRACT_ADDRESS =
 export const WETH_BASE_CONTRACT_ADDRESS =
   '0x4200000000000000000000000000000000000006';
 
-export const SWAPS_WRAPPED_TOKENS_ADDRESSES: { [key: string]: string } = {
+export const SWAPS_WRAPPED_TOKENS_ADDRESSES: Record<Hex, `0x${string}`> = {
   [ETH_CHAIN_ID]: WETH_CONTRACT_ADDRESS,
   [SWAPS_TESTNET_CHAIN_ID]: WETH_CONTRACT_ADDRESS,
   [BSC_CHAIN_ID]: WBNB_CONTRACT_ADDRESS,
@@ -87,7 +88,7 @@ export const SWAPS_WRAPPED_TOKENS_ADDRESSES: { [key: string]: string } = {
   [BASE_CHAIN_ID]: WETH_BASE_CONTRACT_ADDRESS,
 };
 
-export const SWAPS_CONTRACT_ADDRESSES: { [key: string]: string } = {
+export const SWAPS_CONTRACT_ADDRESSES: Record<Hex, `0x${string}`> = {
   [ETH_CHAIN_ID]: ETH_SWAPS_CONTRACT_ADDRESS,
   [SWAPS_TESTNET_CHAIN_ID]: ETH_SWAPS_CONTRACT_ADDRESS,
   [BSC_CHAIN_ID]: BSC_SWAPS_CONTRACT_ADDRESS,
@@ -100,46 +101,75 @@ export const SWAPS_CONTRACT_ADDRESSES: { [key: string]: string } = {
   [BASE_CHAIN_ID]: BASE_SWAPS_CONTRACT_ADDRESS,
 };
 
-export const ALLOWED_CONTRACT_ADDRESSES: { [key: string]: string[] } = {
+/**
+ * Returns the contract address for a given chain ID and contract type.
+ *
+ * - Contract type "wrapped" returns the wrapped token address.
+ * - Contract type "swaps" returns the swaps contract address.
+ * - Throws an error if the contract address is undefined.
+ *
+ * @param key - Chain ID (e.g., `0x1` for Ethereum).
+ * @param contractType - Contract type (either "wrapped" or "swaps").
+ * @returns Contract address for the given chain ID and contract type.
+ */
+function getContractAddress(
+  key: Hex,
+  contractType: 'wrapped' | 'swaps',
+): `0x${string}` {
+  const dict = {
+    wrapped: SWAPS_WRAPPED_TOKENS_ADDRESSES,
+    swaps: SWAPS_CONTRACT_ADDRESSES,
+  };
+
+  const address = dict[contractType][key];
+  if (typeof address === 'undefined') {
+    throw new Error(`Contract address for ${key} is undefined.`);
+  }
+  return address;
+}
+
+export const ALLOWED_CONTRACT_ADDRESSES: {
+  [key: string]: [Hex, `0x${string}`];
+} = {
   [ETH_CHAIN_ID]: [
-    SWAPS_CONTRACT_ADDRESSES[ETH_CHAIN_ID],
-    SWAPS_WRAPPED_TOKENS_ADDRESSES[ETH_CHAIN_ID],
+    getContractAddress(ETH_CHAIN_ID, 'swaps'),
+    getContractAddress(ETH_CHAIN_ID, 'wrapped'),
   ],
   [SWAPS_TESTNET_CHAIN_ID]: [
-    SWAPS_CONTRACT_ADDRESSES[SWAPS_TESTNET_CHAIN_ID],
-    SWAPS_WRAPPED_TOKENS_ADDRESSES[SWAPS_TESTNET_CHAIN_ID],
+    getContractAddress(SWAPS_TESTNET_CHAIN_ID, 'swaps'),
+    getContractAddress(SWAPS_TESTNET_CHAIN_ID, 'wrapped'),
   ],
   [BSC_CHAIN_ID]: [
-    SWAPS_CONTRACT_ADDRESSES[BSC_CHAIN_ID],
-    SWAPS_WRAPPED_TOKENS_ADDRESSES[BSC_CHAIN_ID],
+    getContractAddress(BSC_CHAIN_ID, 'swaps'),
+    getContractAddress(BSC_CHAIN_ID, 'wrapped'),
   ],
   [POLYGON_CHAIN_ID]: [
-    SWAPS_CONTRACT_ADDRESSES[POLYGON_CHAIN_ID],
-    SWAPS_WRAPPED_TOKENS_ADDRESSES[POLYGON_CHAIN_ID],
+    getContractAddress(POLYGON_CHAIN_ID, 'swaps'),
+    getContractAddress(POLYGON_CHAIN_ID, 'wrapped'),
   ],
   [AVALANCHE_CHAIN_ID]: [
-    SWAPS_CONTRACT_ADDRESSES[AVALANCHE_CHAIN_ID],
-    SWAPS_WRAPPED_TOKENS_ADDRESSES[AVALANCHE_CHAIN_ID],
+    getContractAddress(AVALANCHE_CHAIN_ID, 'swaps'),
+    getContractAddress(AVALANCHE_CHAIN_ID, 'wrapped'),
   ],
   [ARBITRUM_CHAIN_ID]: [
-    SWAPS_CONTRACT_ADDRESSES[ARBITRUM_CHAIN_ID],
-    SWAPS_WRAPPED_TOKENS_ADDRESSES[ARBITRUM_CHAIN_ID],
+    getContractAddress(ARBITRUM_CHAIN_ID, 'swaps'),
+    getContractAddress(ARBITRUM_CHAIN_ID, 'wrapped'),
   ],
   [OPTIMISM_CHAIN_ID]: [
-    SWAPS_CONTRACT_ADDRESSES[OPTIMISM_CHAIN_ID],
-    SWAPS_WRAPPED_TOKENS_ADDRESSES[OPTIMISM_CHAIN_ID],
+    getContractAddress(OPTIMISM_CHAIN_ID, 'swaps'),
+    getContractAddress(OPTIMISM_CHAIN_ID, 'wrapped'),
   ],
   [ZKSYNC_ERA_CHAIN_ID]: [
-    SWAPS_CONTRACT_ADDRESSES[ZKSYNC_ERA_CHAIN_ID],
-    SWAPS_WRAPPED_TOKENS_ADDRESSES[ZKSYNC_ERA_CHAIN_ID],
+    getContractAddress(ZKSYNC_ERA_CHAIN_ID, 'swaps'),
+    getContractAddress(ZKSYNC_ERA_CHAIN_ID, 'wrapped'),
   ],
   [LINEA_CHAIN_ID]: [
-    SWAPS_CONTRACT_ADDRESSES[LINEA_CHAIN_ID],
-    SWAPS_WRAPPED_TOKENS_ADDRESSES[LINEA_CHAIN_ID],
+    getContractAddress(LINEA_CHAIN_ID, 'swaps'),
+    getContractAddress(LINEA_CHAIN_ID, 'wrapped'),
   ],
   [BASE_CHAIN_ID]: [
-    SWAPS_CONTRACT_ADDRESSES[BASE_CHAIN_ID],
-    SWAPS_WRAPPED_TOKENS_ADDRESSES[BASE_CHAIN_ID],
+    getContractAddress(BASE_CHAIN_ID, 'swaps'),
+    getContractAddress(BASE_CHAIN_ID, 'wrapped'),
   ],
 };
 
@@ -196,7 +226,7 @@ export const BASE_SWAPS_TOKEN_OBJECT: SwapsToken = {
   ...ETH_SWAPS_TOKEN_OBJECT,
 };
 
-export const SWAPS_NATIVE_TOKEN_OBJECTS: { [key: string]: SwapsToken } = {
+export const SWAPS_NATIVE_TOKEN_OBJECTS: { [key: Hex]: SwapsToken } = {
   [ETH_CHAIN_ID]: ETH_SWAPS_TOKEN_OBJECT,
   [SWAPS_TESTNET_CHAIN_ID]: ETH_SWAPS_TOKEN_OBJECT,
   [BSC_CHAIN_ID]: BSC_SWAPS_TOKEN_OBJECT,

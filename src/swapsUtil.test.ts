@@ -1,4 +1,5 @@
 import { BigNumber } from 'bignumber.js';
+import { Response as FetchResponse } from 'node-fetch';
 
 import type { SwapsToken } from './swapsInterfaces';
 import { APIType } from './swapsInterfaces';
@@ -10,32 +11,37 @@ import * as swapsUtil from './swapsUtil';
  * @returns An object with a method to clear the mock.
  */
 function mockFetch(urlResponseMap: Record<string, any>) {
-  jest.spyOn(global, 'fetch').mockImplementation(async (url, _) => {
-    const matchingUrlKey = Object.keys(urlResponseMap).find((key) =>
-      (url as string).startsWith(key),
-    );
-    if (!matchingUrlKey) {
-      console.error(`No mock response for URL: ${url as string}`);
-      return Promise.resolve({
-        json: async () => Promise.resolve({}),
-      }) as Promise<Response>;
-    }
+  jest.mock('node-fetch', () => {
+    return async (url: string, _: any) => {
+      const matchingUrlKey = Object.keys(urlResponseMap).find((key) =>
+        url.startsWith(key),
+      );
+      if (!matchingUrlKey) {
+        console.error(`No mock response for URL: ${url}`);
+        return Promise.resolve(
+          new FetchResponse(JSON.stringify({}), {
+            status: 404,
+          }),
+        );
+      }
 
-    const response = urlResponseMap[matchingUrlKey];
+      const response = urlResponseMap[matchingUrlKey];
 
-    if (response.throws) {
-      return Promise.reject(new Error('Mock fetch error'));
-    }
+      if (response.throws) {
+        return Promise.reject(new Error('Mock fetch error'));
+      }
 
-    return Promise.resolve({
-      json: async () => Promise.resolve(response.body),
-      ok: true,
-      url: matchingUrlKey,
-    }) as Promise<Response>;
+      return Promise.resolve(
+        new FetchResponse(JSON.stringify(response.body), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      );
+    };
   });
 
   return {
-    clearMock: () => (global.fetch as jest.Mock).mockRestore(),
+    clearMock: () => jest.unmock('node-fetch'),
   };
 }
 
@@ -634,7 +640,7 @@ describe('SwapsUtil', () => {
       [numbers, '5'],
       [largeNumbers, '500'],
     ])('returns the middle value', (values, result) => {
-      const middleValue = swapsUtil.getMedian(values);
+      const middleValue = swapsUtil.getMedian(values) as BigNumber;
       expect(middleValue).toBeInstanceOf(BigNumber);
       expect(middleValue.toString(10)).toBe(result);
     });
@@ -643,7 +649,7 @@ describe('SwapsUtil', () => {
       [[...numbers, new BigNumber(10)], '5.5'],
       [[...largeNumbers, new BigNumber(1000)], '550'],
     ])('returns the median value', (values, result) => {
-      const medianValue = swapsUtil.getMedian(values);
+      const medianValue = swapsUtil.getMedian(values) as BigNumber;
       expect(medianValue).toBeInstanceOf(BigNumber);
       expect(medianValue.toString(10)).toBe(result);
     });
@@ -746,12 +752,20 @@ describe('SwapsUtil', () => {
 
   describe('shouldEnableDirectWrapping', () => {
     const randomTokenAddress = '0x881d40237659c251811cec9c364ef91234567890';
+    const ETH = swapsUtil.SWAPS_NATIVE_TOKEN_OBJECTS[swapsUtil.ETH_CHAIN_ID];
+    const BNB = swapsUtil.SWAPS_NATIVE_TOKEN_OBJECTS[swapsUtil.BSC_CHAIN_ID];
+    const MATIC =
+      swapsUtil.SWAPS_NATIVE_TOKEN_OBJECTS[swapsUtil.POLYGON_CHAIN_ID];
+
+    if (!ETH || !BNB || !MATIC) {
+      throw new Error('Test setup error: Token objects are not defined');
+    }
 
     it('returns true if swapping from ETH to WETH', () => {
       expect(
         swapsUtil.shouldEnableDirectWrapping(
           swapsUtil.ETH_CHAIN_ID,
-          swapsUtil.SWAPS_NATIVE_TOKEN_OBJECTS[swapsUtil.ETH_CHAIN_ID]?.address,
+          ETH.address,
           swapsUtil.WETH_CONTRACT_ADDRESS,
         ),
       ).toBe(true);
@@ -762,7 +776,7 @@ describe('SwapsUtil', () => {
         swapsUtil.shouldEnableDirectWrapping(
           swapsUtil.ETH_CHAIN_ID,
           swapsUtil.WETH_CONTRACT_ADDRESS,
-          swapsUtil.SWAPS_NATIVE_TOKEN_OBJECTS[swapsUtil.ETH_CHAIN_ID]?.address,
+          ETH.address,
         ),
       ).toBe(true);
     });
@@ -771,7 +785,7 @@ describe('SwapsUtil', () => {
       expect(
         swapsUtil.shouldEnableDirectWrapping(
           swapsUtil.ETH_CHAIN_ID,
-          swapsUtil.SWAPS_NATIVE_TOKEN_OBJECTS[swapsUtil.ETH_CHAIN_ID]?.address,
+          ETH.address,
           '0xc02AAA39b223fe8d0a0e5c4f27ead9083c756CC2',
         ),
       ).toBe(true);
@@ -781,7 +795,7 @@ describe('SwapsUtil', () => {
       expect(
         swapsUtil.shouldEnableDirectWrapping(
           swapsUtil.ETH_CHAIN_ID,
-          swapsUtil.SWAPS_NATIVE_TOKEN_OBJECTS[swapsUtil.ETH_CHAIN_ID]?.address,
+          ETH.address,
           randomTokenAddress,
         ),
       ).toBe(false);
@@ -791,7 +805,7 @@ describe('SwapsUtil', () => {
       expect(
         swapsUtil.shouldEnableDirectWrapping(
           swapsUtil.BSC_CHAIN_ID,
-          swapsUtil.SWAPS_NATIVE_TOKEN_OBJECTS[swapsUtil.BSC_CHAIN_ID]?.address,
+          BNB.address,
           swapsUtil.WBNB_CONTRACT_ADDRESS,
         ),
       ).toBe(true);
@@ -802,7 +816,7 @@ describe('SwapsUtil', () => {
         swapsUtil.shouldEnableDirectWrapping(
           swapsUtil.BSC_CHAIN_ID,
           swapsUtil.WBNB_CONTRACT_ADDRESS,
-          swapsUtil.SWAPS_NATIVE_TOKEN_OBJECTS[swapsUtil.BSC_CHAIN_ID]?.address,
+          BNB.address,
         ),
       ).toBe(true);
     });
@@ -811,7 +825,7 @@ describe('SwapsUtil', () => {
       expect(
         swapsUtil.shouldEnableDirectWrapping(
           swapsUtil.BSC_CHAIN_ID,
-          swapsUtil.SWAPS_NATIVE_TOKEN_OBJECTS[swapsUtil.BSC_CHAIN_ID]?.address,
+          BNB.address,
           randomTokenAddress,
         ),
       ).toBe(false);
@@ -821,8 +835,7 @@ describe('SwapsUtil', () => {
       expect(
         swapsUtil.shouldEnableDirectWrapping(
           swapsUtil.POLYGON_CHAIN_ID,
-          swapsUtil.SWAPS_NATIVE_TOKEN_OBJECTS[swapsUtil.POLYGON_CHAIN_ID]
-            ?.address,
+          MATIC.address,
           swapsUtil.WMATIC_CONTRACT_ADDRESS,
         ),
       ).toBe(true);
@@ -833,8 +846,7 @@ describe('SwapsUtil', () => {
         swapsUtil.shouldEnableDirectWrapping(
           swapsUtil.POLYGON_CHAIN_ID,
           swapsUtil.WMATIC_CONTRACT_ADDRESS,
-          swapsUtil.SWAPS_NATIVE_TOKEN_OBJECTS[swapsUtil.POLYGON_CHAIN_ID]
-            ?.address,
+          MATIC.address,
         ),
       ).toBe(true);
     });
@@ -843,8 +855,7 @@ describe('SwapsUtil', () => {
       expect(
         swapsUtil.shouldEnableDirectWrapping(
           swapsUtil.POLYGON_CHAIN_ID,
-          swapsUtil.SWAPS_NATIVE_TOKEN_OBJECTS[swapsUtil.POLYGON_CHAIN_ID]
-            ?.address,
+          MATIC.address,
           randomTokenAddress,
         ),
       ).toBe(false);
