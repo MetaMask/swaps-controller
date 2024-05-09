@@ -7,8 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [9.0.0]
-### Uncategorized
-- deps: @metamask/gas-fee-controller@^3.0.0->^12.0.0 ([#219](https://github.com/MetaMask/swaps-controller/pull/219))
+### Changed
+- **BREAKING**: peerDependency `@metamask/composable-controller` requires upgrade from v1 to v4 ([#219](https://github.com/MetaMask/swaps-controller/pull/219))
+- **BREAKING**: Update `@metamask/gas-fee-controller` from v3 to v12 ([#219](https://github.com/MetaMask/swaps-controller/pull/219))
+- Update `@metamask/base-controller` from v1 to v4 ([#219](https://github.com/MetaMask/swaps-controller/pull/219))
+
+### Fixed
+- Remove dependency on deprecated `web3-provider-engine` ([#219](https://github.com/MetaMask/swaps-controller/pull/219))
+- Upgrade legacy `eth-sig-util` to `@metamask/eth-sig-util` ([#219](https://github.com/MetaMask/swaps-controller/pull/219))
+- Replace legacy `ethjs` with `@metamask/ethjs` ([#219](https://github.com/MetaMask/swaps-controller/pull/219))
+- Replace legacy `ethjs-query` with `@metamask/ethjs-query` ([#219](https://github.com/MetaMask/swaps-controller/pull/219))
 
 ## [8.1.0]
 ### Added
@@ -25,7 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Replace `@metamask/ethjs-query` with `@metamask/eth-query` ([#191](https://github.com/MetaMask/swaps-controller/pull/191))
 - Move dependencies from/to devDependencies ([#215](https://github.com/MetaMask/swaps-controller/pull/215)) ([#217](https://github.com/MetaMask/swaps-controller/pull/217))
 - Fix web3 import ([#212](https://github.com/MetaMask/swaps-controller/pull/212))
-- Exclude tests from `dist` and change target on `tsconfig.json`  ([#212](https://github.com/MetaMask/swaps-controller/pull/212))
+- Exclude tests from `dist` and change target on `tsconfig.json` ([#212](https://github.com/MetaMask/swaps-controller/pull/212))
 
 ### Removed
 - Remove dependency `ethereumjs-util` ([#192](https://github.com/MetaMask/swaps-controller/pull/192))
