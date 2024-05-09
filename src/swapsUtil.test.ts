@@ -550,7 +550,7 @@ describe('SwapsUtil', () => {
   });
 
   describe('fetchSwapsFeatureFlags', () => {
-    it('should work', async () => {
+    it('should return network and global feature flags', async () => {
       const featureFlags = {
         bsc: {
           mobile_active: false,
@@ -592,7 +592,7 @@ describe('SwapsUtil', () => {
       expect(featureLiveness).toEqual(featureFlags);
     });
 
-    it('should return everything on unsupported networks', async () => {
+    it('should return network and global feature flags regardless of unsupported networks', async () => {
       const featureFlags = {
         bsc: {
           mobile_active: false,
