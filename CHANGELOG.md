@@ -6,6 +6,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [9.0.0-rc1]
+### Changed
+- **BREAKING**: peerDependency @metamask/composable-controller requires upgrade from v1 to v4
+- **BREAKING**: Bump `@metamask/gas-fee-controller` from v3 to v12
+  - TODO: What's actual implications here?
+- Bump `@metamask/base-controller` from v1 to v4
+
+### Fixed
+- Remove dependency on broken and deprecated `web3-provider-engine` ([#219](https://github.com/MetaMask/swaps-controller/pull/219))
+- Replace legacy `ethjs` with `@metamask/ethjs` ([#219](https://github.com/MetaMask/swaps-controller/pull/219))
+- Replace legacy `ethjs-query` with `@metamask/ethjs-query` ([#219](https://github.com/MetaMask/swaps-controller/pull/219))
+- Upgrade deprecated and broken `eth-sig-util` to `@metamask/eth-sig-util` ([#219](https://github.com/MetaMask/swaps-controller/pull/219))
+- Upgrade legacy `ethjs` to `@metamask/ethjs` ([#219](https://github.com/MetaMask/swaps-controller/pull/219))
+
 ## [8.0.0]
 ### Changed
 - **BREAKING**: Replace `@metamask/controllers` with individual controller packages ([#193](https://github.com/MetaMask/swaps-controller/pull/193)) ([#214](https://github.com/MetaMask/swaps-controller/pull/214)) ([#215](https://github.com/MetaMask/swaps-controller/pull/215))
@@ -135,7 +149,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use standalone gas API endpoint ([#70](https://github.com/MetaMask/swaps-controller/pull/70))
 - Bump @metamask/controllers from 14.1.0 to 14.2.0 ([#69](https://github.com/MetaMask/swaps-controller/pull/69))
 
-[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v8.0.0...HEAD
+[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v9.0.0-rc1...HEAD
+[9.0.0-rc1]: https://github.com/MetaMask/swaps-controller/compare/v8.0.0...v9.0.0-rc1
 [8.0.0]: https://github.com/MetaMask/swaps-controller/compare/v7.0.1...v8.0.0
 [7.0.1]: https://github.com/MetaMask/swaps-controller/compare/v7.0.0...v7.0.1
 [7.0.0]: https://github.com/MetaMask/swaps-controller/compare/v6.9.3...v7.0.0
