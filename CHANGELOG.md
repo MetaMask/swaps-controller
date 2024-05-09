@@ -6,7 +6,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [9.0.0]
+## [9.0.0-rc1]
+### Changed
+- **BREAKING**: peerDependency `@metamask/composable-controller` requires upgrade from v1 to v4 ([#219](https://github.com/MetaMask/swaps-controller/pull/219))
+- **BREAKING**: Bump `@metamask/gas-fee-controller` from v3 to v12 ([#219](https://github.com/MetaMask/swaps-controller/pull/219))
+  - TODO: What's actual implications for user here?
+- Bump `@metamask/base-controller` from v1 to v4 ([#219](https://github.com/MetaMask/swaps-controller/pull/219))
+
+### Fixed
+- Remove dependency on broken and deprecated `web3-provider-engine` ([#219](https://github.com/MetaMask/swaps-controller/pull/219))
+- Upgrade deprecated and broken `eth-sig-util` to `@metamask/eth-sig-util` ([#219](https://github.com/MetaMask/swaps-controller/pull/219))
+- Replace legacy `ethjs` with `@metamask/ethjs` ([#219](https://github.com/MetaMask/swaps-controller/pull/219))
+- Replace legacy `ethjs-query` with `@metamask/ethjs-query` ([#219](https://github.com/MetaMask/swaps-controller/pull/219))
 
 ## [8.0.0]
 ### Changed
@@ -16,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Replace `@metamask/ethjs-query` with `@metamask/eth-query` ([#191](https://github.com/MetaMask/swaps-controller/pull/191))
 - Move dependencies from/to devDependencies ([#215](https://github.com/MetaMask/swaps-controller/pull/215)) ([#217](https://github.com/MetaMask/swaps-controller/pull/217))
 - Fix web3 import ([#212](https://github.com/MetaMask/swaps-controller/pull/212))
-- Exclude tests from `dist` and change target on `tsconfig.json`  ([#212](https://github.com/MetaMask/swaps-controller/pull/212))
+- Exclude tests from `dist` and change target on `tsconfig.json` ([#212](https://github.com/MetaMask/swaps-controller/pull/212))
 
 ### Removed
 - Remove dependency `ethereumjs-util` ([#192](https://github.com/MetaMask/swaps-controller/pull/192))
@@ -137,8 +148,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use standalone gas API endpoint ([#70](https://github.com/MetaMask/swaps-controller/pull/70))
 - Bump @metamask/controllers from 14.1.0 to 14.2.0 ([#69](https://github.com/MetaMask/swaps-controller/pull/69))
 
-[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v9.0.0...HEAD
-[9.0.0]: https://github.com/MetaMask/swaps-controller/compare/v8.0.0...v9.0.0
+[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v9.0.0-rc1...HEAD
+[9.0.0-rc1]: https://github.com/MetaMask/swaps-controller/compare/v8.0.0...v9.0.0-rc1
 [8.0.0]: https://github.com/MetaMask/swaps-controller/compare/v7.0.1...v8.0.0
 [7.0.1]: https://github.com/MetaMask/swaps-controller/compare/v7.0.0...v7.0.1
 [7.0.0]: https://github.com/MetaMask/swaps-controller/compare/v6.9.3...v7.0.0
