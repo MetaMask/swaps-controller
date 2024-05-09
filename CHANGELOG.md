@@ -6,6 +6,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [9.0.0-rc1]
+### Uncategorized
+- deps: @metamask/base-controller@^3.2.1->^4.1.1
+- deps: @metamask/gas-fee-controller@^6.1.2->^12.0.0
+- update lockfile
+- update allow-scripts config
+- fix: downgrade @metamask/controller-utils@^8.0.2->^5.0.2
+- fix: downgrade @metamask/eth-query@^4.0.0->^3.0.1
+- update allow-scripts config
+- deps: @metamask/base-controller@^1.1.2->^3.2.1
+- devDeps: @metamask/transaction-controller@^3.0.0->^11.0.0
+- deps: @metamask/gas-fee-controller@^3.0.0->^6.1.2
+- update CODEOWNERS.md ([#234](https://github.com/MetaMask/swaps-controller/pull/234))
+
 ## [8.0.0]
 ### Changed
 - **BREAKING**: Replace `@metamask/controllers` with individual controller packages ([#193](https://github.com/MetaMask/swaps-controller/pull/193)) ([#214](https://github.com/MetaMask/swaps-controller/pull/214)) ([#215](https://github.com/MetaMask/swaps-controller/pull/215))
@@ -135,7 +149,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use standalone gas API endpoint ([#70](https://github.com/MetaMask/swaps-controller/pull/70))
 - Bump @metamask/controllers from 14.1.0 to 14.2.0 ([#69](https://github.com/MetaMask/swaps-controller/pull/69))
 
-[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v8.0.0...HEAD
+[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v9.0.0-rc1...HEAD
+[9.0.0-rc1]: https://github.com/MetaMask/swaps-controller/compare/v8.0.0...v9.0.0-rc1
 [8.0.0]: https://github.com/MetaMask/swaps-controller/compare/v7.0.1...v8.0.0
 [7.0.1]: https://github.com/MetaMask/swaps-controller/compare/v7.0.0...v7.0.1
 [7.0.0]: https://github.com/MetaMask/swaps-controller/compare/v6.9.3...v7.0.0
