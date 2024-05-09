@@ -26,7 +26,7 @@ export type SwapsToken = {
 export type NetworkFeatureFlags = {
   mobile_active: boolean;
   extension_active: boolean;
-  fallback_to_v1: boolean;
+  fallback_to_v1?: boolean;
   fallbackToV1: boolean;
   mobileActive: boolean;
   extensionActive: boolean;
