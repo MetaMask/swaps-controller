@@ -7,18 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [9.0.0-rc1]
-### Uncategorized
-- deps: @metamask/base-controller@^3.2.1->^4.1.1
-- deps: @metamask/gas-fee-controller@^6.1.2->^12.0.0
-- update lockfile
-- update allow-scripts config
-- fix: downgrade @metamask/controller-utils@^8.0.2->^5.0.2
-- fix: downgrade @metamask/eth-query@^4.0.0->^3.0.1
-- update allow-scripts config
-- deps: @metamask/base-controller@^1.1.2->^3.2.1
-- devDeps: @metamask/transaction-controller@^3.0.0->^11.0.0
-- deps: @metamask/gas-fee-controller@^3.0.0->^6.1.2
-- update CODEOWNERS.md ([#234](https://github.com/MetaMask/swaps-controller/pull/234))
+### Changed
+- **BREAKING**: peerDependency @metamask/composable-controller requires upgrade from v1 to v4
+- **BREAKING**: Bump `@metamask/gas-fee-controller` from v3 to v12
+  - TODO: What's actual implications here?
+- Bump `@metamask/base-controller` from v1 to v4
+
+### Fixed
+- Remove dependency on broken and deprecated `web3-provider-engine` ([#219](https://github.com/MetaMask/swaps-controller/pull/219))
+- Replace legacy `ethjs` with `@metamask/ethjs` ([#219](https://github.com/MetaMask/swaps-controller/pull/219))
+- Replace legacy `ethjs-query` with `@metamask/ethjs-query` ([#219](https://github.com/MetaMask/swaps-controller/pull/219))
+- Upgrade deprecated and broken `eth-sig-util` to `@metamask/eth-sig-util` ([#219](https://github.com/MetaMask/swaps-controller/pull/219))
+- Upgrade legacy `ethjs` to `@metamask/ethjs` ([#219](https://github.com/MetaMask/swaps-controller/pull/219))
 
 ## [8.0.0]
 ### Changed
