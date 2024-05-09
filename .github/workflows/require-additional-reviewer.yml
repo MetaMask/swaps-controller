@@ -2,7 +2,9 @@ name: Require Additional Reviewer for Releases
 
 on:
   pull_request:
+    branches: ['main']
   pull_request_review:
+    branches: ['main']
 
 jobs:
   require-additional-reviewer:
