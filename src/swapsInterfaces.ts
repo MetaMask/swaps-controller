@@ -27,6 +27,16 @@ export type NetworkFeatureFlags = {
   mobile_active: boolean;
   extension_active: boolean;
   fallback_to_v1?: boolean;
+};
+
+export type NetworksFeatureStatus = {
+  [network: string]: NetworkFeatureFlags;
+};
+
+export type NetworkFeatureFlagsAll = {
+  mobile_active: boolean;
+  extension_active: boolean;
+  fallback_to_v1?: boolean;
   fallbackToV1: boolean;
   mobileActive: boolean;
   extensionActive: boolean;
@@ -40,8 +50,8 @@ export type NetworkFeatureFlags = {
   };
 };
 
-export type NetworksFeatureStatus = {
-  [network: string]: NetworkFeatureFlags;
+export type NetworksFeatureStatusAll = {
+  [network: string]: NetworkFeatureFlagsAll;
 };
 
 export type GlobalFeatureFlags = {
@@ -57,7 +67,7 @@ export type GlobalFeatureFlags = {
   };
 };
 
-export type FeatureFlags = NetworksFeatureStatus & GlobalFeatureFlags;
+export type FeatureFlags = NetworksFeatureStatusAll & GlobalFeatureFlags;
 
 /**
  * Metadata needed to fetch quotes
