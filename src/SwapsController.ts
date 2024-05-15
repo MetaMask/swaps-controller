@@ -21,7 +21,8 @@ import type { Hex } from '@metamask/utils';
 import { Mutex } from 'async-mutex';
 import { BigNumber } from 'bignumber.js';
 import abiERC20 from 'human-standard-token-abi';
-import * as web3 from 'web3';
+import { Web3 } from 'web3';
+import type { Web3 as Web3Type } from 'web3';
 
 import type {
   APIAggregatorMetadata,
@@ -57,9 +58,6 @@ import {
   OPTIMISM_CHAIN_ID,
   shouldEnableDirectWrapping,
 } from './swapsUtil';
-
-// hack to fix web3 import issue after transpiling
-const Web3 = web3.Web3 === undefined ? web3.default : web3.Web3;
 
 // Functions to determine type of the return value from GasFeeController
 
@@ -222,7 +220,7 @@ export default class SwapsController extends BaseController<
 > {
   private handle?: NodeJS.Timeout;
 
-  private web3: any;
+  private web3: Web3Type;
 
   private ethQuery: any;
 
@@ -546,29 +544,28 @@ export default class SwapsController extends BaseController<
     contractAddress: string,
     walletAddress: string,
   ): Promise<number> {
-    const contract = this.web3.eth.contract(abiERC20).at(contractAddress);
+    const contract = new this.web3.eth.Contract(abiERC20, contractAddress);
     const allowanceTimeout = new Promise<number>((_, reject) => {
       setTimeout(() => {
         reject(new Error(SwapsError.SWAPS_ALLOWANCE_TIMEOUT));
       }, 10000);
     });
 
-    const allowancePromise = new Promise<number>((resolve, reject) => {
-      contract.allowance(
-        walletAddress,
-        getSwapsContractAddress(this.config.chainId),
-        (error: Error, result: number) => {
-          /* istanbul ignore if */
-          if (error) {
-            reject(error);
-            return;
-          }
-          resolve(result);
-        },
-      );
-    });
+    const allowancePromise = async () => {
+      try {
+        const result: bigint = await contract.methods
+          .allowance(
+            walletAddress,
+            getSwapsContractAddress(this.config.chainId),
+          )
+          .call();
+        return Number(result);
+      } catch (error) {
+        throw error;
+      }
+    };
 
-    return Promise.race([allowanceTimeout, allowancePromise]);
+    return Promise.race([allowanceTimeout, allowancePromise()]);
   }
 
   /* istanbul ignore next */
@@ -977,8 +974,8 @@ export default class SwapsController extends BaseController<
   }
 
   startFetchAndSetQuotes(
-    fetchParams: APIFetchQuotesParams,
-    fetchParamsMetaData: APIFetchQuotesMetadata,
+    fetchParams?: APIFetchQuotesParams,
+    fetchParamsMetaData?: APIFetchQuotesMetadata,
   ) {
     if (!fetchParams) {
       return null;
@@ -1112,10 +1109,15 @@ export default class SwapsController extends BaseController<
    * @param error.key - Error key.
    * @param error.description - Error description.
    */
-  stopPollingAndResetState(error?: {
-    key: SwapsError | null;
-    description: string | null;
-  }) {
+  stopPollingAndResetState(
+    error: {
+      key: SwapsError | null;
+      description: string | null;
+    } = {
+      key: null,
+      description: null,
+    },
+  ) {
     this.abortController && this.abortController.abort();
     this.handle && clearTimeout(this.handle);
     this.pollCount = Number(this.config.pollCountLimit) + 1;
