@@ -552,17 +552,10 @@ export default class SwapsController extends BaseController<
     });
 
     const allowancePromise = async () => {
-      try {
-        const result: bigint = await contract.methods
-          .allowance(
-            walletAddress,
-            getSwapsContractAddress(this.config.chainId),
-          )
-          .call();
-        return Number(result);
-      } catch (error) {
-        throw error;
-      }
+      const result: bigint = await contract.methods
+        .allowance(walletAddress, getSwapsContractAddress(this.config.chainId))
+        .call();
+      return Number(result);
     };
 
     return Promise.race([allowanceTimeout, allowancePromise()]);
