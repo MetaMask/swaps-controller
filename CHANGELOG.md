@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [8.1.0]
+### Uncategorized
+- ci: add npm publishing to publish-release workflow ([#237](https://github.com/MetaMask/swaps-controller/pull/237))
+- feat: add util to fetch global and chain feature flags at once ([#229](https://github.com/MetaMask/swaps-controller/pull/229))
+- update CODEOWNERS.md ([#234](https://github.com/MetaMask/swaps-controller/pull/234))
+
 ## [8.0.0]
 ### Changed
 - **BREAKING**: Replace `@metamask/controllers` with individual controller packages ([#193](https://github.com/MetaMask/swaps-controller/pull/193)) ([#214](https://github.com/MetaMask/swaps-controller/pull/214)) ([#215](https://github.com/MetaMask/swaps-controller/pull/215))
@@ -135,7 +141,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use standalone gas API endpoint ([#70](https://github.com/MetaMask/swaps-controller/pull/70))
 - Bump @metamask/controllers from 14.1.0 to 14.2.0 ([#69](https://github.com/MetaMask/swaps-controller/pull/69))
 
-[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v8.0.0...HEAD
+[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v8.1.0...HEAD
+[8.1.0]: https://github.com/MetaMask/swaps-controller/compare/v8.0.0...v8.1.0
 [8.0.0]: https://github.com/MetaMask/swaps-controller/compare/v7.0.1...v8.0.0
 [7.0.1]: https://github.com/MetaMask/swaps-controller/compare/v7.0.0...v7.0.1
 [7.0.0]: https://github.com/MetaMask/swaps-controller/compare/v6.9.3...v7.0.0
