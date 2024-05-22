@@ -549,6 +549,106 @@ describe('SwapsUtil', () => {
     });
   });
 
+  describe('fetchSwapsFeatureFlags', () => {
+    it('should return network and global feature flags', async () => {
+      const featureFlags = {
+        bsc: {
+          mobile_active: false,
+          extension_active: true,
+          fallback_to_v1: true,
+        },
+        ethereum: {
+          mobile_active: false,
+          extension_active: true,
+          fallback_to_v1: true,
+        },
+        polygon: {
+          mobile_active: false,
+          extension_active: true,
+          fallback_to_v1: false,
+        },
+        smart_transactions: {
+          mobile_active: true,
+          extension_active: true
+        },
+        smartTransactions: {
+          mobileActive: true,
+          extensionActive: true,
+          mobileActiveIOS: false,
+          mobileActiveAndroid: false
+        },
+        swapRedesign: {
+          mobileActive: false,
+          extensionActive: true
+        }
+      }
+
+      mockFetch({
+        'https://swap.metaswap.codefi.network/featureFlags': {
+          body: featureFlags,
+        },
+      });
+      const featureLiveness = await swapsUtil.fetchSwapsFeatureFlags('0x1');
+      expect(featureLiveness).toEqual(featureFlags);
+    });
+
+    it('should return network and global feature flags regardless of unsupported networks', async () => {
+      const featureFlags = {
+        bsc: {
+          mobile_active: false,
+          extension_active: true,
+          fallback_to_v1: true,
+        },
+        ethereum: {
+          mobile_active: false,
+          extension_active: true,
+          fallback_to_v1: true,
+        },
+        polygon: {
+          mobile_active: false,
+          extension_active: true,
+          fallback_to_v1: false,
+        },
+        smart_transactions: {
+          mobile_active: true,
+          extension_active: true
+        },
+        smartTransactions: {
+          mobileActive: true,
+          extensionActive: true,
+          mobileActiveIOS: false,
+          mobileActiveAndroid: false
+        },
+        swapRedesign: {
+          mobileActive: false,
+          extensionActive: true
+        }
+      }
+
+      mockFetch({
+        'https://swap.metaswap.codefi.network/featureFlags': {
+          body: featureFlags,
+        },
+      });
+      const featureLiveness = await swapsUtil.fetchSwapsFeatureFlags(
+        '0x321',
+      );
+      expect(featureLiveness).toEqual(featureFlags);
+    });
+
+    it('should throw on exception', async () => {
+      mockFetch({
+        'https://swap.metaswap.codefi.network/featureFlags': {
+          throws: true,
+        },
+      });
+
+      await expect(async () =>
+        swapsUtil.fetchSwapsFeatureFlags('0x1'),
+      ).rejects.toThrow();
+    });
+  });
+
   describe('fetchGasPrices', () => {
     it('should work', async () => {
       mockFetch({

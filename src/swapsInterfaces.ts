@@ -33,6 +33,42 @@ export type NetworksFeatureStatus = {
   [network: string]: NetworkFeatureFlags;
 };
 
+export type NetworkFeatureFlagsAll = {
+  mobile_active: boolean;
+  extension_active: boolean;
+  fallback_to_v1?: boolean;
+  fallbackToV1: boolean;
+  mobileActive: boolean;
+  extensionActive: boolean;
+  mobileActiveIOS: boolean;
+  mobileActiveAndroid: boolean;
+
+  smartTransactions: {
+    expectedDeadline: number;
+    maxDeadline: number;
+    returnTxHashAsap: boolean;
+  };
+};
+
+export type NetworksFeatureStatusAll = {
+  [network: string]: NetworkFeatureFlagsAll;
+};
+
+export type GlobalFeatureFlags = {
+  smart_transactions: {
+    mobile_active: boolean;
+    extension_active: boolean;
+  };
+  smartTransactions: {
+    mobileActive: boolean;
+    extensionActive: boolean;
+    mobileActiveIOS: boolean;
+    mobileActiveAndroid: boolean;
+  };
+};
+
+export type FeatureFlags = NetworksFeatureStatusAll & GlobalFeatureFlags;
+
 /**
  * Metadata needed to fetch quotes
  * @interface APIFetchQuotesMetadata
