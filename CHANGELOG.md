@@ -10,9 +10,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Add `fetchSwapsFeatureFlags` to fetch global and chain feature flags at once ([#229](https://github.com/MetaMask/swaps-controller/pull/229))
 
-### Changed
-- Update CODEOWNERS.md ([#234](https://github.com/MetaMask/swaps-controller/pull/234))
-
 ### Fixed
 - Fix bug in contract instance creation for `getERC20Allowance` ([#241](https://github.com/MetaMask/swaps-controller/pull/241))
 
