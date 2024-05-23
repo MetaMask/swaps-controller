@@ -2,84 +2,32 @@ import { ComposableController } from '@metamask/composable-controller';
 
 import SwapsController, { INITIAL_CHAIN_DATA } from './SwapsController';
 import * as swapsUtil from './swapsUtil';
+import { Quote } from './swapsInterfaces';
+import BigNumber from 'bignumber.js';
 
-// const HttpProvider = require('ethjs-provider-http');
-
-// const MAINNET_PROVIDER = new HttpProvider('https://mainnet.infura.io/v3/341eacb578dd44a1a049cbc5f6fd4035');
-
-// const QUOTE_POLLING_INTERVAL = 10;
 const POLL_COUNT_LIMIT = 3;
 
-// const API_TOKENS = [
-//   {
-//     address: '0x6b175474e89094c44da98b954eedeac495271d0f',
-//     symbol: 'DAI',
-//     decimals: 18,
-//     occurances: 30,
-//     iconUrl: 'https://cloudflare-ipfs.com/ipfs/QmNYVMm3iC7HEoxfvxsZbRoapdjDHj9EREFac4BPeVphSJ',
-//   },
-//   {
-//     address: '0xdac17f958d2ee523a2206206994597c13d831ec7',
-//     symbol: 'USDT',
-//     decimals: 6,
-//     occurances: 30,
-//     iconUrl: 'https://cloudflare-ipfs.com/ipfs/QmR3TGmDDdmid99ExTHwPiKro4njZhSidbjcTbSrS5rHnq',
-//   },
-//   {
-//     address: '0x8e870d67f660d95d5be530380d0ec0bd388289e1',
-//     symbol: 'PAX',
-//     decimals: 18,
-//     occurances: 30,
-//     iconUrl: 'https://cloudflare-ipfs.com/ipfs/QmQTzo6Ecdn54x7NafwegjLetAnno1ATL9Y8M3PcVXGVhR',
-//   },
-// ];
-
-const API_TRADES = {
-  totle: {
-    trade: null,
-    sourceToken: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
-    destinationToken: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
-    sourceAmount: '10000000000000000',
-    destinationAmount: null,
-    error: 'Error fetching totle trade: Gas estimation failed.',
-    approvalNeeded: {
-      data: '0x095ea7b3000000000000000000000000881d40237659c251811cec9c364ef91dc08d300c0000000000000000000000000000000000000000004a817c7ffffffdabf41c00',
-      to: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
-      value: '0',
-      from: '0xb0da5965d43369968574d399dbe6374683773a65',
-    },
-    maxGas: 2270000,
-    averageGas: 583863,
-    estimatedRefund: 38540,
-    fetchTime: 543,
-    aggregator: 'totle',
-    aggType: 'AGG',
-    fee: 0.875,
-    gasMultiplier: 1.5,
-    priceSlippage: {
-      ratio: 1,
-      calculationError: 'No trade data to calculate price slippage',
-      bucket: 'low',
-    },
-  },
+const API_TRADES: {
+  [key: string]: Quote;
+} = {
   paraswap: {
     trade: {
       data: '0x5f5755290000000000000000000000000000000000000000000000000000000000000080000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000000000000000000000000000000000000000000000000002386f26fc1000000000000000000000000000000000000000000000000000000000000000000c0000000000000000000000000000000000000000000000000000000000000000a70617261737761705632000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000780000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48000000000000000000000000000000000000000000000000002386f26fc1000000000000000000000000000000000000000000000000000000000000005908bf000000000000000000000000000000000000000000000000000000000000012000000000000000000000000000000000000000000000000000000000000006c0000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48000000000000000000000000000000000000000000000000002386f26fc1000000000000000000000000000000000000000000000000000000000000005908c000000000000000000000000000000000000000000000000000000000005c97e80000000000000000000000000000000000000000000000000000000000000140000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000068000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000020000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb480000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000020000000000000000000000000c9eeed34a6e0edb7f32cffd1d12e625564db9e83000000000000000000000000080bf510fcbf18b91105470639e9561022937712000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003a00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000002c00000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002000000000000000000000000056178a0d5f301baf6cf3e1cd53d9863437345bf9000000000000000000000000c9eeed34a6e0edb7f32cffd1d12e625564db9e8300000000000000000000000055662e225a3376759c24331a9aed764f8f0c9fbb000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005c97e8000000000000000000000000000000000000000000000000002386f26fc1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005fbc4b5f000000000000000000000000000000000000000000000000164a480bf71de3ba000000000000000000000000000000000000000000000000000000000000018000000000000000000000000000000000000000000000000000000000000001e00000000000000000000000000000000000000000000000000000000000000024f47261b0000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000024f47261b0000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000421cbe650637ba43625e3c4b021bba38856e0c948a1b7e69cb81923d421b6c6a0e317574e8ca0898f24cc10b4ac769c5a9e67ed422e79882105d369da8cf35af29b00300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000086d6574616d61736b000000000000000000000000000000000000000000000000',
       from: '0xb0da5965d43369968574d399dbe6374683773a65',
       value: '0',
       to: '0x881D40237659C251811CEC9c364ef91dC08D300C',
-      gas: 2750000,
+      gas: '2750000',
     },
     sourceAmount: '10000000000000000',
-    destinationAmount: '6015406',
+    destinationAmount: 6015406,
     error: null,
     sourceToken: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
     destinationToken: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
     approvalNeeded: {
       data: '0x095ea7b3000000000000000000000000881d40237659c251811cec9c364ef91dc08d300c0000000000000000000000000000000000000000004a817c7ffffffdabf41c00',
       to: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
-      value: '0',
       from: '0xb0da5965d43369968574d399dbe6374683773a65',
+      gas: '2750000',
     },
     maxGas: 2750000,
     averageGas: 637198,
@@ -89,11 +37,18 @@ const API_TRADES = {
     aggType: 'AGG',
     fee: 0.875,
     gasMultiplier: 1.5,
-    priceSlippage: {
-      ratio: 1.0095049985488103,
-      calculationError: '',
-      bucket: 'low',
+    quoteRefreshSeconds: 60,
+    savings: {
+      total: new BigNumber(0),
+      performance: new BigNumber(0),
+      fee: new BigNumber(0),
+      medianMetaMaskFee: new BigNumber(0),
     },
+    gasEstimate: '100000',
+    gasEstimateWithRefund: '90000',
+    destinationTokenRate: 0.9999999999999999,
+    sourceTokenRate: 1.0000000000000002,
+    multiLayerL1TradeFeeTotal: '0',
   },
   oneInch: {
     trade: {
@@ -101,18 +56,18 @@ const API_TRADES = {
       from: '0xb0da5965d43369968574d399dbe6374683773a65',
       value: '0',
       to: '0x881D40237659C251811CEC9c364ef91dC08D300C',
-      gas: 2530000,
+      gas: '2530000',
     },
     sourceAmount: '10000000000000000',
-    destinationAmount: '6037378',
+    destinationAmount: 6037378,
     error: null,
     sourceToken: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
     destinationToken: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
     approvalNeeded: {
       data: '0x095ea7b3000000000000000000000000881d40237659c251811cec9c364ef91dc08d300c0000000000000000000000000000000000000000004a817c7ffffffdabf41c00',
       to: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
-      value: '0',
       from: '0xb0da5965d43369968574d399dbe6374683773a65',
+      gas: '2530000',
     },
     maxGas: 2530000,
     averageGas: 929497,
@@ -122,68 +77,20 @@ const API_TRADES = {
     aggType: 'AGG',
     fee: 0.875,
     gasMultiplier: 1.5,
-    priceSlippage: {
-      ratio: 1.0058310785411322,
-      calculationError: '',
-      bucket: 'low',
+    quoteRefreshSeconds: 60,
+    savings: {
+      total: new BigNumber(0),
+      performance: new BigNumber(0),
+      fee: new BigNumber(0),
+      medianMetaMaskFee: new BigNumber(0),
     },
-  },
-  pmm: {
-    trade: {
-      data: '0x5f5755290000000000000000000000000000000000000000000000000000000000000080000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000000000000000000000000000000000000000000000000002386f26fc1000000000000000000000000000000000000000000000000000000000000000000c00000000000000000000000000000000000000000000000000000000000000003706d6d000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003e0000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48000000000000000000000000000000000000000000000000002386f26fc100000000000000000000000000000000000000000000000000000000000000591110000000000000000000000000000000000000000000000000000000000000012000000000000000000000000000000000000000000000000000000000000003200000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000002386f26fc1000000000000000000000000000000000000000000000000000000000000000002a000000000000000000000000056178a0d5f301baf6cf3e1cd53d9863437345bf900000000000000000000000074de5d4fcbf63e00296fd95d33236b979401663100000000000000000000000055662e225a3376759c24331a9aed764f8f0c9fbb000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005bd240000000000000000000000000000000000000000000000000002386f26fc1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005fbc4b59000000000000000000000000000000000000000000000000164a480aa137afb4000000000000000000000000000000000000000000000000000000000000018000000000000000000000000000000000000000000000000000000000000001e00000000000000000000000000000000000000000000000000000000000000024f47261b0000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000024f47261b0000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc20000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000421b4330b4d9789661eaab3294bfe913a505ce47d616479d4ab03832cc4635264b993272de3b344a1a4bf4e3a16a6971b727ba3a8d9e691ad2435c203be04fe3adab03000000000000000000000000000000000000000000000000000000000000',
-      from: '0xb0da5965d43369968574d399dbe6374683773a65',
-      value: '0',
-      to: '0x881D40237659C251811CEC9c364ef91dC08D300C',
-      gas: 405000,
-    },
-    sourceAmount: '10000000000000000',
-    destinationAmount: '6017600',
-    error: null,
-    sourceToken: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
-    destinationToken: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
-    approvalNeeded: {
-      data: '0x095ea7b3000000000000000000000000881d40237659c251811cec9c364ef91dc08d300c0000000000000000000000000000000000000000004a817c7ffffffdabf41c00',
-      to: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
-      value: '0',
-      from: '0xb0da5965d43369968574d399dbe6374683773a65',
-    },
-    maxGas: 405000,
-    averageGas: 209421,
-    estimatedRefund: 18205,
-    fetchTime: 852,
-    aggregator: 'pmm',
-    aggType: 'RFQ',
-    fee: 0.875,
-    gasMultiplier: 1.5,
-    priceSlippage: {
-      ratio: 1.0091369358715276,
-      calculationError: '',
-      bucket: 'low',
-    },
+    gasEstimate: '100000',
+    gasEstimateWithRefund: '90000',
+    destinationTokenRate: 0.9999999999999999,
+    sourceTokenRate: 1.0000000000000002,
+    multiLayerL1TradeFeeTotal: '0',
   },
 };
-
-// const FETCH_PARAMS = {
-//   slippage: 3,
-//   sourceToken: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
-//   destinationToken: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
-//   sourceAmount: 10000000000000000,
-//   fromAddress: '0xb0da5965d43369968574d399dbe6374683773a65',
-//   walletAddress: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cw2',
-//   metaData: {
-//     sourceTokenInfo: {
-//       address: '0x6b175474e89094c44da98b954eedeac495271d0f',
-//       symbol: 'DAI',
-//       decimals: 18,
-//       iconUrl: 'https://foo.bar/logo.png',
-//     },
-//     destinationTokenInfo: {
-//       address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
-//       symbol: 'USDC',
-//       decimals: 18,
-//     },
-//   },
-// };
 
 const mockFlags: { [key: string]: any } = {
   estimateGas: null,
@@ -225,25 +132,21 @@ jest.mock('@metamask/eth-query', () =>
   }),
 );
 
-// mock import of Web3 which is a constructor
+// Mock implementation of web3
 jest.mock('web3', () => {
-  const _ = jest.fn().mockImplementation(() => {
-    return {
+  return {
+    Web3: jest.fn(() => ({
       eth: {
-        contract: () => {
-          return {
-            at: () => {
-              return {
-                allowance: (_0: string, _1: string, callback: any) =>
-                  callback(undefined, 1),
-              };
-            },
-          };
-        },
+        Contract: jest.fn(() => ({
+          methods: {
+            allowance: jest.fn(() => ({
+              call: jest.fn().mockResolvedValue('1000000000000000000'), // Mocked allowance value
+            })),
+          },
+        })),
       },
-    };
-  });
-  return { Web3: _ };
+    })),
+  };
 });
 
 describe('SwapsController', () => {
@@ -377,7 +280,12 @@ describe('SwapsController', () => {
 
   describe('provider', () => {
     it('should set provider', () => {
-      const provider = { name: 'foo provider' };
+      const provider = {
+        name: 'test',
+        type: 'test',
+        chainId: '0x1',
+        rpcUrl: 'test',
+      };
       expect(swapsController.defaultConfig.provider).toBeUndefined();
       swapsController.configure({
         provider,
@@ -543,6 +451,17 @@ describe('SwapsController', () => {
       expect(swapsUtilFetchTokens).toHaveBeenCalled();
       expect(swapsController.state.tokensLastFetched).toBe(0);
     });
+
+    it('should not fetch tokens if chain id is not supported', async () => {
+      swapsController.configure({
+        supportedChainIds: ['0x1'],
+      });
+      swapsController.state.tokens = [];
+      swapsController.state.tokensLastFetched = 0;
+      swapsController.configure({ chainId: '0x2' });
+      await swapsController.fetchTokenWithCache();
+      expect(swapsUtilFetchTokens).not.toHaveBeenCalled();
+    });
   });
 
   describe('top assets cache', () => {
@@ -650,6 +569,132 @@ describe('SwapsController', () => {
       await swapsController.fetchAggregatorMetadataWithCache();
       expect(swapsUtilFetchAggregatorMetadata).toHaveBeenCalled();
       expect(swapsController.state.aggregatorMetadataLastFetched).toBe(0);
+    });
+  });
+  describe('updateQuotesWithGasPrice', () => {
+    it('should update quotes with custom gas price', () => {
+      const customGasFee = {
+        gasPrice: '10',
+      };
+      const usedGasEstimate = {
+        gasPrice: '20',
+      };
+
+      swapsController.state.quotes = API_TRADES;
+      swapsController.state.usedGasEstimate = usedGasEstimate;
+
+      swapsController.updateQuotesWithGasPrice(customGasFee);
+
+      const updatedQuoteValues = swapsController.state.quoteValues!;
+      expect(updatedQuoteValues.paraswap.maxEthFee).toBeDefined();
+    });
+
+    it('should not update quotes if usedGasEstimate is null', () => {
+      const customGasFee = {
+        gasPrice: '10',
+      };
+      swapsController.state.usedGasEstimate = null;
+
+      swapsController.updateQuotesWithGasPrice(customGasFee);
+
+      const updatedQuoteValues = swapsController.state.quoteValues;
+      expect(updatedQuoteValues).toStrictEqual({});
+    });
+  });
+  describe('updateSelectedQuoteWithGasLimit', () => {
+    it('should update selected quote with custom gas limit', () => {
+      const customGasLimit = '0x5208'; // 21000 in hex
+      swapsController.state.topAggId = 'paraswap';
+      swapsController.state.quotes = API_TRADES;
+      swapsController.state.quoteValues = {
+        paraswap: {
+          ...swapsController.state.quoteValues!.paraswap,
+          maxEthFee: '0',
+        },
+      };
+      swapsController.state.usedGasEstimate = {
+        gasPrice: '20',
+      };
+
+      swapsController.updateSelectedQuoteWithGasLimit(customGasLimit);
+
+      const updatedQuoteValues = swapsController.state.quoteValues;
+      expect(updatedQuoteValues?.paraswap.maxEthFee).toBeDefined();
+    });
+
+    it('should not update selected quote if topAggId or usedGasEstimate is null', () => {
+      const customGasLimit = '0x5208'; // 21000 in hex
+      swapsController.state.topAggId = null;
+      swapsController.state.usedGasEstimate = null;
+
+      swapsController.updateSelectedQuoteWithGasLimit(customGasLimit);
+
+      const updatedQuoteValues = swapsController.state.quoteValues;
+      expect(updatedQuoteValues).toStrictEqual({});
+    });
+  });
+  describe('startFetchAndSetQuotes', () => {
+    it('should set fetch parameters and initiate polling', () => {
+      const fetchParams = {
+        slippage: 1,
+        sourceToken: '0x1',
+        sourceAmount: 1000,
+        destinationToken: '0x2',
+        walletAddress: '0x3',
+      };
+      const fetchParamsMetaData = {
+        sourceTokenInfo: {
+          decimals: 18,
+          address: '0x1',
+          symbol: 'TOKEN1',
+        },
+        destinationTokenInfo: {
+          decimals: 18,
+          address: '0x2',
+          symbol: 'TOKEN2',
+        },
+      };
+
+      swapsController.startFetchAndSetQuotes(fetchParams, fetchParamsMetaData);
+
+      expect(swapsController.state.fetchParams).toEqual(fetchParams);
+      expect(swapsController.state.fetchParamsMetaData).toEqual(
+        fetchParamsMetaData,
+      );
+      expect(swapsController.state.isInPolling).toBe(true);
+    });
+    // should return null if no fetch parameters are provided
+    it('should return null if no fetch parameters are provided', () => {
+      swapsController.startFetchAndSetQuotes();
+
+      expect(swapsController.state.isInPolling).toBe(false);
+    });
+  });
+  describe('stopPollingAndResetState', () => {
+    it('should stop polling and reset state with error', () => {
+      const error = {
+        key: swapsUtil.SwapsError.QUOTES_NOT_AVAILABLE_ERROR,
+        description: 'Test error description',
+      };
+
+      swapsController.stopPollingAndResetState(error);
+
+      expect(swapsController.state.isInPolling).toBe(false);
+      expect(swapsController.state.error).toEqual(error);
+      expect(swapsController.state.quotes).toEqual({});
+      expect(swapsController.state.quoteValues).toEqual({});
+    });
+
+    it('should stop polling and reset state without error', () => {
+      swapsController.stopPollingAndResetState();
+
+      expect(swapsController.state.isInPolling).toBe(false);
+      expect(swapsController.state.error).toEqual({
+        key: null,
+        description: null,
+      });
+      expect(swapsController.state.quotes).toEqual({});
+      expect(swapsController.state.quoteValues).toEqual({});
     });
   });
 });

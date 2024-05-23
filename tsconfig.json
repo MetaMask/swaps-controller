@@ -13,6 +13,7 @@
     "outDir": "dist",
     "sourceMap": true,
     "strict": true,
+    "strictPropertyInitialization": false,
     "target": "ES2020"
   },
   "include": ["src/**/*.ts"],
