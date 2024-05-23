@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update CODEOWNERS.md ([#234](https://github.com/MetaMask/swaps-controller/pull/234))
 
 ### Fixed
-- Fixes bug in contract instance creation for `getERC20Allowance` ([#241](https://github.com/MetaMask/swaps-controller/pull/241))
+- Fix bug in contract instance creation for `getERC20Allowance` ([#241](https://github.com/MetaMask/swaps-controller/pull/241))
 
 ## [8.0.0]
 ### Changed
