@@ -404,14 +404,18 @@ describe('SwapsController', () => {
 
   describe('tokens cache', () => {
     it('should fetch tokens when no tokens in state', async () => {
-      swapsController.state.tokens = null;
+      swapsController.update({
+        tokens: [],
+      });
       await swapsController.fetchTokenWithCache();
       expect(swapsUtilFetchTokens).toHaveBeenCalled();
     });
 
     it('should fetch tokens when last fetched is 0', async () => {
-      swapsController.state.tokens = [];
-      swapsController.state.tokensLastFetched = 0;
+      swapsController.update({
+        tokens: [],
+        tokensLastFetched: 0,
+      });
       await swapsController.fetchTokenWithCache();
       expect(swapsUtilFetchTokens).toHaveBeenCalled();
     });
@@ -419,22 +423,28 @@ describe('SwapsController', () => {
     it('should fetch tokens when last fetched is over threshold', async () => {
       const threshold = 5000;
       swapsController.configure({ fetchTokensThreshold: threshold });
-      swapsController.state.tokens = [];
-      swapsController.state.tokensLastFetched = Date.now() - threshold - 1;
+      swapsController.update({
+        tokens: [],
+        tokensLastFetched: Date.now() - threshold - 1,
+      });
       await swapsController.fetchTokenWithCache();
       expect(swapsUtilFetchTokens).toHaveBeenCalled();
     });
 
     it('should not fetch tokens when no threshold reached', async () => {
-      swapsController.state.tokens = [];
-      swapsController.state.tokensLastFetched = Date.now();
+      swapsController.update({
+        tokens: [],
+        tokensLastFetched: Date.now(),
+      });
       await swapsController.fetchTokenWithCache();
       expect(swapsUtilFetchTokens).not.toHaveBeenCalled();
     });
 
     it('should not fetch tokens when no threshold reached or tokens are available', async () => {
-      swapsController.state.tokens = [];
-      swapsController.state.tokensLastFetched = Date.now();
+      swapsController.update({
+        tokens: [],
+        tokensLastFetched: Date.now(),
+      });
       await swapsController.fetchTokenWithCache();
       expect(swapsUtilFetchTokens).not.toHaveBeenCalled();
     });
@@ -445,8 +455,10 @@ describe('SwapsController', () => {
       });
       const threshold = 5000;
       swapsController.configure({ fetchTokensThreshold: threshold });
-      swapsController.state.tokens = [];
-      swapsController.state.tokensLastFetched = Date.now() - threshold - 1;
+      swapsController.update({
+        tokens: [],
+        tokensLastFetched: Date.now() - threshold - 1,
+      });
       await swapsController.fetchTokenWithCache();
       expect(swapsUtilFetchTokens).toHaveBeenCalled();
       expect(swapsController.state.tokensLastFetched).toBe(0);
@@ -466,14 +478,18 @@ describe('SwapsController', () => {
 
   describe('top assets cache', () => {
     it('should fetch top assets when no top assets in state', async () => {
-      swapsController.state.topAssets = null;
+      swapsController.update({
+        topAssets: null,
+      });
       await swapsController.fetchTopAssetsWithCache();
       expect(swapsUtilFetchTopAssets).toHaveBeenCalled();
     });
 
     it('should fetch top assets when last fetched is 0', async () => {
-      swapsController.state.topAssets = [];
-      swapsController.state.topAssetsLastFetched = 0;
+      swapsController.update({
+        topAssets: [],
+        topAssetsLastFetched: 0,
+      });
       await swapsController.fetchTopAssetsWithCache();
       expect(swapsUtilFetchTopAssets).toHaveBeenCalled();
     });
@@ -481,22 +497,28 @@ describe('SwapsController', () => {
     it('should fetch top assets when last fetched is over threshold', async () => {
       const threshold = 5000;
       swapsController.configure({ fetchTopAssetsThreshold: threshold });
-      swapsController.state.topAssets = [];
-      swapsController.state.topAssetsLastFetched = Date.now() - threshold - 1;
+      swapsController.update({
+        topAssets: [],
+        topAssetsLastFetched: Date.now() - threshold - 1,
+      });
       await swapsController.fetchTopAssetsWithCache();
       expect(swapsUtilFetchTopAssets).toHaveBeenCalled();
     });
 
     it('should not fetch top assets when no threshold reached', async () => {
-      swapsController.state.topAssets = [];
-      swapsController.state.topAssetsLastFetched = Date.now();
+      swapsController.update({
+        topAssets: [],
+        topAssetsLastFetched: Date.now(),
+      });
       await swapsController.fetchTopAssetsWithCache();
       expect(swapsUtilFetchTopAssets).not.toHaveBeenCalled();
     });
 
     it('should not fetch top assets when no threshold reached or tokens are available', async () => {
-      swapsController.state.topAssets = [];
-      swapsController.state.topAssetsLastFetched = Date.now();
+      swapsController.update({
+        topAssets: [],
+        topAssetsLastFetched: Date.now(),
+      });
       await swapsController.fetchTopAssetsWithCache();
       expect(swapsUtilFetchTopAssets).not.toHaveBeenCalled();
     });
@@ -507,8 +529,10 @@ describe('SwapsController', () => {
       });
       const threshold = 5000;
       swapsController.configure({ fetchTopAssetsThreshold: threshold });
-      swapsController.state.topAssets = [];
-      swapsController.state.topAssetsLastFetched = Date.now() - threshold - 1;
+      swapsController.update({
+        topAssets: [],
+        topAssetsLastFetched: Date.now() - threshold - 1,
+      });
       await swapsController.fetchTopAssetsWithCache();
       expect(swapsUtilFetchTopAssets).toHaveBeenCalled();
       expect(swapsController.state.topAssetsLastFetched).toBe(0);
@@ -517,14 +541,18 @@ describe('SwapsController', () => {
 
   describe('aggregator metadata cache', () => {
     it('should fetch aggregator metadata when no aggregator metadata in state', async () => {
-      swapsController.state.aggregatorMetadata = null;
+      swapsController.update({
+        aggregatorMetadata: null,
+      });
       await swapsController.fetchAggregatorMetadataWithCache();
       expect(swapsUtilFetchAggregatorMetadata).toHaveBeenCalled();
     });
 
     it('should fetch aggregator metadata when last fetched is 0', async () => {
-      swapsController.state.aggregatorMetadata = {};
-      swapsController.state.aggregatorMetadataLastFetched = 0;
+      swapsController.update({
+        aggregatorMetadata: {},
+        aggregatorMetadataLastFetched: 0,
+      });
       await swapsController.fetchAggregatorMetadataWithCache();
       expect(swapsUtilFetchAggregatorMetadata).toHaveBeenCalled();
     });
@@ -534,23 +562,28 @@ describe('SwapsController', () => {
       swapsController.configure({
         fetchAggregatorMetadataThreshold: threshold,
       });
-      swapsController.state.aggregatorMetadata = {};
-      swapsController.state.aggregatorMetadataLastFetched =
-        Date.now() - threshold - 1;
+      swapsController.update({
+        aggregatorMetadata: {},
+        aggregatorMetadataLastFetched: Date.now() - threshold - 1,
+      });
       await swapsController.fetchAggregatorMetadataWithCache();
       expect(swapsUtilFetchAggregatorMetadata).toHaveBeenCalled();
     });
 
     it('should not fetch aggregator metadata when no threshold reached', async () => {
-      swapsController.state.aggregatorMetadata = {};
-      swapsController.state.aggregatorMetadataLastFetched = Date.now();
+      swapsController.update({
+        aggregatorMetadata: {},
+        aggregatorMetadataLastFetched: Date.now(),
+      });
       await swapsController.fetchAggregatorMetadataWithCache();
       expect(swapsUtilFetchAggregatorMetadata).not.toHaveBeenCalled();
     });
 
     it('should not fetch aggregator metadata when no threshold reached or tokens are available', async () => {
-      swapsController.state.aggregatorMetadata = {};
-      swapsController.state.aggregatorMetadataLastFetched = Date.now();
+      swapsController.update({
+        aggregatorMetadata: {},
+        aggregatorMetadataLastFetched: Date.now(),
+      });
       await swapsController.fetchAggregatorMetadataWithCache();
       expect(swapsUtilFetchAggregatorMetadata).not.toHaveBeenCalled();
     });
@@ -563,9 +596,10 @@ describe('SwapsController', () => {
       swapsController.configure({
         fetchAggregatorMetadataThreshold: threshold,
       });
-      swapsController.state.aggregatorMetadata = {};
-      swapsController.state.aggregatorMetadataLastFetched =
-        Date.now() - threshold - 1;
+      swapsController.update({
+        aggregatorMetadata: {},
+        aggregatorMetadataLastFetched: Date.now() - threshold - 1,
+      });
       await swapsController.fetchAggregatorMetadataWithCache();
       expect(swapsUtilFetchAggregatorMetadata).toHaveBeenCalled();
       expect(swapsController.state.aggregatorMetadataLastFetched).toBe(0);

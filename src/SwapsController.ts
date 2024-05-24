@@ -1,5 +1,5 @@
 import type { BaseConfig, BaseState } from '@metamask/base-controller';
-import { BaseController } from '@metamask/base-controller';
+import { BaseControllerV1 } from '@metamask/base-controller';
 import {
   gweiDecToWEIBN,
   query,
@@ -16,7 +16,7 @@ import type {
   GasFeeStateLegacy,
 } from '@metamask/gas-fee-controller';
 import { GAS_ESTIMATE_TYPES } from '@metamask/gas-fee-controller';
-import type { Transaction } from '@metamask/transaction-controller';
+import type { TransactionParams } from '@metamask/transaction-controller';
 import type { Hex } from '@metamask/utils';
 import { Mutex } from 'async-mutex';
 import { BigNumber } from 'bignumber.js';
@@ -160,7 +160,7 @@ export type SwapsState = {
   topAggId: null | string;
   isInPolling: boolean;
   pollingCyclesLeft: number;
-  approvalTransaction: Transaction | null;
+  approvalTransaction: TransactionParams | null;
   quoteValues: { [key: string]: QuoteValues } | null;
   quoteRefreshSeconds: number | null;
   usedGasEstimate: EthGasPriceEstimate | GasFeeEstimates | null;
@@ -177,7 +177,7 @@ export type SwapsState = {
 type SwapsNextState = {
   quotes: { [key: string]: Quote };
   quotesLastFetched: null | number;
-  approvalTransaction: Transaction | null;
+  approvalTransaction: TransactionParams | null;
   topAggId: null | string;
   topAggSavings?: QuoteSavings | null;
   quoteValues: { [key: string]: QuoteValues } | null;
@@ -214,7 +214,7 @@ function getNewChainCache(
   };
 }
 
-export default class SwapsController extends BaseController<
+export default class SwapsController extends BaseControllerV1<
   SwapsConfig,
   SwapsState
 > {
@@ -237,7 +237,7 @@ export default class SwapsController extends BaseController<
   private readonly fetchEstimatedMultiLayerL1Fee?: (
     eth: any,
     options: {
-      txParams: Transaction;
+      txParams: TransactionParams;
       chainId: Hex;
     },
   ) => Promise<string | undefined>;
@@ -563,7 +563,7 @@ export default class SwapsController extends BaseController<
 
   /* istanbul ignore next */
   private async timedoutGasReturn(
-    tradeTxParams: Transaction | null,
+    tradeTxParams: TransactionParams | null,
   ): Promise<{ gas: string | null }> {
     if (!tradeTxParams) {
       return { gas: null };
@@ -825,7 +825,7 @@ export default class SwapsController extends BaseController<
       fetchEstimatedMultiLayerL1Fee?: (
         eth: EthQuery,
         options: {
-          txParams: Transaction;
+          txParams: TransactionParams;
           chainId: Hex;
         },
       ) => Promise<string | undefined>;
