@@ -46,7 +46,7 @@
     "@metamask/eslint-config-typescript": "^12.1.0",
     "@metamask/approval-controller": "^5.1.1",
     "@metamask/network-controller": "^17.1.0",
-    "@metamask/transaction-controller": "^19.0.1",
+    "@metamask/transaction-controller": "^20.0.0",
     "@types/jest": "^26.0.22",
     "@types/node": "^20.10.4",
     "@typescript-eslint/eslint-plugin": "^5.42.1",
