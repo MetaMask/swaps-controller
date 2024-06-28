@@ -543,9 +543,9 @@ export default class SwapsController extends BaseControllerV1<
   private async getERC20Allowance(
     contractAddress: string,
     walletAddress: string,
-  ): Promise<number> {
+  ): Promise<BigNumber> {
     const contract = new this.web3.eth.Contract(abiERC20, contractAddress);
-    const allowanceTimeout = new Promise<number>((_, reject) => {
+    const allowanceTimeout = new Promise<BigNumber>((_, reject) => {
       setTimeout(() => {
         reject(new Error(SwapsError.SWAPS_ALLOWANCE_TIMEOUT));
       }, 10000);
@@ -555,7 +555,7 @@ export default class SwapsController extends BaseControllerV1<
       const result: bigint = await contract.methods
         .allowance(walletAddress, getSwapsContractAddress(this.config.chainId))
         .call();
-      return Number(result);
+      return new BigNumber(result.toString());
     };
 
     return Promise.race([allowanceTimeout, allowancePromise()]);
@@ -739,7 +739,9 @@ export default class SwapsController extends BaseControllerV1<
           fetchParams.walletAddress,
         );
 
-        if (Number(allowance) < fetchParams.sourceAmount) {
+        // On Android, trying to cast a massive BigInt to a number will result in null
+        // allowance and sourceAmount are in Solidity atomic amounts, so they can be bigger than a JS Number
+        if (allowance.isLessThan(new BigNumber(fetchParams.sourceAmount))) {
           approvalTransaction =
             quotesArray.find((quote) => quote.approvalNeeded)?.approvalNeeded ??
             null;
