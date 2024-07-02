@@ -6,6 +6,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [9.0.1]
+### Changed
+- Update old codefi.network urls ([#260](https://github.com/MetaMask/swaps-controller/pull/260))
+
+### Fixed
+- Fix Web3 import behaving differently between unit test and React Native envs ([#255](https://github.com/MetaMask/swaps-controller/pull/255))
+- Fix `bigint` cast to `Number` results in `null` on Android only ([#259](https://github.com/MetaMask/swaps-controller/pull/259))
+
+
 ## [9.0.0]
 ### Changed
 - **BREAKING**: peerDependency `@metamask/composable-controller` requires upgrade from v1 to v4 ([#219](https://github.com/MetaMask/swaps-controller/pull/219))
@@ -154,7 +163,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use standalone gas API endpoint ([#70](https://github.com/MetaMask/swaps-controller/pull/70))
 - Bump @metamask/controllers from 14.1.0 to 14.2.0 ([#69](https://github.com/MetaMask/swaps-controller/pull/69))
 
-[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v9.0.0...HEAD
+[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v9.0.1...HEAD
+[9.0.1]: https://github.com/MetaMask/swaps-controller/compare/v9.0.0...v9.0.1
 [9.0.0]: https://github.com/MetaMask/swaps-controller/compare/v8.1.0...v9.0.0
 [8.1.0]: https://github.com/MetaMask/swaps-controller/compare/v8.0.0...v8.1.0
 [8.0.0]: https://github.com/MetaMask/swaps-controller/compare/v7.0.1...v8.0.0
