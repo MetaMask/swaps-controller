@@ -7,10 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [9.0.1]
-### Uncategorized
-- fix: restoring web3 import patch ([#255](https://github.com/MetaMask/swaps-controller/pull/255))
-- fix: android bigint cast to number results in null ([#259](https://github.com/MetaMask/swaps-controller/pull/259))
-- chore(MMS-1147): update old codefi.network urls ([#260](https://github.com/MetaMask/swaps-controller/pull/260))
+### Changed
+- Update old codefi.network urls ([#260](https://github.com/MetaMask/swaps-controller/pull/260))
+
+### Fixed
+- Fix Web3 import behaving differently between unit test and React Native envs ([#255](https://github.com/MetaMask/swaps-controller/pull/255))
+- Fix `bigint` cast to `Number` results in `null` on Android only ([#259](https://github.com/MetaMask/swaps-controller/pull/259))
+
 
 ## [9.0.0]
 ### Changed
