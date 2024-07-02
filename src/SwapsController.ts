@@ -21,7 +21,7 @@ import type { Hex } from '@metamask/utils';
 import { Mutex } from 'async-mutex';
 import { BigNumber } from 'bignumber.js';
 import abiERC20 from 'human-standard-token-abi';
-import { Web3 } from 'web3';
+import * as web3 from 'web3';
 import type { Web3 as Web3Type } from 'web3';
 
 import type {
@@ -58,6 +58,9 @@ import {
   OPTIMISM_CHAIN_ID,
   shouldEnableDirectWrapping,
 } from './swapsUtil';
+
+// Hack to fix the issue with the web3 import that works different in app vs tests
+const Web3 = web3.Web3 === undefined ? web3.default : web3.Web3;
 
 // Functions to determine type of the return value from GasFeeController
 
