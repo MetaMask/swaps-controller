@@ -237,11 +237,11 @@ describe('SwapsUtil', () => {
   describe('getTokenMetadataURL', () => {
     it('should work', () => {
       expect(swapsUtil.getTokenMetadataURL('0x1')).toBe(
-        'https://swap.metaswap.codefi.network/networks/1/token',
+        'https://swap.api.cx.metamask.io/networks/1/token',
       );
 
       expect(swapsUtil.getTokenMetadataURL(swapsUtil.ETH_CHAIN_ID)).toBe(
-        'https://swap.metaswap.codefi.network/networks/1/token',
+        'https://swap.api.cx.metamask.io/networks/1/token',
       );
 
       expect(
@@ -249,11 +249,11 @@ describe('SwapsUtil', () => {
       ).toBe('https://swap.dev-api.cx.metamask.io/networks/1/token');
 
       expect(swapsUtil.getTokenMetadataURL(swapsUtil.BSC_CHAIN_ID)).toBe(
-        'https://swap.metaswap.codefi.network/networks/56/token',
+        'https://swap.api.cx.metamask.io/networks/56/token',
       );
 
       expect(swapsUtil.getTokenMetadataURL(swapsUtil.POLYGON_CHAIN_ID)).toBe(
-        'https://swap.metaswap.codefi.network/networks/137/token',
+        'https://swap.api.cx.metamask.io/networks/137/token',
       );
     });
   });
@@ -261,9 +261,9 @@ describe('SwapsUtil', () => {
   describe('fetchTradesInfo', () => {
     it('should work', async () => {
       mockFetch({
-        'https://swap.metaswap.codefi.network/networks/1/trades?destinationToken=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&sourceToken=0x6b175474e89094c44da98b954eedeac495271d0f&sourceAmount=1000000000000000000&slippage=3&timeout=10000&walletAddress=0xB0dA5965D43369968574D399dBe6374683773a65':
+        'https://swap.api.cx.metamask.io/networks/1/trades?destinationToken=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&sourceToken=0x6b175474e89094c44da98b954eedeac495271d0f&sourceAmount=1000000000000000000&slippage=3&timeout=10000&walletAddress=0xB0dA5965D43369968574D399dBe6374683773a65':
           { body: API_TRADES },
-        'https://swap.metaswap.codefi.network/networks/1/trades?destinationToken=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&sourceToken=0x6b175474e89094c44da98b954eedeac495271d0f&sourceAmount=1000000000000000000&slippage=3&timeout=10000&walletAddress=0xB0dA5965D43369968574D399dBe6374683773a65&clientId=mobile':
+        'https://swap.api.cx.metamask.io/networks/1/trades?destinationToken=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&sourceToken=0x6b175474e89094c44da98b954eedeac495271d0f&sourceAmount=1000000000000000000&slippage=3&timeout=10000&walletAddress=0xB0dA5965D43369968574D399dBe6374683773a65&clientId=mobile':
           { body: API_TRADES },
       });
 
@@ -359,7 +359,7 @@ describe('SwapsUtil', () => {
 
     it('should work for direct wrapping', async () => {
       mockFetch({
-        'https://swap.metaswap.codefi.network/networks/1/trades?destinationToken=0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2&sourceToken=0x0000000000000000000000000000000000000000&sourceAmount=1000000000000000000&slippage=3&timeout=10000&walletAddress=0xB0dA5965D43369968574D399dBe6374683773a65&enableDirectWrapping=true':
+        'https://swap.api.cx.metamask.io/networks/1/trades?destinationToken=0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2&sourceToken=0x0000000000000000000000000000000000000000&sourceAmount=1000000000000000000&slippage=3&timeout=10000&walletAddress=0xB0dA5965D43369968574D399dBe6374683773a65&enableDirectWrapping=true':
           { body: API_TRADES },
       });
 
@@ -443,7 +443,7 @@ describe('SwapsUtil', () => {
   describe('fetchTokens', () => {
     it('should work', async () => {
       mockFetch({
-        'https://swap.metaswap.codefi.network/networks/1/tokens': {
+        'https://swap.api.cx.metamask.io/networks/1/tokens': {
           body: API_TOKENS.concat([FAKE_SWAPS_TOKEN]),
         },
       });
@@ -457,7 +457,7 @@ describe('SwapsUtil', () => {
   describe('fetchAggregatorMetadata', () => {
     it('should work', async () => {
       mockFetch({
-        'https://swap.metaswap.codefi.network/networks/1/aggregatorMetadata': {
+        'https://swap.api.cx.metamask.io/networks/1/aggregatorMetadata': {
           body: API_TRADES,
         },
       });
@@ -471,7 +471,7 @@ describe('SwapsUtil', () => {
   describe('fetchTopAssets', () => {
     it('should work', async () => {
       mockFetch({
-        'https://swap.metaswap.codefi.network/networks/1/topAssets': {
+        'https://swap.api.cx.metamask.io/networks/1/topAssets': {
           body: API_TRADES,
         },
       });
@@ -484,7 +484,7 @@ describe('SwapsUtil', () => {
   describe('fetchSwapsFeatureLiveness', () => {
     it('should work', async () => {
       mockFetch({
-        'https://swap.metaswap.codefi.network/featureFlags': {
+        'https://swap.api.cx.metamask.io/featureFlags': {
           body: {
             bsc: {
               mobile_active: false,
@@ -510,7 +510,7 @@ describe('SwapsUtil', () => {
 
     it('should return undefined on unsupported networks', async () => {
       mockFetch({
-        'https://swap.metaswap.codefi.network/featureFlags': {
+        'https://swap.api.cx.metamask.io/featureFlags': {
           body: {
             bsc: {
               mobile_active: false,
@@ -538,7 +538,7 @@ describe('SwapsUtil', () => {
 
     it('should throw on exception', async () => {
       mockFetch({
-        'https://swap.metaswap.codefi.network/featureFlags': {
+        'https://swap.api.cx.metamask.io/featureFlags': {
           throws: true,
         },
       });
@@ -584,7 +584,7 @@ describe('SwapsUtil', () => {
       }
 
       mockFetch({
-        'https://swap.metaswap.codefi.network/featureFlags': {
+        'https://swap.api.cx.metamask.io/featureFlags': {
           body: featureFlags,
         },
       });
@@ -626,7 +626,7 @@ describe('SwapsUtil', () => {
       }
 
       mockFetch({
-        'https://swap.metaswap.codefi.network/featureFlags': {
+        'https://swap.api.cx.metamask.io/featureFlags': {
           body: featureFlags,
         },
       });
@@ -638,7 +638,7 @@ describe('SwapsUtil', () => {
 
     it('should throw on exception', async () => {
       mockFetch({
-        'https://swap.metaswap.codefi.network/featureFlags': {
+        'https://swap.api.cx.metamask.io/featureFlags': {
           throws: true,
         },
       });
