@@ -1,5 +1,5 @@
 import type { TransactionParams } from '@metamask/transaction-controller';
-import type { BigNumber } from 'bignumber.js';
+import type BN from 'bn.js';
 
 export enum APIType {
   TRADES = 'TRADES',
@@ -123,10 +123,10 @@ type QuoteTransaction = {
  * @interface QuoteSavings
  */
 export type QuoteSavings = {
-  total: BigNumber;
-  performance: BigNumber;
-  fee: BigNumber;
-  medianMetaMaskFee: BigNumber;
+  total: BN;
+  performance: BN;
+  fee: BN;
+  medianMetaMaskFee: BN;
 };
 
 /**
