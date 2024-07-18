@@ -4,6 +4,7 @@ import SwapsController, { INITIAL_CHAIN_DATA } from './SwapsController';
 import * as swapsUtil from './swapsUtil';
 import { Quote } from './swapsInterfaces';
 import BigNumber from 'bignumber.js';
+import { BaseControllerV1 } from '@metamask/base-controller';
 
 const POLL_COUNT_LIMIT = 3;
 
@@ -178,7 +179,7 @@ describe('SwapsController', () => {
         pollCountLimit: POLL_COUNT_LIMIT,
       },
     );
-    new ComposableController([swapsController]);
+    new ComposableController([swapsController as BaseControllerV1<any, any>]);
 
     swapsUtilFetchTokens = jest
       .spyOn(swapsUtil, 'fetchTokens')
