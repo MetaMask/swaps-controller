@@ -1,9 +1,15 @@
 import { ComposableController } from '@metamask/composable-controller';
 
-import SwapsController, { INITIAL_CHAIN_DATA } from './SwapsController';
+import SwapsController, {
+  INITIAL_CHAIN_DATA,
+  isGasFeeStateEthGasPrice,
+  isGasFeeStateLegacy,
+} from './SwapsController';
 import * as swapsUtil from './swapsUtil';
 import { Quote } from './swapsInterfaces';
 import BigNumber from 'bignumber.js';
+import { GasFeeEstimates } from '@metamask/gas-fee-controller';
+import { ChainId } from '@metamask/controller-utils';
 
 const POLL_COUNT_LIMIT = 3;
 
@@ -278,6 +284,37 @@ describe('SwapsController', () => {
     });
   });
 
+  it('should set a default value for pollingCyclesLeft', () => {
+    swapsController = new SwapsController(
+      {
+        fetchGasFeeEstimates,
+        fetchEstimatedMultiLayerL1Fee,
+      },
+      {},
+    );
+    expect(swapsController.state.pollingCyclesLeft).toBe(3);
+  });
+
+  it('should use INITIAL_CHAIN_DATA when chainCache does not have data for the chainId', () => {
+    const chainId = ChainId.aurora;
+
+    // add to supportedChainIds
+    swapsController.configure({
+      supportedChainIds: [chainId],
+    });
+
+    // clear chainCache
+    swapsController.update({
+      chainCache: {},
+    });
+
+    // set chainId
+    swapsController.configure({ chainId });
+
+    const cachedData = swapsController.state.chainCache[chainId];
+    expect(cachedData).toEqual(INITIAL_CHAIN_DATA);
+  });
+
   describe('provider', () => {
     it('should set provider', () => {
       const provider = {
@@ -537,6 +574,17 @@ describe('SwapsController', () => {
       expect(swapsUtilFetchTopAssets).toHaveBeenCalled();
       expect(swapsController.state.topAssetsLastFetched).toBe(0);
     });
+
+    it('should return undefined if chain id is not supported', async () => {
+      swapsController.configure({
+        supportedChainIds: ['0x1'],
+      });
+      swapsController.state.topAssets = [];
+      swapsController.state.topAssetsLastFetched = 0;
+      swapsController.configure({ chainId: '0x2' });
+      await swapsController.fetchTopAssetsWithCache();
+      expect(swapsUtilFetchTopAssets).not.toHaveBeenCalled();
+    });
   });
 
   describe('aggregator metadata cache', () => {
@@ -603,6 +651,16 @@ describe('SwapsController', () => {
       await swapsController.fetchAggregatorMetadataWithCache();
       expect(swapsUtilFetchAggregatorMetadata).toHaveBeenCalled();
       expect(swapsController.state.aggregatorMetadataLastFetched).toBe(0);
+    });
+    it('should return undefined if chain id is not supported', async () => {
+      swapsController.configure({
+        supportedChainIds: ['0x1'],
+      });
+      swapsController.state.aggregatorMetadata = {};
+      swapsController.state.aggregatorMetadataLastFetched = 0;
+      swapsController.configure({ chainId: '0x2' });
+      await swapsController.fetchAggregatorMetadataWithCache();
+      expect(swapsUtilFetchAggregatorMetadata).not.toHaveBeenCalled();
     });
   });
   describe('updateQuotesWithGasPrice', () => {
@@ -729,6 +787,416 @@ describe('SwapsController', () => {
       });
       expect(swapsController.state.quotes).toEqual({});
       expect(swapsController.state.quoteValues).toEqual({});
+    });
+
+    it('should clear timeout if this.handle is set', () => {
+      const clearTimeoutSpy = jest.spyOn(global, 'clearTimeout');
+      swapsController['handle'] = setTimeout(() => {}, 1000); // Set a timeout
+
+      swapsController.stopPollingAndResetState();
+
+      expect(clearTimeoutSpy).toHaveBeenCalledWith(swapsController['handle']);
+      clearTimeoutSpy.mockRestore();
+    });
+  });
+
+  describe('getGasPrice', () => {
+    let swapsController: SwapsController;
+
+    beforeEach(() => {
+      fetchGasFeeEstimates = jest.fn().mockImplementation(() => ({
+        gasFeeEstimates: {
+          high: {
+            suggestedMaxFeePerGas: '100',
+            suggestedMaxPriorityFeePerGas: '10',
+          },
+          medium: '20',
+          low: '5',
+          estimatedBaseFee: '50',
+        },
+        estimatedGasFeeTimeBounds: {},
+        gasEstimateType: 'fee-market',
+      }));
+
+      swapsController = new SwapsController(
+        {
+          fetchGasFeeEstimates,
+        },
+        {
+          pollCountLimit: POLL_COUNT_LIMIT,
+        },
+      );
+    });
+
+    it('should fetch gas price using fetchGasFeeEstimates', async () => {
+      // @ts-expect-error - testing private method
+      const gasPriceEstimate = await swapsController.getGasPrice();
+      expect(gasPriceEstimate).toEqual({
+        high: {
+          suggestedMaxFeePerGas: '100',
+          suggestedMaxPriorityFeePerGas: '10',
+        },
+        low: '5',
+        medium: '20',
+        estimatedBaseFee: '50',
+      });
+    });
+
+    it('should throw error if gas fee estimates are not available', async () => {
+      fetchGasFeeEstimates = jest.fn().mockImplementation(() => ({
+        gasFeeEstimates: {},
+        estimatedGasFeeTimeBounds: {},
+        gasEstimateType: 'none',
+      }));
+
+      swapsController = new SwapsController(
+        {
+          fetchGasFeeEstimates,
+        },
+        {
+          pollCountLimit: POLL_COUNT_LIMIT,
+        },
+      );
+
+      // @ts-expect-error - testing private method
+      await expect(swapsController.getGasPrice()).rejects.toThrow(
+        swapsUtil.SwapsError.SWAPS_GAS_PRICE_ESTIMATION,
+      );
+    });
+
+    it('should fetch gas price from fetchGasPrices if fetchGasFeeEstimates is not defined', async () => {
+      swapsController = new SwapsController(
+        {
+          fetchGasFeeEstimates: undefined,
+        },
+        {
+          pollCountLimit: POLL_COUNT_LIMIT,
+        },
+      );
+
+      const fetchGasPricesSpy = jest
+        .spyOn(swapsUtil, 'fetchGasPrices')
+        .mockResolvedValue({
+          proposedGasPrice: '100',
+          safeGasPrice: '50',
+          fastGasPrice: '150',
+        });
+
+      // @ts-expect-error - testing private method
+      const gasPrice = await swapsController.getGasPrice();
+      expect(gasPrice).toEqual({ gasPrice: '100' });
+      fetchGasPricesSpy.mockRestore();
+    });
+  });
+
+  describe('calculateQuoteValues', () => {
+    let swapsController: SwapsController;
+
+    beforeEach(() => {
+      fetchGasFeeEstimates = jest.fn().mockImplementation(() => ({
+        gasFeeEstimates: {
+          high: {
+            suggestedMaxFeePerGas: '100',
+            suggestedMaxPriorityFeePerGas: '10',
+          },
+          medium: '20',
+          low: '5',
+          estimatedBaseFee: '50',
+        },
+        estimatedGasFeeTimeBounds: {},
+        gasEstimateType: 'fee-market',
+      }));
+
+      swapsController = new SwapsController(
+        {
+          fetchGasFeeEstimates,
+        },
+        {
+          pollCountLimit: POLL_COUNT_LIMIT,
+        },
+      );
+    });
+
+    it('should calculate quote values for Fee Market gas estimate type', () => {
+      const quote = API_TRADES.paraswap;
+
+      // @ts-expect-error - incomplete type
+      const gasFeeEstimates = {
+        high: {
+          suggestedMaxFeePerGas: '100',
+          suggestedMaxPriorityFeePerGas: '10',
+        },
+        medium: '20',
+        low: '5',
+        estimatedBaseFee: '50',
+      } as GasFeeEstimates;
+
+      // @ts-expect-error - testing private method
+      const quoteValues = swapsController.calculateQuoteValues(
+        quote,
+        null,
+        gasFeeEstimates,
+      );
+
+      expect(quoteValues).toHaveProperty('aggregator', 'paraswap');
+      expect(quoteValues).toHaveProperty('tradeGasLimit');
+      expect(quoteValues).toHaveProperty('tradeMaxGasLimit');
+      expect(quoteValues).toHaveProperty('ethFee');
+      expect(quoteValues).toHaveProperty('maxEthFee');
+      expect(quoteValues).toHaveProperty('ethValueOfTokens');
+      expect(quoteValues).toHaveProperty('overallValueOfQuote');
+      expect(quoteValues).toHaveProperty('metaMaskFeeInEth');
+    });
+
+    it('should calculate quote values for Legacy gas estimate type', () => {
+      const quote = API_TRADES.paraswap;
+
+      const gasFeeEstimates = {
+        gasPrice: '100',
+      };
+
+      // @ts-expect-error - testing private method
+      const quoteValues = swapsController.calculateQuoteValues(
+        quote,
+        null,
+        gasFeeEstimates,
+      );
+
+      expect(quoteValues).toHaveProperty('aggregator', 'paraswap');
+      expect(quoteValues).toHaveProperty('tradeGasLimit');
+      expect(quoteValues).toHaveProperty('tradeMaxGasLimit');
+      expect(quoteValues).toHaveProperty('ethFee');
+      expect(quoteValues).toHaveProperty('maxEthFee');
+      expect(quoteValues).toHaveProperty('ethValueOfTokens');
+      expect(quoteValues).toHaveProperty('overallValueOfQuote');
+      expect(quoteValues).toHaveProperty('metaMaskFeeInEth');
+    });
+
+    it('should calculate quote values with custom gas fee', () => {
+      const quote = API_TRADES.paraswap;
+
+      const gasFeeEstimates = fetchGasFeeEstimates();
+
+      const customGasFee = {
+        maxFeePerGas: '200',
+        maxPriorityFeePerGas: '20',
+        estimatedBaseFee: '100',
+      };
+
+      // @ts-expect-error - testing private method
+      const quoteValues = swapsController.calculateQuoteValues(
+        quote,
+        null,
+        gasFeeEstimates,
+        customGasFee,
+      );
+
+      expect(quoteValues).toHaveProperty('aggregator', 'paraswap');
+      expect(quoteValues).toHaveProperty('tradeGasLimit');
+      expect(quoteValues).toHaveProperty('tradeMaxGasLimit');
+      expect(quoteValues).toHaveProperty('ethFee');
+      expect(quoteValues).toHaveProperty('maxEthFee');
+      expect(quoteValues).toHaveProperty('ethValueOfTokens');
+      expect(quoteValues).toHaveProperty('overallValueOfQuote');
+      expect(quoteValues).toHaveProperty('metaMaskFeeInEth');
+    });
+  });
+
+  describe('calculatesCustomLimitMaxEthFee', () => {
+    let swapsController: SwapsController;
+
+    beforeEach(() => {
+      fetchGasFeeEstimates = jest.fn().mockImplementation(() => ({
+        gasFeeEstimates: {
+          high: {
+            suggestedMaxFeePerGas: '100',
+            suggestedMaxPriorityFeePerGas: '10',
+          },
+          medium: '20',
+          low: '5',
+          estimatedBaseFee: '50',
+        },
+        estimatedGasFeeTimeBounds: {},
+        gasEstimateType: 'fee-market',
+      }));
+
+      swapsController = new SwapsController(
+        {
+          fetchGasFeeEstimates,
+        },
+        {
+          pollCountLimit: POLL_COUNT_LIMIT,
+        },
+      );
+    });
+
+    it('should calculate maxEthFee for Fee Market gas estimate type', () => {
+      const quote = API_TRADES.paraswap;
+
+      // @ts-expect-error - incomplete type
+      const gasFeeEstimates = {
+        high: {
+          suggestedMaxFeePerGas: '100',
+          suggestedMaxPriorityFeePerGas: '10',
+        },
+        medium: '20',
+        low: '5',
+        estimatedBaseFee: '50',
+      } as GasFeeEstimates;
+
+      const customGasLimit = '0x5208'; // 21000 in hex
+
+      // @ts-expect-error - testing private method
+      const maxEthFee = swapsController.calculatesCustomLimitMaxEthFee(
+        quote,
+        gasFeeEstimates,
+        customGasLimit,
+      );
+
+      expect(maxEthFee).toBeDefined();
+    });
+
+    it('should calculate maxEthFee for Legacy gas estimate type', () => {
+      const quote = API_TRADES.paraswap;
+
+      const gasFeeEstimates = {
+        gasPrice: '100',
+      };
+
+      const customGasLimit = '0x5208'; // 21000 in hex
+
+      // @ts-expect-error - testing private method
+      const maxEthFee = swapsController.calculatesCustomLimitMaxEthFee(
+        quote,
+        gasFeeEstimates,
+        customGasLimit,
+      );
+
+      expect(maxEthFee).toBeDefined();
+    });
+
+    it('should calculate maxEthFee with custom gas fee', () => {
+      const quote = API_TRADES.paraswap;
+
+      const customGasFee = {
+        maxFeePerGas: '200',
+        maxPriorityFeePerGas: '20',
+        estimatedBaseFee: '100',
+      };
+
+      const customGasLimit = '0x5208'; // 21000 in hex
+
+      // @ts-expect-error - testing private method
+      const maxEthFee = swapsController.calculatesCustomLimitMaxEthFee(
+        quote,
+        customGasFee,
+        customGasLimit,
+      );
+
+      expect(maxEthFee).toBeDefined();
+    });
+  });
+
+  describe('isGasFeeStateEthGasPrice', () => {
+    beforeEach(() => {
+      fetchGasFeeEstimates = jest.fn();
+
+      swapsController = new SwapsController(
+        {
+          fetchGasFeeEstimates,
+        },
+        {
+          pollCountLimit: POLL_COUNT_LIMIT,
+        },
+      );
+    });
+
+    it('should return true for GasFeeStateEthGasPrice object', () => {
+      const gasFeeState = {
+        gasEstimateType: 'eth_gasPrice',
+        gasFeeEstimates: {
+          gasPrice: '100',
+        },
+      };
+
+      // @ts-expect-error - incomplete type
+      const result = isGasFeeStateEthGasPrice(gasFeeState);
+
+      expect(result).toBe(true);
+    });
+
+    it('should return false for non-GasFeeStateEthGasPrice object', () => {
+      const gasFeeState = {
+        gasEstimateType: 'fee-market',
+        gasFeeEstimates: {
+          high: {
+            suggestedMaxFeePerGas: '100',
+            suggestedMaxPriorityFeePerGas: '10',
+          },
+        },
+      };
+
+      // @ts-expect-error - incomplete type
+      const result = isGasFeeStateEthGasPrice(gasFeeState);
+
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('isGasFeeStateLegacy', () => {
+    beforeEach(() => {
+      fetchGasFeeEstimates = jest.fn();
+
+      swapsController = new SwapsController(
+        {
+          fetchGasFeeEstimates,
+        },
+        {
+          pollCountLimit: POLL_COUNT_LIMIT,
+        },
+      );
+    });
+
+    it('should return true for GasFeeStateLegacy object', () => {
+      const gasFeeState = {
+        gasEstimateType: 'legacy',
+        gasFeeEstimates: {
+          medium: '100',
+        },
+      };
+
+      // @ts-expect-error - incomplete type
+      const result = isGasFeeStateLegacy(gasFeeState);
+
+      expect(result).toBe(true);
+    });
+
+    it('should return false for non-GasFeeStateLegacy object', () => {
+      const gasFeeState = {
+        gasEstimateType: 'fee-market',
+        gasFeeEstimates: {
+          high: {
+            suggestedMaxFeePerGas: '100',
+            suggestedMaxPriorityFeePerGas: '10',
+          },
+        },
+      };
+
+      // @ts-expect-error - incomplete type
+      const result = isGasFeeStateLegacy(gasFeeState);
+
+      expect(result).toBe(false);
+    });
+
+    it('should return false for invalid object', () => {
+      const gasFeeState = {
+        invalidKey: 'invalidValue',
+      };
+
+      // @ts-expect-error - incomplete type
+      const result = isGasFeeStateLegacy(gasFeeState);
+
+      expect(result).toBe(false);
     });
   });
 });

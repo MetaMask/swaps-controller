@@ -43,7 +43,7 @@ import { APIType } from './swapsInterfaces';
 // /
 // / BEGIN: Lifted from now unexported normalizeTransaction in @metamask/transaction-controller@3.0.0
 // /
-const TX_NORMALIZERS: { [param in keyof TransactionParams]: any } = {
+export const TX_NORMALIZERS: { [param in keyof TransactionParams]: any } = {
   data: (data: string) => add0x(data),
   from: (from: string) => add0x(from).toLowerCase(),
   gas: (gas: string) => add0x(gas),
@@ -286,7 +286,9 @@ export async function fetchTradesInfo(
           from: quote.trade.from,
           data: quote.trade.data,
           amount: BNToHex(new BN(quote.trade.value)),
-          gas: BNToHex(new BN(quote.maxGas) || new BN(MAX_GAS_LIMIT)),
+          gas: quote.maxGas
+            ? BNToHex(new BN(quote.maxGas))
+            : BNToHex(new BN(MAX_GAS_LIMIT)),
         });
 
         return {
@@ -448,10 +450,14 @@ export function calculateGasEstimateWithRefund(
     estimatedRefund ?? 0,
   );
   const estimatedGasBN = new BigNumber(estimated);
-  const gasEstimateWithRefund = maxGasMinusRefund.lt(estimatedGasBN)
-    ? maxGasMinusRefund
-    : estimatedGasBN;
-  return gasEstimateWithRefund;
+
+  if (maxGasMinusRefund.isLessThan(estimatedGasBN)) {
+    return maxGasMinusRefund;
+  }
+  if (estimated === '0x0') {
+    return maxGasMinusRefund;
+  }
+  return estimatedGasBN;
 }
 
 /**
@@ -469,7 +475,7 @@ export function getSwapsTokensReceived(
   receipt: TransactionReceipt,
   approvalReceipt: TransactionReceipt | null,
   transaction: TransactionParams,
-  approvalTransaction: TransactionParams,
+  approvalTransaction: TransactionParams | null,
   destinationToken: SwapsToken,
   previousBalance: string,
   postBalance: string,
