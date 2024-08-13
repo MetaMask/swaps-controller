@@ -6,6 +6,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [9.0.2]
+### Changed
+- Increase test coverage ([#274](https://github.com/MetaMask/swaps-controller/pull/274))
+- Bump `braces` from `3.0.2` to `3.0.3` ([#257](https://github.com/MetaMask/swaps-controller/pull/257))
+
+### Fixed
+- Fix issue in Mobile Swaps where users would be blocked from pressing the swap button after the first poll finishes ([#275](https://github.com/MetaMask/swaps-controller/pull/275))
+
+
 ## [9.0.1]
 ### Changed
 - Update old codefi.network urls ([#260](https://github.com/MetaMask/swaps-controller/pull/260))
@@ -163,7 +172,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use standalone gas API endpoint ([#70](https://github.com/MetaMask/swaps-controller/pull/70))
 - Bump @metamask/controllers from 14.1.0 to 14.2.0 ([#69](https://github.com/MetaMask/swaps-controller/pull/69))
 
-[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v9.0.1...HEAD
+[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v9.0.2...HEAD
+[9.0.2]: https://github.com/MetaMask/swaps-controller/compare/v9.0.1...v9.0.2
 [9.0.1]: https://github.com/MetaMask/swaps-controller/compare/v9.0.0...v9.0.1
 [9.0.0]: https://github.com/MetaMask/swaps-controller/compare/v8.1.0...v9.0.0
 [8.1.0]: https://github.com/MetaMask/swaps-controller/compare/v8.0.0...v8.1.0
