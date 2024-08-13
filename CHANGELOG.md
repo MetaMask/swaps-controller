@@ -7,10 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [9.0.2]
-### Uncategorized
-- fix: issue where isInPolling would be immediately false after the first poll happens ([#275](https://github.com/MetaMask/swaps-controller/pull/275))
-- chore: increasing test coverage ([#274](https://github.com/MetaMask/swaps-controller/pull/274))
-- chore(deps): bump braces in the npm_and_yarn group across 1 directory ([#257](https://github.com/MetaMask/swaps-controller/pull/257))
+### Fixed
+- Fix issue where `isInPolling` would be immediately false after the first poll happens ([#275](https://github.com/MetaMask/swaps-controller/pull/275))
+
+### Changed
+- Increase test coverage ([#274](https://github.com/MetaMask/swaps-controller/pull/274))
+- Bump `braces` from `3.0.2` to `3.0.3` ([#257](https://github.com/MetaMask/swaps-controller/pull/257))
 
 ## [9.0.1]
 ### Changed
