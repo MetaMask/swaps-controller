@@ -7,12 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [9.0.2]
-### Fixed
-- Fix issue in Mobile Swaps where users would be blocked from pressing the swap button after the first poll finishes ([#275](https://github.com/MetaMask/swaps-controller/pull/275))
-
 ### Changed
 - Increase test coverage ([#274](https://github.com/MetaMask/swaps-controller/pull/274))
 - Bump `braces` from `3.0.2` to `3.0.3` ([#257](https://github.com/MetaMask/swaps-controller/pull/257))
+
+### Fixed
+- Fix issue in Mobile Swaps where users would be blocked from pressing the swap button after the first poll finishes ([#275](https://github.com/MetaMask/swaps-controller/pull/275))
+
 
 ## [9.0.1]
 ### Changed
