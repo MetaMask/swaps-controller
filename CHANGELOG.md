@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [9.0.2]
 ### Fixed
-- Fix issue where `isInPolling` would be immediately false after the first poll happens ([#275](https://github.com/MetaMask/swaps-controller/pull/275))
+- Fix issue in Mobile Swaps where users would be blocked from pressing the swap button after the first poll finishes ([#275](https://github.com/MetaMask/swaps-controller/pull/275))
 
 ### Changed
 - Increase test coverage ([#274](https://github.com/MetaMask/swaps-controller/pull/274))
