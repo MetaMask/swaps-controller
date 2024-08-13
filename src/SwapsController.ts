@@ -620,13 +620,9 @@ export default class SwapsController extends BaseControllerV1<
       if (threshold && nextQuotesState?.quoteRefreshSeconds) {
         this.update({ ...this.state, ...nextQuotesState, usedGasEstimate });
         this.handle = setTimeout(() => {
-          this.pollForNewQuotesWithThreshold(threshold)
-            .then(() => {
-              this.update({ isInPolling: false });
-            })
-            .catch(() => {
-              this.update({ isInPolling: false });
-            });
+          this.pollForNewQuotesWithThreshold(threshold).catch(() => {
+            this.update({ isInPolling: false });
+          });
         }, nextQuotesState.quoteRefreshSeconds * 1000 - threshold);
       }
     } else {
