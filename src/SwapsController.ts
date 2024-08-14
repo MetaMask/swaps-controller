@@ -69,7 +69,7 @@ const Web3 = web3.Web3 === undefined ? web3.default : web3.Web3;
  * @param object - The gas fee state to be checked.
  * @returns Whether the given object is of type GasFeeStateEthGasPrice.
  */
-function isGasFeeStateEthGasPrice(
+export function isGasFeeStateEthGasPrice(
   object: GasFeeState,
 ): object is GasFeeStateEthGasPrice {
   return object.gasEstimateType === GAS_ESTIMATE_TYPES.ETH_GASPRICE;
@@ -91,7 +91,9 @@ function isGasFeeStateFeeMarket(
  * @param object - The gas fee state to be evaluated.
  * @returns Whether the object is of type GasFeeStateLegacy.
  */
-function isGasFeeStateLegacy(object: GasFeeState): object is GasFeeStateLegacy {
+export function isGasFeeStateLegacy(
+  object: GasFeeState,
+): object is GasFeeStateLegacy {
   return object.gasEstimateType === GAS_ESTIMATE_TYPES.LEGACY;
 }
 
@@ -618,13 +620,9 @@ export default class SwapsController extends BaseControllerV1<
       if (threshold && nextQuotesState?.quoteRefreshSeconds) {
         this.update({ ...this.state, ...nextQuotesState, usedGasEstimate });
         this.handle = setTimeout(() => {
-          this.pollForNewQuotesWithThreshold(threshold)
-            .then(() => {
-              this.update({ isInPolling: false });
-            })
-            .catch(() => {
-              this.update({ isInPolling: false });
-            });
+          this.pollForNewQuotesWithThreshold(threshold).catch(() => {
+            this.update({ isInPolling: false });
+          });
         }, nextQuotesState.quoteRefreshSeconds * 1000 - threshold);
       }
     } else {
@@ -918,7 +916,7 @@ export default class SwapsController extends BaseControllerV1<
     }
 
     const { chainCache } = this.state;
-    if (chainCache?.[chainId] === undefined) {
+    if (!chainCache?.[chainId]) {
       this.update({
         ...INITIAL_CHAIN_DATA,
         chainCache: getNewChainCache(chainCache, chainId, INITIAL_CHAIN_DATA),
@@ -926,7 +924,7 @@ export default class SwapsController extends BaseControllerV1<
       return;
     }
 
-    const cachedData = chainCache?.[chainId] || INITIAL_CHAIN_DATA;
+    const cachedData = chainCache[chainId];
     this.update({
       ...cachedData,
     });
