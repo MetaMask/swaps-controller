@@ -20,16 +20,16 @@
   },
   "license": "SEE LICENSE IN LICENSE",
   "scripts": {
-    "setup": "yarn install && yarn allow-scripts",
     "test": "jest",
     "test:watch": "jest --watch",
-    "prepublishOnly": "yarn build:clean && yarn lint && yarn test",
     "lint:eslint": "eslint . --cache --ext js,ts",
-    "lint:misc": "prettier '**/*.json' '**/*.md' '!CHANGELOG.md' '**/*.yml' --ignore-path .gitignore",
+    "lint:misc": "prettier '**/*.json' '**/*.md' '**/*.yml' --ignore-path .gitignore  --no-error-on-unmatched-pattern",
     "lint": "yarn lint:eslint && yarn lint:misc --check",
+    "lint:changelog": "auto-changelog validate --prettier",
     "lint:fix": "yarn lint:eslint --fix && yarn lint:misc --write",
     "build:clean": "rimraf dist && yarn build",
-    "build": "tsc --project ."
+    "build": "tsc --project .",
+    "prepack": "./scripts/prepack.sh"
   },
   "peerDependencies": {
     "@metamask/composable-controller": "^4.0.0",
@@ -38,13 +38,13 @@
   "devDependencies": {
     "@babel/runtime": "^7.0.0",
     "@lavamoat/allow-scripts": "^3.0.0",
+    "@metamask/approval-controller": "^5.1.1",
     "@metamask/auto-changelog": "^3.4.4",
     "@metamask/composable-controller": "^4.0.0",
     "@metamask/eslint-config": "^12.2.0",
     "@metamask/eslint-config-jest": "^12.1.0",
     "@metamask/eslint-config-nodejs": "^12.1.0",
     "@metamask/eslint-config-typescript": "^12.1.0",
-    "@metamask/approval-controller": "^5.1.1",
     "@metamask/network-controller": "^17.1.0",
     "@metamask/transaction-controller": "^19.0.1",
     "@types/jest": "^26.0.22",
@@ -92,5 +92,6 @@
       "@metamask/controller-utils>ethereumjs-util>ethereum-cryptography>keccak": false,
       "@metamask/controller-utils>ethereumjs-util>ethereum-cryptography>secp256k1": false
     }
-  }
+  },
+  "packageManager": "yarn@4.4.0"
 }
