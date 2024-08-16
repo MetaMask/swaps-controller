@@ -239,13 +239,10 @@ export default class SwapsController extends BaseControllerV1<
     options?: FetchGasFeeEstimateOptions,
   ) => Promise<GasFeeState | undefined>;
 
-  private readonly fetchEstimatedMultiLayerL1Fee?: (
-    eth: any,
-    options: {
-      txParams: TransactionParams;
-      chainId: Hex;
-    },
-  ) => Promise<string | undefined>;
+  private readonly fetchEstimatedMultiLayerL1Fee?: (options: {
+    txParams: TransactionParams;
+    chainId: Hex;
+  }) => Promise<string | undefined>;
 
   /**
    * Fetch current gas price
@@ -698,7 +695,7 @@ export default class SwapsController extends BaseControllerV1<
           Object.values(quotes).map(async (quote) => {
             if (quote.trade && this.fetchEstimatedMultiLayerL1Fee) {
               const multiLayerL1TradeFeeTotal =
-                await this.fetchEstimatedMultiLayerL1Fee(this.ethQuery, {
+                await this.fetchEstimatedMultiLayerL1Fee({
                   txParams: quote.trade,
                   chainId,
                 });
@@ -825,13 +822,10 @@ export default class SwapsController extends BaseControllerV1<
       fetchEstimatedMultiLayerL1Fee,
     }: {
       fetchGasFeeEstimates?: () => Promise<GasFeeState | undefined>;
-      fetchEstimatedMultiLayerL1Fee?: (
-        eth: EthQuery,
-        options: {
-          txParams: TransactionParams;
-          chainId: Hex;
-        },
-      ) => Promise<string | undefined>;
+      fetchEstimatedMultiLayerL1Fee?: (options: {
+        txParams: TransactionParams;
+        chainId: Hex;
+      }) => Promise<string | undefined>;
     },
     config?: Partial<SwapsConfig>,
     state?: Partial<SwapsState>,
