@@ -37,8 +37,9 @@ import type {
   SwapsAsset,
   SwapsToken,
   TransactionReceipt,
-} from './swapsInterfaces';
-import { APIType } from './swapsInterfaces';
+} from './SwapsController.types';
+import { APIType } from './SwapsController.types';
+import { TxParams } from './SwapsController.types';
 
 // /
 // / BEGIN: Lifted from now unexported normalizeTransaction in @metamask/transaction-controller@3.0.0
@@ -710,10 +711,7 @@ export function calcTokenAmount(value: number | BigNumber, decimals: number) {
  * @param ethQuery - The ethQuery object.
  * @returns Promise resolving to an object containing gas and gasPrice.
  */
-export async function estimateGas(
-  transaction: TransactionParams,
-  ethQuery: any,
-) {
+export async function estimateGas(transaction: TxParams, ethQuery: any) {
   const estimatedTransaction = { ...transaction };
   const { value, data } = estimatedTransaction;
   const { gasLimit } = await query(ethQuery, 'getBlockByNumber', [

@@ -1,5 +1,12 @@
-import type { TransactionParams } from '@metamask/transaction-controller';
-import type { BigNumber } from 'bignumber.js';
+import { RestrictedControllerMessenger } from '@metamask/base-controller';
+import EthQuery from '@metamask/eth-query';
+import {
+  EthGasPriceEstimate,
+  GasFeeEstimates,
+  GasFeeState,
+} from '@metamask/gas-fee-controller';
+import { Hex } from '@metamask/utils';
+import { controllerName, SwapsError } from './swapsUtil';
 
 export enum APIType {
   TRADES = 'TRADES',
@@ -116,17 +123,17 @@ export type APIAggregatorMetadata = {
 
 type QuoteTransaction = {
   value: string;
-} & TransactionParams;
+} & TxParams;
 
 /**
  * Savings of a quote
  * @interface QuoteSavings
  */
 export type QuoteSavings = {
-  total: BigNumber;
-  performance: BigNumber;
-  fee: BigNumber;
-  medianMetaMaskFee: BigNumber;
+  total: string;
+  performance: string;
+  fee: string;
+  medianMetaMaskFee: string;
 };
 
 /**
@@ -158,15 +165,14 @@ export type QuoteSavings = {
  */
 export type Quote = {
   trade: QuoteTransaction;
-  approvalNeeded: null | {
-    data: string;
-    to: string;
-    from: string;
-    gas: string;
-  };
+  approvalNeeded: TxParams | null;
   sourceAmount: string;
   destinationAmount: number;
-  error: null | Error;
+  error: {
+    name: string;
+    message: string;
+    stack: string;
+  } | null;
   sourceToken: string;
   destinationToken: string;
   maxGas: number;
@@ -183,7 +189,7 @@ export type Quote = {
   gasEstimateWithRefund: string | null;
   destinationTokenRate: number | null;
   sourceTokenRate: number | null;
-  multiLayerL1TradeFeeTotal: string | undefined;
+  multiLayerL1TradeFeeTotal: string | null;
 };
 
 /**
@@ -238,6 +244,16 @@ export type TransactionReceipt = {
   status: string;
 };
 
+export type TxParams = {
+  from: string;
+  to: string;
+  value?: string;
+  data?: string;
+  gas: string;
+  gasPrice?: string;
+  nonce?: string;
+};
+
 export type ChainData = {
   aggregatorMetadata: null | { [key: string]: APIAggregatorMetadata };
   tokens: null | SwapsToken[];
@@ -249,4 +265,93 @@ export type ChainData = {
 
 export type ChainCache = {
   [key: string]: ChainData;
+};
+
+// Custom types for custom gas values
+export type CustomEthGasPriceEstimate = {
+  gasPrice: string; // a GWEI dec string
+  selected?: 'low' | 'medium' | 'high';
+};
+
+export type CustomGasFee = {
+  maxFeePerGas: string; // a GWEI dec string
+  maxPriorityFeePerGas: string; // a GWEI dec string
+  estimatedBaseFee?: string; // a GWEI dec string
+  selected?: 'low' | 'medium' | 'high';
+};
+
+export type SwapsConfig = {
+  clientId?: string;
+  maxGasLimit: number;
+  pollCountLimit: number;
+  fetchAggregatorMetadataThreshold: number;
+  fetchTokensThreshold: number;
+  fetchTopAssetsThreshold: number;
+  provider: any;
+  chainId: Hex;
+  supportedChainIds: Hex[];
+};
+
+export type SwapsControllerState = {
+  quotes: { [key: string]: Quote };
+  fetchParams: APIFetchQuotesParams;
+  fetchParamsMetaData: APIFetchQuotesMetadata;
+  topAggSavings: QuoteSavings | null;
+  quotesLastFetched: null | number;
+  error: { key: null | SwapsError; description: null | string };
+  topAggId: null | string;
+  isInPolling: boolean;
+  pollingCyclesLeft: number;
+  approvalTransaction: TxParams | null;
+  quoteValues: { [key: string]: QuoteValues } | null;
+  quoteRefreshSeconds: number | null;
+  usedGasEstimate: EthGasPriceEstimate | GasFeeEstimates | null;
+  usedCustomGas: CustomEthGasPriceEstimate | CustomGasFee | null;
+  aggregatorMetadata: null | { [key: string]: APIAggregatorMetadata };
+  aggregatorMetadataLastFetched: number;
+  tokens: null | SwapsToken[];
+  tokensLastFetched: number;
+  topAssets: null | SwapsAsset[];
+  topAssetsLastFetched: number;
+  chainCache: ChainCache;
+  config: SwapsConfig;
+};
+
+/**
+ * The external actions available to the {@link SwapsController}.
+ */
+export type AllowedActions = never;
+
+/**
+ * The internal actions available to the SwapsController.
+ */
+export type SwapsControllerActions = never;
+
+/**
+ * The events that the SwapsController can emit.
+ */
+export type SwapsControllerEvents = never;
+
+/**
+ * The messenger for the SwapsController.
+ */
+export type SwapsControllerMessenger = RestrictedControllerMessenger<
+  typeof controllerName,
+  SwapsControllerActions | AllowedActions,
+  SwapsControllerEvents,
+  AllowedActions['type'],
+  never
+>;
+
+export type SwapsControllerOptions = {
+  // TODO: Remove once GasFeeController exports this action type
+  fetchGasFeeEstimates?: () => Promise<GasFeeState | undefined>;
+  fetchEstimatedMultiLayerL1Fee?: (
+    eth: EthQuery,
+    options: {
+      txParams: TxParams;
+      chainId: Hex;
+    },
+  ) => Promise<string | undefined>;
+  messenger: SwapsControllerMessenger;
 };

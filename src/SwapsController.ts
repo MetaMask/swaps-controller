@@ -1,5 +1,4 @@
-import type { BaseConfig, BaseState } from '@metamask/base-controller';
-import { BaseControllerV1 } from '@metamask/base-controller';
+import { BaseController, StateMetadata } from '@metamask/base-controller';
 import {
   gweiDecToWEIBN,
   query,
@@ -16,51 +15,75 @@ import type {
   GasFeeStateLegacy,
 } from '@metamask/gas-fee-controller';
 import { GAS_ESTIMATE_TYPES } from '@metamask/gas-fee-controller';
-import type { TransactionParams } from '@metamask/transaction-controller';
 import type { Hex } from '@metamask/utils';
 import { Mutex } from 'async-mutex';
 import { BigNumber } from 'bignumber.js';
 import abiERC20 from 'human-standard-token-abi';
-import * as web3 from 'web3';
 import type { Web3 as Web3Type } from 'web3';
+import * as web3 from 'web3';
 
 import type {
-  APIAggregatorMetadata,
   APIFetchQuotesMetadata,
   APIFetchQuotesParams,
-  ChainData,
   ChainCache,
+  ChainData,
+  CustomEthGasPriceEstimate,
+  CustomGasFee,
   Quote,
-  QuoteSavings,
   QuoteValues,
-  SwapsAsset,
-  SwapsToken,
-} from './swapsInterfaces';
+  SwapsConfig,
+  SwapsControllerMessenger,
+  SwapsControllerOptions,
+  SwapsControllerState,
+  TxParams,
+} from './SwapsController.types';
 import {
   calcTokenAmount,
   calculateGasEstimateWithRefund,
   calculateGasLimits,
+  controllerName,
+  DEFAULT_ERC20_APPROVE_GAS,
   estimateGas,
   fetchAggregatorMetadata,
   fetchGasPrices,
   fetchTokens,
   fetchTopAssets,
   fetchTradesInfo,
+  getDefaultSwapsControllerState,
   getSwapsContractAddress,
-  SwapsError,
-  DEFAULT_ERC20_APPROVE_GAS,
   NATIVE_SWAPS_TOKEN_ADDRESS,
-  ETH_CHAIN_ID,
-  BSC_CHAIN_ID,
-  SWAPS_TESTNET_CHAIN_ID,
-  POLYGON_CHAIN_ID,
-  AVALANCHE_CHAIN_ID,
   OPTIMISM_CHAIN_ID,
   shouldEnableDirectWrapping,
+  SwapsError,
 } from './swapsUtil';
 
 // Hack to fix the issue with the web3 import that works different in app vs tests
 const Web3 = web3.Web3 === undefined ? web3.default : web3.Web3;
+
+const metadata: StateMetadata<SwapsControllerState> = {
+  quotes: { persist: false, anonymous: false },
+  quoteValues: { persist: false, anonymous: false },
+  fetchParams: { persist: false, anonymous: false },
+  fetchParamsMetaData: { persist: false, anonymous: false },
+  topAggSavings: { persist: false, anonymous: false },
+  aggregatorMetadata: { persist: false, anonymous: false },
+  tokens: { persist: false, anonymous: false },
+  topAssets: { persist: false, anonymous: false },
+  approvalTransaction: { persist: false, anonymous: false },
+  aggregatorMetadataLastFetched: { persist: false, anonymous: false },
+  quotesLastFetched: { persist: false, anonymous: false },
+  topAssetsLastFetched: { persist: false, anonymous: false },
+  error: { persist: false, anonymous: false },
+  topAggId: { persist: false, anonymous: false },
+  tokensLastFetched: { persist: false, anonymous: false },
+  isInPolling: { persist: false, anonymous: false },
+  pollingCyclesLeft: { persist: false, anonymous: false },
+  quoteRefreshSeconds: { persist: false, anonymous: false },
+  usedGasEstimate: { persist: false, anonymous: false },
+  usedCustomGas: { persist: false, anonymous: false },
+  chainCache: { persist: false, anonymous: false },
+  config: { persist: false, anonymous: false },
+};
 
 // Functions to determine type of the return value from GasFeeController
 
@@ -97,19 +120,6 @@ export function isGasFeeStateLegacy(
   return object.gasEstimateType === GAS_ESTIMATE_TYPES.LEGACY;
 }
 
-// Custom types for custom gas values
-type CustomEthGasPriceEstimate = {
-  gasPrice: string; // a GWEI dec string
-  selected?: 'low' | 'medium' | 'high';
-};
-
-type CustomGasFee = {
-  maxFeePerGas: string; // a GWEI dec string
-  maxPriorityFeePerGas: string; // a GWEI dec string
-  estimatedBaseFee?: string; // a GWEI dec string
-  selected?: 'low' | 'medium' | 'high';
-};
-
 /**
  * Determines if the given object is of type EthGasPriceEstimate.
  * @param object - The object to be evaluated.
@@ -143,52 +153,6 @@ function isCustomGasFee(object: any): object is CustomGasFee {
   );
 }
 
-export type SwapsConfig = {
-  clientId?: string;
-  maxGasLimit: number;
-  pollCountLimit: number;
-  fetchAggregatorMetadataThreshold: number;
-  fetchTokensThreshold: number;
-  fetchTopAssetsThreshold: number;
-  provider: any;
-  chainId: Hex;
-  supportedChainIds: Hex[];
-} & BaseConfig;
-
-export type SwapsState = {
-  quotes: { [key: string]: Quote };
-  fetchParams: APIFetchQuotesParams;
-  fetchParamsMetaData: APIFetchQuotesMetadata;
-  topAggSavings: QuoteSavings | null;
-  quotesLastFetched: null | number;
-  error: { key: null | SwapsError; description: null | string };
-  topAggId: null | string;
-  isInPolling: boolean;
-  pollingCyclesLeft: number;
-  approvalTransaction: TransactionParams | null;
-  quoteValues: { [key: string]: QuoteValues } | null;
-  quoteRefreshSeconds: number | null;
-  usedGasEstimate: EthGasPriceEstimate | GasFeeEstimates | null;
-  usedCustomGas: CustomEthGasPriceEstimate | CustomGasFee | null;
-  aggregatorMetadata: null | { [key: string]: APIAggregatorMetadata };
-  aggregatorMetadataLastFetched: number;
-  tokens: null | SwapsToken[];
-  tokensLastFetched: number;
-  topAssets: null | SwapsAsset[];
-  topAssetsLastFetched: number;
-  chainCache: ChainCache;
-} & BaseState;
-
-type SwapsNextState = {
-  quotes: { [key: string]: Quote };
-  quotesLastFetched: null | number;
-  approvalTransaction: TransactionParams | null;
-  topAggId: null | string;
-  topAggSavings?: QuoteSavings | null;
-  quoteValues: { [key: string]: QuoteValues } | null;
-  quoteRefreshSeconds: number | null;
-};
-
 export const INITIAL_CHAIN_DATA: ChainData = {
   aggregatorMetadata: null,
   tokens: null,
@@ -219,9 +183,10 @@ function getNewChainCache(
   };
 }
 
-export default class SwapsController extends BaseControllerV1<
-  SwapsConfig,
-  SwapsState
+export default class SwapsController extends BaseController<
+  typeof controllerName,
+  SwapsControllerState,
+  SwapsControllerMessenger
 > {
   private handle?: NodeJS.Timeout;
 
@@ -242,7 +207,7 @@ export default class SwapsController extends BaseControllerV1<
   private readonly fetchEstimatedMultiLayerL1Fee?: (
     eth: any,
     options: {
-      txParams: TransactionParams;
+      txParams: TxParams;
       chainId: Hex;
     },
   ) => Promise<string | undefined>;
@@ -275,8 +240,8 @@ export default class SwapsController extends BaseControllerV1<
 
     try {
       const { proposedGasPrice } = await fetchGasPrices(
-        this.config.chainId,
-        this.config.clientId,
+        this.state.config.chainId,
+        this.state.config.clientId,
       );
       return { gasPrice: proposedGasPrice };
     } catch (error) {
@@ -558,7 +523,10 @@ export default class SwapsController extends BaseControllerV1<
 
     const allowancePromise = async () => {
       const result: bigint = await contract.methods
-        .allowance(walletAddress, getSwapsContractAddress(this.config.chainId))
+        .allowance(
+          walletAddress,
+          getSwapsContractAddress(this.state.config.chainId),
+        )
         .call();
       return new BigNumber(result.toString());
     };
@@ -568,7 +536,7 @@ export default class SwapsController extends BaseControllerV1<
 
   /* istanbul ignore next */
   private async timedoutGasReturn(
-    tradeTxParams: TransactionParams | null,
+    tradeTxParams: TxParams | null,
   ): Promise<{ gas: string | null }> {
     if (!tradeTxParams) {
       return { gas: null };
@@ -586,7 +554,7 @@ export default class SwapsController extends BaseControllerV1<
             from: tradeTxParams.from,
             to: tradeTxParams.to,
             value: tradeTxParams.value,
-          },
+          } as TxParams,
           this.ethQuery,
         ),
         gasTimeout,
@@ -606,22 +574,38 @@ export default class SwapsController extends BaseControllerV1<
       this.handle = undefined;
     }
 
-    if (this.pollCount < Number(this.config.pollCountLimit) + 1) {
+    if (this.pollCount < Number(this.state.config.pollCountLimit) + 1) {
       if (!this.state.isInPolling) {
-        this.update({ isInPolling: true });
+        this.update((_state) => {
+          _state.isInPolling = true;
+        });
       }
       const { nextQuotesState, threshold, usedGasEstimate } =
         await this.fetchQuotes();
 
-      this.update({
-        pollingCyclesLeft: this.config.pollCountLimit - this.pollCount,
+      this.update((_state) => {
+        _state.pollingCyclesLeft =
+          _state.config.pollCountLimit - this.pollCount;
       });
 
       if (threshold && nextQuotesState?.quoteRefreshSeconds) {
-        this.update({ ...this.state, ...nextQuotesState, usedGasEstimate });
+        // this.update({ ...this.state, ...nextQuotesState, usedGasEstimate });
+        this.update((_state) => {
+          _state.quotes = nextQuotesState.quotes ?? _state.quotes;
+          _state.quotesLastFetched = nextQuotesState.quotesLastFetched ?? 0;
+          _state.approvalTransaction =
+            nextQuotesState.approvalTransaction ?? null;
+          _state.topAggId = nextQuotesState.topAggId ?? _state.topAggId;
+          _state.quoteValues =
+            nextQuotesState.quoteValues ?? _state.quoteValues;
+          _state.quoteRefreshSeconds = nextQuotesState.quoteRefreshSeconds ?? 0;
+          _state.usedGasEstimate = usedGasEstimate;
+        });
         this.handle = setTimeout(() => {
           this.pollForNewQuotesWithThreshold(threshold).catch(() => {
-            this.update({ isInPolling: false });
+            this.update((_state) => {
+              _state.isInPolling = false;
+            });
           });
         }, nextQuotesState.quoteRefreshSeconds * 1000 - threshold);
       }
@@ -670,13 +654,13 @@ export default class SwapsController extends BaseControllerV1<
 
   /* istanbul ignore next */
   private async fetchQuotes(): Promise<{
-    nextQuotesState: SwapsNextState | null;
+    nextQuotesState: Partial<SwapsControllerState> | null;
     threshold: number | null;
     usedGasEstimate: EthGasPriceEstimate | GasFeeEstimates | null;
   }> {
     const timeStarted = Date.now();
     const { fetchParams } = this.state;
-    const { clientId, chainId } = this.config;
+    const { clientId, chainId } = this.state.config;
     try {
       /** We need to abort quotes fetch if stopPollingAndResetState is called while getting quotes */
       this.abortController = new AbortController();
@@ -703,19 +687,15 @@ export default class SwapsController extends BaseControllerV1<
                   chainId,
                 });
               // eslint-disable-next-line require-atomic-updates
-              quote.multiLayerL1TradeFeeTotal = multiLayerL1TradeFeeTotal;
+              quote.multiLayerL1TradeFeeTotal =
+                multiLayerL1TradeFeeTotal ?? null;
             }
             return quote;
           }),
         );
       }
 
-      let approvalTransaction: {
-        data?: string;
-        from: string;
-        to?: string;
-        gas?: string;
-      } | null = null;
+      let approvalTransaction: TxParams | null = null;
 
       const enableDirectWrappingParam = shouldEnableDirectWrapping(
         chainId,
@@ -750,11 +730,12 @@ export default class SwapsController extends BaseControllerV1<
           if (!approvalTransaction) {
             throw new Error(SwapsError.SWAPS_ALLOWANCE_ERROR);
           }
+
           const { gas: approvalGas } = await this.timedoutGasReturn({
             data: approvalTransaction.data,
             from: approvalTransaction.from,
             to: approvalTransaction.to,
-          });
+          } as TxParams);
 
           approvalTransaction = {
             ...approvalTransaction,
@@ -775,7 +756,7 @@ export default class SwapsController extends BaseControllerV1<
 
       const quotesLastFetched = Date.now();
 
-      const nextQuotesState: SwapsNextState = {
+      const nextQuotesState: Partial<SwapsControllerState> = {
         quotes,
         quotesLastFetched,
         approvalTransaction,
@@ -802,139 +783,37 @@ export default class SwapsController extends BaseControllerV1<
   }
 
   /**
-   * Name of this controller used during composition
-   */
-  name = 'SwapsController';
-
-  /**
-   * List of required sibling controllers this controller needs to function
-   */
-  requiredControllers = [];
-
-  /**
    * Creates a SwapsController instance.
    * @param options - Constructor options.
    * @param options.fetchGasFeeEstimates - Fetches gas fee estimates from GasFeeController.
    * @param options.fetchEstimatedMultiLayerL1Fee - Fetches an L1 fee for a given transaction.
+   * @param options.messenger - The messaging system used by the controller.
    * @param config - Initial options used to configure this controller.
    * @param state - Initial state to set on this controller.
    */
   constructor(
-    {
-      fetchGasFeeEstimates,
-      fetchEstimatedMultiLayerL1Fee,
-    }: {
-      fetchGasFeeEstimates?: () => Promise<GasFeeState | undefined>;
-      fetchEstimatedMultiLayerL1Fee?: (
-        eth: EthQuery,
-        options: {
-          txParams: TransactionParams;
-          chainId: Hex;
-        },
-      ) => Promise<string | undefined>;
-    },
-    config?: Partial<SwapsConfig>,
-    state?: Partial<SwapsState>,
+    opts: SwapsControllerOptions,
+    state: Partial<SwapsControllerState>,
   ) {
-    super(config, state);
-    this.defaultConfig = {
-      maxGasLimit: 2500000,
-      pollCountLimit: 3,
-      fetchAggregatorMetadataThreshold: 1000 * 60 * 60 * 24 * 15,
-      fetchTokensThreshold: 1000 * 60 * 60 * 24,
-      fetchTopAssetsThreshold: 1000 * 60 * 30,
-      provider: undefined,
-      chainId: '0x1',
-      supportedChainIds: [
-        ETH_CHAIN_ID,
-        BSC_CHAIN_ID,
-        SWAPS_TESTNET_CHAIN_ID,
-        POLYGON_CHAIN_ID,
-        AVALANCHE_CHAIN_ID,
-      ],
-      clientId: undefined,
-    };
-
-    this.defaultState = {
-      quotes: {},
-      quoteValues: {},
-      fetchParams: {
-        slippage: 0,
-        sourceToken: '',
-        sourceAmount: 0,
-        destinationToken: '',
-        walletAddress: '',
+    super({
+      name: controllerName,
+      metadata,
+      messenger: opts.messenger,
+      state: {
+        ...getDefaultSwapsControllerState(),
+        ...state,
       },
-      fetchParamsMetaData: {
-        sourceTokenInfo: {
-          decimals: 0,
-          address: '',
-          symbol: '',
-        },
-        destinationTokenInfo: {
-          decimals: 0,
-          address: '',
-          symbol: '',
-        },
-      },
-      topAggSavings: null,
-      aggregatorMetadata: null,
-      tokens: null,
-      topAssets: null,
-      approvalTransaction: null,
-      aggregatorMetadataLastFetched: 0,
-      quotesLastFetched: 0,
-      topAssetsLastFetched: 0,
-      error: { key: null, description: null },
-      topAggId: null,
-      tokensLastFetched: 0,
-      isInPolling: false,
-      pollingCyclesLeft: config?.pollCountLimit ?? 3,
-      quoteRefreshSeconds: null,
-      usedGasEstimate: null,
-      usedCustomGas: null,
-      chainCache: {
-        '0x1': INITIAL_CHAIN_DATA,
-      },
-    };
-
-    this.fetchGasFeeEstimates = fetchGasFeeEstimates;
-    this.fetchEstimatedMultiLayerL1Fee = fetchEstimatedMultiLayerL1Fee;
-    this.initialize();
-  }
-
-  set provider(provider: any) {
-    if (provider) {
-      this.ethQuery = new EthQuery(provider);
-      this.web3 = new Web3(provider);
-    }
-  }
-
-  set chainId(chainId: Hex) {
-    if (!this.config.supportedChainIds.includes(chainId)) {
-      return;
-    }
-
-    const { chainCache } = this.state;
-    if (!chainCache?.[chainId]) {
-      this.update({
-        ...INITIAL_CHAIN_DATA,
-        chainCache: getNewChainCache(chainCache, chainId, INITIAL_CHAIN_DATA),
-      });
-      return;
-    }
-
-    const cachedData = chainCache[chainId];
-    this.update({
-      ...cachedData,
     });
+
+    this.fetchGasFeeEstimates = opts.fetchGasFeeEstimates;
+    this.fetchEstimatedMultiLayerL1Fee = opts.fetchEstimatedMultiLayerL1Fee;
   }
 
   /**
    * Updates all quotes with a new custom gas price.
    * @param customGasFee - Custom gas price in dec gwei format.
    */
-  updateQuotesWithGasPrice(
+  public updateQuotesWithGasPrice(
     customGasFee: CustomEthGasPriceEstimate | CustomGasFee,
   ): void {
     const { quotes, usedGasEstimate } = this.state;
@@ -946,14 +825,18 @@ export default class SwapsController extends BaseControllerV1<
       usedGasEstimate,
       customGasFee,
     );
-    this.update({ topAggId, quoteValues, usedCustomGas: customGasFee });
+    this.update((_state) => {
+      _state.quoteValues = quoteValues;
+      _state.topAggId = topAggId;
+      _state.usedCustomGas = customGasFee;
+    });
   }
 
   /**
    * Updates the selected quote maxEthFee param according to a custom gas limit.
    * @param customGasLimit - Custom gas limit in hex format.
    */
-  updateSelectedQuoteWithGasLimit(customGasLimit: string): void {
+  public updateSelectedQuoteWithGasLimit(customGasLimit: string): void {
     const { topAggId, quotes, quoteValues, usedGasEstimate, usedCustomGas } =
       this.state;
     if (!topAggId || !quoteValues || !usedGasEstimate) {
@@ -966,10 +849,19 @@ export default class SwapsController extends BaseControllerV1<
       customGasLimit,
     );
     quoteValues[selectedQuote.aggregator].maxEthFee = maxEthFee;
-    this.update({ topAggId, quoteValues });
+
+    this.update((_state) => {
+      _state.topAggId = topAggId;
+      _state.quoteValues = quoteValues;
+    });
   }
 
-  startFetchAndSetQuotes(
+  /**
+   * Starts the polling process.
+   * @param fetchParams - Parameters to fetch quotes.
+   * @param fetchParamsMetaData - Metadata for the fetchParams.
+   */
+  public startFetchAndSetQuotes(
     fetchParams?: APIFetchQuotesParams,
     fetchParamsMetaData?: APIFetchQuotesMetadata,
   ) {
@@ -982,16 +874,23 @@ export default class SwapsController extends BaseControllerV1<
     // of quotes with these new params.
     this.pollCount = 0;
 
-    this.update({ fetchParams, fetchParamsMetaData });
+    this.update((_state) => {
+      _state.fetchParams = fetchParams;
+      _state.fetchParamsMetaData =
+        fetchParamsMetaData ?? _state.fetchParamsMetaData;
+    });
 
     // ignoring rule since otherwise we need to change the behavior of the function
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     this.pollForNewQuotesWithThreshold();
   }
 
+  /**
+   * Fetches the tokens and updates the state with them.
+   */
   async fetchTokenWithCache() {
     const { chainId, clientId, fetchTokensThreshold, supportedChainIds } =
-      this.config;
+      this.state.config;
     const { tokens, tokensLastFetched } = this.state;
 
     if (!supportedChainIds.includes(chainId)) {
@@ -1002,16 +901,20 @@ export default class SwapsController extends BaseControllerV1<
       const releaseLock = await this.mutex.acquire();
       try {
         const newTokens = await fetchTokens(chainId, clientId);
-        const data = { tokens: newTokens, tokensLastFetched: Date.now() };
-        this.update({
-          ...data,
-          chainCache: getNewChainCache(this.state.chainCache, chainId, data),
+        this.update((_state) => {
+          _state.tokens = newTokens;
+          _state.tokensLastFetched = Date.now();
+          _state.chainCache = getNewChainCache(_state.chainCache, chainId, {
+            tokens: newTokens,
+            tokensLastFetched: Date.now(),
+          });
         });
       } catch {
-        const data = { tokensLastFetched: 0 };
-        this.update({
-          ...data,
-          chainCache: getNewChainCache(this.state.chainCache, chainId, data),
+        this.update((_state) => {
+          _state.tokensLastFetched = 0;
+          _state.chainCache = getNewChainCache(_state.chainCache, chainId, {
+            tokensLastFetched: 0,
+          });
         });
       } finally {
         releaseLock();
@@ -1019,9 +922,12 @@ export default class SwapsController extends BaseControllerV1<
     }
   }
 
-  async fetchTopAssetsWithCache() {
+  /**
+   * Fetches the top assets and updates the state with them.
+   */
+  public async fetchTopAssetsWithCache() {
     const { chainId, clientId, fetchTopAssetsThreshold, supportedChainIds } =
-      this.config;
+      this.state.config;
     const { topAssets, topAssetsLastFetched } = this.state;
 
     if (!supportedChainIds.includes(chainId)) {
@@ -1039,15 +945,24 @@ export default class SwapsController extends BaseControllerV1<
           topAssets: newTopAssets,
           topAssetsLastFetched: Date.now(),
         };
-        this.update({
-          ...data,
-          chainCache: getNewChainCache(this.state.chainCache, chainId, data),
+        this.update((_state) => {
+          _state.topAssets = data.topAssets;
+          _state.topAssetsLastFetched = data.topAssetsLastFetched;
+          _state.chainCache = getNewChainCache(
+            _state.chainCache,
+            chainId,
+            data,
+          );
         });
       } catch {
         const data = { topAssetsLastFetched: 0 };
-        this.update({
-          ...data,
-          chainCache: getNewChainCache(this.state.chainCache, chainId, data),
+        this.update((_state) => {
+          _state.topAssetsLastFetched = data.topAssetsLastFetched;
+          _state.chainCache = getNewChainCache(
+            _state.chainCache,
+            chainId,
+            data,
+          );
         });
       } finally {
         releaseLock();
@@ -1055,13 +970,16 @@ export default class SwapsController extends BaseControllerV1<
     }
   }
 
-  async fetchAggregatorMetadataWithCache() {
+  /**
+   * Fetches the aggregator metadata and updates the state with it.
+   */
+  public async fetchAggregatorMetadataWithCache() {
     const {
       chainId,
       clientId,
       fetchAggregatorMetadataThreshold,
       supportedChainIds,
-    } = this.config;
+    } = this.state.config;
     const { aggregatorMetadata, aggregatorMetadataLastFetched } = this.state;
 
     if (!supportedChainIds.includes(chainId)) {
@@ -1083,15 +1001,26 @@ export default class SwapsController extends BaseControllerV1<
           aggregatorMetadata: newAggregatorMetada,
           aggregatorMetadataLastFetched: Date.now(),
         };
-        this.update({
-          ...data,
-          chainCache: getNewChainCache(this.state.chainCache, chainId, data),
+        this.update((_state) => {
+          _state.aggregatorMetadata = data.aggregatorMetadata;
+          _state.aggregatorMetadataLastFetched =
+            data.aggregatorMetadataLastFetched;
+          _state.chainCache = getNewChainCache(
+            _state.chainCache,
+            chainId,
+            data,
+          );
         });
       } catch {
         const data = { aggregatorMetadataLastFetched: 0 };
-        this.update({
-          ...data,
-          chainCache: getNewChainCache(this.state.chainCache, chainId, data),
+        this.update((_state) => {
+          _state.aggregatorMetadataLastFetched =
+            data.aggregatorMetadataLastFetched;
+          _state.chainCache = getNewChainCache(
+            _state.chainCache,
+            chainId,
+            data,
+          );
         });
       } finally {
         releaseLock();
@@ -1105,7 +1034,7 @@ export default class SwapsController extends BaseControllerV1<
    * @param error.key - Error key.
    * @param error.description - Error description.
    */
-  stopPollingAndResetState(
+  public stopPollingAndResetState(
     error: {
       key: SwapsError | null;
       description: string | null;
@@ -1116,18 +1045,84 @@ export default class SwapsController extends BaseControllerV1<
   ) {
     this.abortController && this.abortController.abort();
     this.handle && clearTimeout(this.handle);
-    this.pollCount = Number(this.config.pollCountLimit) + 1;
-    this.update({
-      ...this.defaultState,
-      isInPolling: false,
-      tokensLastFetched: this.state.tokensLastFetched,
-      topAssetsLastFetched: this.state.topAssetsLastFetched,
-      aggregatorMetadataLastFetched: this.state.aggregatorMetadataLastFetched,
-      tokens: this.state.tokens,
-      topAssets: this.state.topAssets,
-      aggregatorMetadata: this.state.aggregatorMetadata,
-      chainCache: this.state.chainCache,
-      error,
+    this.pollCount = Number(this.state.config.pollCountLimit) + 1;
+    this.update((_state) => {
+      const defaultState = getDefaultSwapsControllerState();
+      Object.keys(defaultState).forEach((key) => {
+        const typedKey = key as keyof typeof defaultState;
+        (_state as any)[typedKey] = defaultState[typedKey];
+      });
+      _state.error.key = error.key;
+      _state.error.description = error.description;
     });
   }
+
+  /**
+   * Internal method used to set the chainId in the state. Users should use the `configure` method instead.
+   * @param chainId - The chainId to set.
+   */
+  #setChainId(chainId: Hex) {
+    if (!this.state.config.supportedChainIds.includes(chainId)) {
+      return;
+    }
+
+    const { chainCache } = this.state;
+    if (!chainCache?.[chainId]) {
+      this.update((_state) => {
+        _state.config.chainId = chainId;
+        _state.aggregatorMetadata = null;
+        _state.tokens = null;
+        _state.topAssets = null;
+        _state.aggregatorMetadataLastFetched = 0;
+        _state.topAssetsLastFetched = 0;
+        _state.tokensLastFetched = 0;
+        _state.chainCache = getNewChainCache(chainCache, chainId, {
+          ...INITIAL_CHAIN_DATA,
+        });
+      });
+      return;
+    }
+
+    const cachedData = chainCache[chainId];
+
+    this.update((_state) => {
+      _state.config.chainId = chainId;
+      _state.aggregatorMetadata = cachedData.aggregatorMetadata;
+      _state.tokens = cachedData.tokens;
+      _state.topAssets = cachedData.topAssets;
+      _state.aggregatorMetadataLastFetched =
+        cachedData.aggregatorMetadataLastFetched;
+      _state.topAssetsLastFetched = cachedData.topAssetsLastFetched;
+      _state.tokensLastFetched = cachedData.tokensLastFetched;
+    });
+  }
+
+  public configure(config: Partial<SwapsConfig>) {
+    const { chainId, provider } = config;
+    if (chainId) {
+      this.#setChainId(chainId);
+    }
+    if (provider) {
+      this.web3 = new Web3(provider);
+      this.ethQuery = new EthQuery(provider);
+    }
+    this.update((_state) => {
+      _state.config = {
+        ..._state.config,
+        ...config,
+      };
+    });
+  }
+
+  /**
+   * This method is used to update the state of the controller for testing purposes.
+   * DO NOT USE OUTSIDE OF TESTING
+   *
+   * @param newState - The new state to set
+   */
+  public __test__updateState = (newState: Partial<SwapsControllerState>) => {
+    this.update((oldState) => {
+      return { ...oldState, ...newState };
+    });
+  };
 }

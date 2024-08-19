@@ -1,12 +1,15 @@
 import { BigNumber } from 'bignumber.js';
 
-import type { QuoteValues, SwapsToken } from './swapsInterfaces';
-import { APIType } from './swapsInterfaces';
-import * as swapsUtil from './swapsUtil';
 import { BNToHex, query, toHex } from '@metamask/controller-utils';
-import { BN } from 'bn.js';
-import { TransactionParams } from '@metamask/transaction-controller';
 import { add0x } from '@metamask/utils';
+import { BN } from 'bn.js';
+import type {
+  QuoteValues,
+  SwapsToken,
+  TxParams,
+} from './SwapsController.types';
+import { APIType } from './SwapsController.types';
+import * as swapsUtil from './swapsUtil';
 
 /**
  * Mocks the fetch function for testing purposes.
@@ -1436,7 +1439,7 @@ describe('SwapsUtil', () => {
     });
 
     it('should estimate gas correctly for a given transaction', async () => {
-      const transaction: TransactionParams = {
+      const transaction: TxParams = {
         from: '0x1234',
         to: '0x5678',
         value: '0x0',
@@ -1461,7 +1464,7 @@ describe('SwapsUtil', () => {
     });
 
     it('should handle transactions without data correctly', async () => {
-      const transaction: TransactionParams = {
+      const transaction: TxParams = {
         from: '0x1234',
         to: '0x5678',
         value: '0x0',
