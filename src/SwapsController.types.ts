@@ -1,22 +1,13 @@
-import { RestrictedControllerMessenger } from '@metamask/base-controller';
-import EthQuery from '@metamask/eth-query';
-import {
+import type { RestrictedControllerMessenger } from '@metamask/base-controller';
+import type EthQuery from '@metamask/eth-query';
+import type {
   EthGasPriceEstimate,
   GasFeeEstimates,
   GasFeeState,
 } from '@metamask/gas-fee-controller';
-import { Hex } from '@metamask/utils';
-import { controllerName, SwapsError } from './swapsUtil';
+import type { Hex } from '@metamask/utils';
 
-export enum APIType {
-  TRADES = 'TRADES',
-  TOKENS = 'TOKENS',
-  TOP_ASSETS = 'TOP_ASSETS',
-  FEATURE_FLAG = 'FEATURE_FLAG',
-  AGGREGATOR_METADATA = 'AGGREGATOR_METADATA',
-  TOKEN = 'TOKEN',
-  GAS_PRICES = 'GAS_PRICES',
-}
+import type { controllerName, SwapsError } from './swapsUtil';
 
 export type SwapsAsset = {
   address: string;
@@ -31,8 +22,11 @@ export type SwapsToken = {
 } & SwapsAsset;
 
 export type NetworkFeatureFlags = {
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   mobile_active: boolean;
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   extension_active: boolean;
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   fallback_to_v1?: boolean;
 };
 
@@ -41,8 +35,11 @@ export type NetworksFeatureStatus = {
 };
 
 export type NetworkFeatureFlagsAll = {
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   mobile_active: boolean;
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   extension_active: boolean;
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   fallback_to_v1?: boolean;
   fallbackToV1: boolean;
   mobileActive: boolean;
@@ -62,8 +59,11 @@ export type NetworksFeatureStatusAll = {
 };
 
 export type GlobalFeatureFlags = {
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   smart_transactions: {
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     mobile_active: boolean;
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     extension_active: boolean;
   };
   smartTransactions: {

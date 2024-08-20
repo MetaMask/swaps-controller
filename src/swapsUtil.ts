@@ -37,9 +37,8 @@ import type {
   SwapsAsset,
   SwapsToken,
   TransactionReceipt,
+  TxParams,
 } from './SwapsController.types';
-import { APIType } from './SwapsController.types';
-import { TxParams } from './SwapsController.types';
 
 // /
 // / BEGIN: Lifted from now unexported normalizeTransaction in @metamask/transaction-controller@3.0.0
@@ -94,6 +93,17 @@ export enum SwapsError {
   SWAPS_ALLOWANCE_TIMEOUT = 'swaps-allowance-timeout',
   SWAPS_ALLOWANCE_ERROR = 'swaps-allowance-error',
 }
+
+export enum APIType {
+  TRADES = 'TRADES',
+  TOKENS = 'TOKENS',
+  TOP_ASSETS = 'TOP_ASSETS',
+  FEATURE_FLAG = 'FEATURE_FLAG',
+  AGGREGATOR_METADATA = 'AGGREGATOR_METADATA',
+  TOKEN = 'TOKEN',
+  GAS_PRICES = 'GAS_PRICES',
+}
+
 // Functions
 /**
  * Returns the client ID header.

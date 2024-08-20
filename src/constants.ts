@@ -1,8 +1,7 @@
 import { toHex } from '@metamask/controller-utils';
 
 import { INITIAL_CHAIN_DATA } from './SwapsController';
-import type { SwapsToken } from './SwapsController.types';
-import { SwapsControllerState } from './SwapsController.types';
+import type { SwapsToken, SwapsControllerState } from './SwapsController.types';
 
 //* Chain IDs and names
 

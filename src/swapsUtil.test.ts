@@ -8,7 +8,6 @@ import type {
   SwapsToken,
   TxParams,
 } from './SwapsController.types';
-import { APIType } from './SwapsController.types';
 import * as swapsUtil from './swapsUtil';
 
 /**
@@ -174,20 +173,30 @@ const FAKE_SWAPS_TOKEN = {
 describe('SwapsUtil', () => {
   describe('getBaseApiURL', () => {
     it('should return expected values', () => {
-      expect(swapsUtil.getBaseApiURL(APIType.TRADES, '0x1')).toBeDefined();
-      expect(swapsUtil.getBaseApiURL(APIType.TOKENS, '0x1')).toBeDefined();
-      expect(swapsUtil.getBaseApiURL(APIType.TOKEN, '0x1')).toBeDefined();
-      expect(swapsUtil.getBaseApiURL(APIType.TOP_ASSETS, '0x1')).toBeDefined();
       expect(
-        swapsUtil.getBaseApiURL(APIType.FEATURE_FLAG, '0x1'),
+        swapsUtil.getBaseApiURL(swapsUtil.APIType.TRADES, '0x1'),
+      ).toBeDefined();
+      expect(
+        swapsUtil.getBaseApiURL(swapsUtil.APIType.TOKENS, '0x1'),
+      ).toBeDefined();
+      expect(
+        swapsUtil.getBaseApiURL(swapsUtil.APIType.TOKEN, '0x1'),
+      ).toBeDefined();
+      expect(
+        swapsUtil.getBaseApiURL(swapsUtil.APIType.TOP_ASSETS, '0x1'),
+      ).toBeDefined();
+      expect(
+        swapsUtil.getBaseApiURL(swapsUtil.APIType.FEATURE_FLAG, '0x1'),
       ).toBeDefined();
 
       expect(
-        swapsUtil.getBaseApiURL(APIType.AGGREGATOR_METADATA, '0x1'),
+        swapsUtil.getBaseApiURL(swapsUtil.APIType.AGGREGATOR_METADATA, '0x1'),
       ).toBeDefined();
-      expect(swapsUtil.getBaseApiURL(APIType.GAS_PRICES, '0x1')).toBeDefined();
+      expect(
+        swapsUtil.getBaseApiURL(swapsUtil.APIType.GAS_PRICES, '0x1'),
+      ).toBeDefined();
       expect(() =>
-        swapsUtil.getBaseApiURL('error value' as APIType, '0x1'),
+        swapsUtil.getBaseApiURL('error value' as swapsUtil.APIType, '0x1'),
       ).toThrow();
     });
   });

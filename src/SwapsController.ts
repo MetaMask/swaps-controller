@@ -1,4 +1,5 @@
-import { BaseController, StateMetadata } from '@metamask/base-controller';
+import { BaseController } from '@metamask/base-controller';
+import type { StateMetadata } from '@metamask/base-controller';
 import {
   gweiDecToWEIBN,
   query,
@@ -784,11 +785,10 @@ export default class SwapsController extends BaseController<
 
   /**
    * Creates a SwapsController instance.
-   * @param options - Constructor options.
-   * @param options.fetchGasFeeEstimates - Fetches gas fee estimates from GasFeeController.
-   * @param options.fetchEstimatedMultiLayerL1Fee - Fetches an L1 fee for a given transaction.
-   * @param options.messenger - The messaging system used by the controller.
-   * @param config - Initial options used to configure this controller.
+   * @param opts - Constructor options.
+   * @param opts.fetchGasFeeEstimates - Fetches gas fee estimates from GasFeeController.
+   * @param opts.fetchEstimatedMultiLayerL1Fee - Fetches an L1 fee for a given transaction.
+   * @param opts.messenger - The messaging system used by the controller.
    * @param state - Initial state to set on this controller.
    */
   constructor(
@@ -860,6 +860,7 @@ export default class SwapsController extends BaseController<
    * Starts the polling process.
    * @param fetchParams - Parameters to fetch quotes.
    * @param fetchParamsMetaData - Metadata for the fetchParams.
+   * @returns Promise resolving when this operation completes.
    */
   public startFetchAndSetQuotes(
     fetchParams?: APIFetchQuotesParams,
@@ -1115,12 +1116,14 @@ export default class SwapsController extends BaseController<
   }
 
   /**
-   * This method is used to update the state of the controller for testing purposes.
-   * DO NOT USE OUTSIDE OF TESTING
-   *
-   * @param newState - The new state to set
+   * Updates the state of the controller for testing purposes.
+   * This method should not be used outside of testing.
+   * @param newState - The new state to set.
    */
-  public __test__updateState = (newState: Partial<SwapsControllerState>) => {
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  public __test__updateState = (
+    newState: Partial<SwapsControllerState>,
+  ): void => {
     this.update((oldState) => {
       return { ...oldState, ...newState };
     });
