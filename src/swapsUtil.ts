@@ -1,16 +1,25 @@
 import {
+  BNToHex,
   convertHexToDecimal,
   handleFetch,
-  timeoutFetch,
-  BNToHex,
   query,
+  timeoutFetch,
 } from '@metamask/controller-utils';
+import type {
+  EthGasPriceEstimate,
+  GasFeeState,
+  GasFeeStateEthGasPrice,
+  GasFeeStateFeeMarket,
+  GasFeeStateLegacy,
+} from '@metamask/gas-fee-controller';
+import { GAS_ESTIMATE_TYPES } from '@metamask/gas-fee-controller';
 import type { TransactionParams } from '@metamask/transaction-controller';
 import type { Hex } from '@metamask/utils';
 import { add0x } from '@metamask/utils';
 import { BigNumber } from 'bignumber.js';
 import { BN } from 'bn.js';
 
+// eslint-disable-next-line import/order
 import {
   ALLOWED_CONTRACT_ADDRESSES,
   API_BASE_URL,
@@ -26,9 +35,14 @@ import {
   SWAPS_WRAPPED_TOKENS_ADDRESSES,
   TOKEN_TRANSFER_LOG_TOPIC_HASH,
 } from './constants';
+
 import type {
   APIAggregatorMetadata,
   APIFetchQuotesParams,
+  ChainCache,
+  ChainData,
+  CustomEthGasPriceEstimate,
+  CustomGasFee,
   FeatureFlags,
   NetworkFeatureFlags,
   NetworksFeatureStatus,
@@ -782,4 +796,95 @@ export function constructTxParams({
     txParams.to = to;
   }
   return normalizeTransaction(txParams);
+}
+
+// Functions to determine type of the return value from GasFeeController
+
+/**
+ * Checks if the given object is of type GasFeeStateEthGasPrice.
+ * @param object - The gas fee state to be checked.
+ * @returns Whether the given object is of type GasFeeStateEthGasPrice.
+ */
+export function isGasFeeStateEthGasPrice(
+  object: GasFeeState,
+): object is GasFeeStateEthGasPrice {
+  return object.gasEstimateType === GAS_ESTIMATE_TYPES.ETH_GASPRICE;
+}
+
+/**
+ * Determines if the given object is of type GasFeeStateFeeMarket based on its 'gasEstimateType'.
+ * @param object - The gas fee state to be evaluated.
+ * @returns Whether the object is of type GasFeeStateFeeMarket.
+ */
+export function isGasFeeStateFeeMarket(
+  object: GasFeeState,
+): object is GasFeeStateFeeMarket {
+  return object.gasEstimateType === GAS_ESTIMATE_TYPES.FEE_MARKET;
+}
+
+/**
+ * Determines if the given object is of type GasFeeStateLegacy based on its 'gasEstimateType'.
+ * @param object - The gas fee state to be evaluated.
+ * @returns Whether the object is of type GasFeeStateLegacy.
+ */
+export function isGasFeeStateLegacy(
+  object: GasFeeState,
+): object is GasFeeStateLegacy {
+  return object.gasEstimateType === GAS_ESTIMATE_TYPES.LEGACY;
+}
+
+/**
+ * Determines if the given object is of type EthGasPriceEstimate.
+ * @param object - The object to be evaluated.
+ * @returns Whether the object is of type EthGasPriceEstimate.
+ */
+export function isEthGasPriceEstimate(
+  object: any,
+): object is EthGasPriceEstimate {
+  return Boolean(object) && object?.gasPrice !== undefined;
+}
+
+/**
+ * Determines if the given object is of type CustomEthGasPriceEstimate.
+ * @param object - The object to be evaluated.
+ * @returns Whether the object is of type CustomEthGasPriceEstimate.
+ */
+export function isCustomEthGasPriceEstimate(
+  object: any,
+): object is CustomEthGasPriceEstimate {
+  return Boolean(object) && object?.gasPrice !== undefined;
+}
+
+/**
+ * Determines if the given object is of type CustomGasFee.
+ * @param object - The object to be evaluated.
+ * @returns Whether the object is of type CustomGasFee.
+ */
+export function isCustomGasFee(object: any): object is CustomGasFee {
+  return (
+    Boolean(object) &&
+    'maxFeePerGas' in object &&
+    'maxPriorityFeePerGas' in object
+  );
+}
+
+/**
+ * Gets a new chainCache for a chainId with updated data.
+ * @param chainCache - Current chainCache from state.
+ * @param chainId - Current chainId from the config.
+ * @param data - Data to be updated.
+ * @returns The new chainCache.
+ */
+export function getNewChainCache(
+  chainCache: ChainCache,
+  chainId: Hex,
+  data: Partial<ChainData>,
+): ChainCache {
+  return {
+    ...chainCache,
+    [chainId]: {
+      ...chainCache?.[chainId],
+      ...data,
+    },
+  };
 }

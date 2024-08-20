@@ -1,10 +1,6 @@
 import { ChainId } from '@metamask/controller-utils';
 import { GasFeeEstimates } from '@metamask/gas-fee-controller';
-import SwapsController, {
-  INITIAL_CHAIN_DATA,
-  isGasFeeStateEthGasPrice,
-  isGasFeeStateLegacy,
-} from './SwapsController';
+import SwapsController from './SwapsController';
 import { Quote, SwapsControllerMessenger } from './SwapsController.types';
 import * as swapsUtil from './swapsUtil';
 
@@ -303,7 +299,7 @@ describe('SwapsController', () => {
     expect(swapsController.state.pollingCyclesLeft).toBe(3);
   });
 
-  it('should use INITIAL_CHAIN_DATA when chainCache does not have data for the chainId', () => {
+  it('should use swapsUtil.INITIAL_CHAIN_DATA when chainCache does not have data for the chainId', () => {
     const chainId = ChainId.aurora;
 
     swapsController.configure({
@@ -318,7 +314,7 @@ describe('SwapsController', () => {
     swapsController.configure({ chainId });
 
     const cachedData = swapsController.state.chainCache[chainId];
-    expect(cachedData).toEqual(INITIAL_CHAIN_DATA);
+    expect(cachedData).toEqual(swapsUtil.INITIAL_CHAIN_DATA);
   });
 
   describe('provider', () => {
@@ -379,17 +375,17 @@ describe('SwapsController', () => {
       });
       swapsController.configure({ chainId: '0x23' });
       expect(swapsController.state.chainCache['0x23']).toStrictEqual(
-        INITIAL_CHAIN_DATA,
+        swapsUtil.INITIAL_CHAIN_DATA,
       );
 
       swapsController.configure({ chainId: '0x24' });
       expect(swapsController.state.chainCache['0x24']).toStrictEqual(
-        INITIAL_CHAIN_DATA,
+        swapsUtil.INITIAL_CHAIN_DATA,
       );
 
       swapsController.configure({ chainId: '0x291' });
       expect(swapsController.state.chainCache['0x291']).toStrictEqual(
-        INITIAL_CHAIN_DATA,
+        swapsUtil.INITIAL_CHAIN_DATA,
       );
     });
 
@@ -410,19 +406,19 @@ describe('SwapsController', () => {
       });
 
       const chainData23 = {
-        ...INITIAL_CHAIN_DATA,
+        ...swapsUtil.INITIAL_CHAIN_DATA,
         tokensLastFetched: 231,
         topAssetsLastFetched: 232,
         aggregatorMetadataLastFetched: 233,
       };
       const chainData24 = {
-        ...INITIAL_CHAIN_DATA,
+        ...swapsUtil.INITIAL_CHAIN_DATA,
         tokensLastFetched: 241,
         topAssetsLastFetched: 242,
         aggregatorMetadataLastFetched: 243,
       };
       const chainData0x123 = {
-        ...INITIAL_CHAIN_DATA,
+        ...swapsUtil.INITIAL_CHAIN_DATA,
         tokensLastFetched: 2911,
         topAssetsLastFetched: 2912,
         aggregatorMetadataLastFetched: 2913,
@@ -1144,7 +1140,7 @@ describe('SwapsController', () => {
       };
 
       // @ts-expect-error - incomplete type
-      const result = isGasFeeStateEthGasPrice(gasFeeState);
+      const result = swapsUtil.isGasFeeStateEthGasPrice(gasFeeState);
 
       expect(result).toBe(true);
     });
@@ -1161,7 +1157,7 @@ describe('SwapsController', () => {
       };
 
       // @ts-expect-error - incomplete type
-      const result = isGasFeeStateEthGasPrice(gasFeeState);
+      const result = swapsUtil.isGasFeeStateEthGasPrice(gasFeeState);
 
       expect(result).toBe(false);
     });
@@ -1189,7 +1185,7 @@ describe('SwapsController', () => {
       };
 
       // @ts-expect-error - incomplete type
-      const result = isGasFeeStateLegacy(gasFeeState);
+      const result = swapsUtil.isGasFeeStateLegacy(gasFeeState);
 
       expect(result).toBe(true);
     });
@@ -1206,7 +1202,7 @@ describe('SwapsController', () => {
       };
 
       // @ts-expect-error - incomplete type
-      const result = isGasFeeStateLegacy(gasFeeState);
+      const result = swapsUtil.isGasFeeStateLegacy(gasFeeState);
 
       expect(result).toBe(false);
     });
@@ -1217,7 +1213,7 @@ describe('SwapsController', () => {
       };
 
       // @ts-expect-error - incomplete type
-      const result = isGasFeeStateLegacy(gasFeeState);
+      const result = swapsUtil.isGasFeeStateLegacy(gasFeeState);
 
       expect(result).toBe(false);
     });

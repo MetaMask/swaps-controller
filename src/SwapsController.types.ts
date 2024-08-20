@@ -1,4 +1,8 @@
-import type { RestrictedControllerMessenger } from '@metamask/base-controller';
+import type {
+  RestrictedControllerMessenger,
+  ControllerStateChangeEvent,
+  ControllerGetStateAction,
+} from '@metamask/base-controller';
 import type EthQuery from '@metamask/eth-query';
 import type {
   EthGasPriceEstimate,
@@ -7,6 +11,7 @@ import type {
 } from '@metamask/gas-fee-controller';
 import type { Hex } from '@metamask/utils';
 
+import type SwapsController from './SwapsController';
 import type { controllerName, SwapsError } from './swapsUtil';
 
 export type SwapsAsset = {
@@ -318,19 +323,45 @@ export type SwapsControllerState = {
 };
 
 /**
+ * The action that fetches the state of the {@link SwapsController}.
+ */
+export type SwapsControllerGetStateAction = ControllerGetStateAction<
+  typeof controllerName,
+  SwapsControllerState
+>;
+
+/**
+ * The event that {@link SwapsController} can emit.
+ */
+export type SwapsControllerStateChangeEvent = ControllerStateChangeEvent<
+  typeof controllerName,
+  SwapsControllerState
+>;
+
+/**
  * The external actions available to the {@link SwapsController}.
+ * TODO: Add GasFeeControllerFetchGasFeeEstimates once GasFeeController exports this action type
  */
 export type AllowedActions = never;
 
 /**
  * The internal actions available to the SwapsController.
  */
-export type SwapsControllerActions = never;
+export type SwapsControllerActions =
+  | SwapsControllerGetStateAction
+  | SwapsControllerUpdateQuotesWithGasPrice
+  | SwapsControllerUpdateSelectedQuoteWithGasLimit
+  | SwapsControllerStartFetchAndSetQuotes
+  | SwapsControllerFetchTokenWithCache
+  | SwapsControllerFetchTopAssetsWithCache
+  | SwapsControllerFetchAggregatorMetadataWithCache
+  | SwapsControllerStopPollingAndResetState
+  | SwapsControllerConfigure;
 
 /**
  * The events that the SwapsController can emit.
  */
-export type SwapsControllerEvents = never;
+export type SwapsControllerEvents = SwapsControllerStateChangeEvent;
 
 /**
  * The messenger for the SwapsController.
@@ -354,4 +385,68 @@ export type SwapsControllerOptions = {
     },
   ) => Promise<string | undefined>;
   messenger: SwapsControllerMessenger;
+};
+
+/**
+ * The action that updates quotes with gas price {@link SwapsController}.
+ */
+export type SwapsControllerUpdateQuotesWithGasPrice = {
+  type: `SwapsController:updateQuotesWithGasPrice`;
+  handler: SwapsController['updateQuotesWithGasPrice'];
+};
+
+/**
+ * The action that updates the selected quote with gas limit {@link SwapsController}.
+ */
+export type SwapsControllerUpdateSelectedQuoteWithGasLimit = {
+  type: `SwapsController:updateSelectedQuoteWithGasLimit`;
+  handler: SwapsController['updateSelectedQuoteWithGasLimit'];
+};
+
+/**
+ * The action that starts fetching and setting quotes {@link SwapsController}.
+ */
+export type SwapsControllerStartFetchAndSetQuotes = {
+  type: `SwapsController:startFetchAndSetQuotes`;
+  handler: SwapsController['startFetchAndSetQuotes'];
+};
+
+/**
+ * The action that fetches a token with cache {@link SwapsController}.
+ */
+export type SwapsControllerFetchTokenWithCache = {
+  type: `SwapsController:fetchTokenWithCache`;
+  handler: SwapsController['fetchTokenWithCache'];
+};
+
+/**
+ * The action that fetches top assets with cache {@link SwapsController}.
+ */
+export type SwapsControllerFetchTopAssetsWithCache = {
+  type: `SwapsController:fetchTopAssetsWithCache`;
+  handler: SwapsController['fetchTopAssetsWithCache'];
+};
+
+/**
+ * The action that fetches aggregator metadata with cache {@link SwapsController}.
+ */
+export type SwapsControllerFetchAggregatorMetadataWithCache = {
+  type: `SwapsController:fetchAggregatorMetadataWithCache`;
+  handler: SwapsController['fetchAggregatorMetadataWithCache'];
+};
+
+/**
+ * The action that stops polling and resets state {@link SwapsController}.
+ */
+export type SwapsControllerStopPollingAndResetState = {
+  type: `SwapsController:stopPollingAndResetState`;
+  handler: SwapsController['stopPollingAndResetState'];
+};
+
+/**
+ * The action that configures the SwapsController {@link SwapsController}.
+ */
+export type SwapsControllerConfigure = {
+  type: `SwapsController:configure`;
+  handler: SwapsController['configure'];
 };
