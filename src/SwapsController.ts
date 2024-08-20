@@ -848,11 +848,19 @@ export default class SwapsController extends BaseController<
       usedCustomGas ?? usedGasEstimate,
       customGasLimit,
     );
-    quoteValues[selectedQuote.aggregator].maxEthFee = maxEthFee;
+    const clonedQuoteValues = {
+      ...quoteValues,
+      [selectedQuote.aggregator]: {
+        ...quoteValues[selectedQuote.aggregator],
+        maxEthFee,
+      },
+    };
+
+    clonedQuoteValues[selectedQuote.aggregator].maxEthFee = maxEthFee;
 
     this.update((_state) => {
       _state.topAggId = topAggId;
-      _state.quoteValues = quoteValues;
+      _state.quoteValues = clonedQuoteValues;
     });
   }
 

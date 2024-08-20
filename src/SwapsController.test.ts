@@ -691,8 +691,10 @@ describe('SwapsController', () => {
         gasPrice: '20',
       };
 
-      swapsController.state.quotes = API_TRADES;
-      swapsController.state.usedGasEstimate = usedGasEstimate;
+      swapsController.__test__updateState({
+        quotes: API_TRADES,
+        usedGasEstimate,
+      });
 
       swapsController.updateQuotesWithGasPrice(customGasFee);
 
@@ -704,7 +706,10 @@ describe('SwapsController', () => {
       const customGasFee = {
         gasPrice: '10',
       };
-      swapsController.state.usedGasEstimate = null;
+
+      swapsController.__test__updateState({
+        usedGasEstimate: null,
+      });
 
       swapsController.updateQuotesWithGasPrice(customGasFee);
 
@@ -715,17 +720,20 @@ describe('SwapsController', () => {
   describe('updateSelectedQuoteWithGasLimit', () => {
     it('should update selected quote with custom gas limit', () => {
       const customGasLimit = '0x5208'; // 21000 in hex
-      swapsController.state.topAggId = 'paraswap';
-      swapsController.state.quotes = API_TRADES;
-      swapsController.state.quoteValues = {
-        paraswap: {
-          ...swapsController.state.quoteValues!.paraswap,
-          maxEthFee: '0',
+
+      swapsController.__test__updateState({
+        topAggId: 'paraswap',
+        quotes: API_TRADES,
+        quoteValues: {
+          paraswap: {
+            ...swapsController.state.quoteValues!.paraswap,
+            maxEthFee: '0',
+          },
         },
-      };
-      swapsController.state.usedGasEstimate = {
-        gasPrice: '20',
-      };
+        usedGasEstimate: {
+          gasPrice: '20',
+        },
+      });
 
       swapsController.updateSelectedQuoteWithGasLimit(customGasLimit);
 
@@ -735,8 +743,11 @@ describe('SwapsController', () => {
 
     it('should not update selected quote if topAggId or usedGasEstimate is null', () => {
       const customGasLimit = '0x5208'; // 21000 in hex
-      swapsController.state.topAggId = null;
-      swapsController.state.usedGasEstimate = null;
+
+      swapsController.__test__updateState({
+        topAggId: null,
+        usedGasEstimate: null,
+      });
 
       swapsController.updateSelectedQuoteWithGasLimit(customGasLimit);
 
