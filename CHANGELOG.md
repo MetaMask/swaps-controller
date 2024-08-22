@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [9.0.6]
 
-### Uncategorized
+### Fixed
 
 - Fix for publish-npm-dry-run workflow ([#287](https://github.com/MetaMask/swaps-controller/pull/287))
 
