@@ -7,8 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [9.0.4]
-### Uncategorized
-- fix: publish-release to use yarnv4 ([#282](https://github.com/MetaMask/swaps-controller/pull/282))
+### Fixed
+- Fix for publish-release workflow ([#282](https://github.com/MetaMask/swaps-controller/pull/282))
 
 ## [9.0.3]
 ### Fixed
