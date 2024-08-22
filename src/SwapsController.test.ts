@@ -163,6 +163,7 @@ describe('SwapsController', () => {
       estimatedGasFeeTimeBounds: {},
       gasEstimateType: 'none',
     }));
+    fetchEstimatedMultiLayerL1Fee = jest.fn().mockImplementation(() => '0x0');
 
     swapsController = new SwapsController(
       {
@@ -216,7 +217,6 @@ describe('SwapsController', () => {
       fetchAggregatorMetadataThreshold: 1000 * 60 * 60 * 24 * 15,
       fetchTokensThreshold: 1000 * 60 * 60 * 24,
       fetchTopAssetsThreshold: 1000 * 60 * 30,
-      provider: undefined,
       clientId: undefined,
     });
   });
@@ -281,7 +281,6 @@ describe('SwapsController', () => {
         fetchAggregatorMetadataThreshold: 1000 * 60 * 60 * 24 * 15,
         fetchTokensThreshold: 1000 * 60 * 60 * 24,
         fetchTopAssetsThreshold: 1000 * 60 * 30,
-        provider: undefined,
         clientId: undefined,
       },
     });
@@ -325,11 +324,13 @@ describe('SwapsController', () => {
         chainId: '0x1',
         rpcUrl: 'test',
       };
-      expect(swapsController.state.config.provider).toBeUndefined();
+      expect(swapsController.web3).toBeUndefined();
+      expect(swapsController.ethQuery).toBeUndefined();
 
       swapsController.configure({ provider });
 
-      expect(swapsController.state.config.provider.name).toBe(provider.name);
+      expect(swapsController.web3).toBeDefined();
+      expect(swapsController.ethQuery).toBeDefined();
     });
   });
 

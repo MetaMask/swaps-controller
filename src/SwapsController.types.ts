@@ -292,7 +292,6 @@ export type SwapsConfig = {
   fetchAggregatorMetadataThreshold: number;
   fetchTokensThreshold: number;
   fetchTopAssetsThreshold: number;
-  provider: any;
   chainId: Hex;
   supportedChainIds: Hex[];
 };

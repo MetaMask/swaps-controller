@@ -94,9 +94,9 @@ export default class SwapsController extends BaseController<
   SwapsControllerState,
   SwapsControllerMessenger
 > {
-  #web3: Web3Type;
+  web3: Web3Type;
 
-  #ethQuery: any;
+  ethQuery: any;
 
   #pollCount = 0;
 
@@ -156,7 +156,7 @@ export default class SwapsController extends BaseController<
     }
 
     try {
-      const gasPrice = await query(this.#ethQuery, 'gasPrice');
+      const gasPrice = await query(this.ethQuery, 'gasPrice');
       return {
         gasPrice: weiHexToGweiDec(gasPrice).toString(),
       };
@@ -421,7 +421,7 @@ export default class SwapsController extends BaseController<
     contractAddress: string,
     walletAddress: string,
   ): Promise<BigNumber> {
-    const contract = new this.#web3.eth.Contract(abiERC20, contractAddress);
+    const contract = new this.web3.eth.Contract(abiERC20, contractAddress);
     const allowanceTimeout = new Promise<BigNumber>((_, reject) => {
       setTimeout(() => {
         reject(new Error(SwapsError.SWAPS_ALLOWANCE_TIMEOUT));
@@ -462,7 +462,7 @@ export default class SwapsController extends BaseController<
             to: tradeTxParams.to,
             value: tradeTxParams.value,
           } as TxParams,
-          this.#ethQuery,
+          this.ethQuery,
         ),
         gasTimeout,
       ]);
@@ -589,7 +589,7 @@ export default class SwapsController extends BaseController<
           Object.values(quotes).map(async (quote) => {
             if (quote.trade && this.#fetchEstimatedMultiLayerL1Fee) {
               const multiLayerL1TradeFeeTotal =
-                await this.#fetchEstimatedMultiLayerL1Fee(this.#ethQuery, {
+                await this.#fetchEstimatedMultiLayerL1Fee(this.ethQuery, {
                   txParams: quote.trade,
                   chainId,
                 });
@@ -1052,19 +1052,24 @@ export default class SwapsController extends BaseController<
     });
   }
 
-  public configure(config: Partial<SwapsConfig>) {
-    const { chainId, provider } = config;
-    if (chainId) {
-      this.#setChainId(chainId);
+  #setProvider(provider: any) {
+    this.web3 = new Web3(provider);
+    this.ethQuery = new EthQuery(provider);
+  }
+
+  public configure(config: Partial<SwapsConfig> & { provider?: any }) {
+    const { provider, ...serializableConfig } = config;
+    if (serializableConfig.chainId) {
+      this.#setChainId(serializableConfig.chainId);
     }
     if (provider) {
-      this.#web3 = new Web3(provider);
-      this.#ethQuery = new EthQuery(provider);
+      this.#setProvider(provider);
     }
+
     this.update((_state) => {
       _state.config = {
         ..._state.config,
-        ...config,
+        ...serializableConfig,
       };
     });
   }
