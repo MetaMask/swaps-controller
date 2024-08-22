@@ -17,7 +17,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version-file: '.nvmrc'
+          node-version-file: 'lts/*'
       - name: Install Yarn
         run: corepack enable
       - uses: actions/checkout@v4
@@ -26,7 +26,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version-file: '.nvmrc'
+          node-version-file: 'lts/*'
           cache: 'yarn'
       - uses: MetaMask/action-publish-release@v3
         env:
