@@ -496,7 +496,6 @@ export default class SwapsController extends BaseController<
       });
 
       if (threshold && nextQuotesState?.quoteRefreshSeconds) {
-        // this.update({ ...this.state, ...nextQuotesState, usedGasEstimate });
         this.update((_state) => {
           _state.quotes = nextQuotesState.quotes ?? _state.quotes;
           _state.quotesLastFetched = nextQuotesState.quotesLastFetched ?? 0;
@@ -1002,11 +1001,22 @@ export default class SwapsController extends BaseController<
     this.handle && clearTimeout(this.handle);
     this.#pollCount = Number(this.state.config.pollCountLimit) + 1;
     this.update((_state) => {
+      const currentState = { ..._state };
       const defaultState = getDefaultSwapsControllerState();
       Object.keys(defaultState).forEach((key) => {
         const typedKey = key as keyof typeof defaultState;
         (_state as any)[typedKey] = defaultState[typedKey];
       });
+      _state.isInPolling = false;
+      _state.config = currentState.config;
+      _state.tokensLastFetched = currentState.tokensLastFetched;
+      _state.topAssetsLastFetched = currentState.topAssetsLastFetched;
+      _state.aggregatorMetadataLastFetched =
+        currentState.aggregatorMetadataLastFetched;
+      _state.tokens = currentState.tokens;
+      _state.topAssets = currentState.topAssets;
+      _state.aggregatorMetadata = currentState.aggregatorMetadata;
+      _state.chainCache = currentState.chainCache;
       _state.error.key = error.key;
       _state.error.description = error.description;
     });
