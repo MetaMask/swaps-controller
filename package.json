@@ -77,8 +77,7 @@
     "async-mutex": "^0.5.0",
     "bignumber.js": "^9.0.1",
     "bn.js": "^5.2.1",
-    "human-standard-token-abi": "^2.0.0",
-    "web3": "^4.2.2"
+    "human-standard-token-abi": "^2.0.0"
   },
   "lavamoat": {
     "allowScripts": {
