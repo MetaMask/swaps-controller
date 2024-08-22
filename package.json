@@ -69,6 +69,7 @@
     "typescript": "^5.1.0"
   },
   "dependencies": {
+    "@ethersproject/contracts": "^5.7.0",
     "@metamask/base-controller": "^5.0.0",
     "@metamask/controller-utils": "^10.0.0",
     "@metamask/eth-query": "^4.0.0",
