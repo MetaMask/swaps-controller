@@ -1,7 +1,7 @@
 import { ChainId } from '@metamask/controller-utils';
 import { GasFeeEstimates } from '@metamask/gas-fee-controller';
 import SwapsController from './SwapsController';
-import { Quote, SwapsControllerMessenger } from './SwapsController.types';
+import { Quote, SwapsControllerMessenger } from './types';
 import * as swapsUtil from './swapsUtil';
 
 const API_TRADES: {

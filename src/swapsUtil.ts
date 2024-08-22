@@ -52,7 +52,7 @@ import type {
   SwapsToken,
   TransactionReceipt,
   TxParams,
-} from './SwapsController.types';
+} from './types';
 
 // /
 // / BEGIN: Lifted from now unexported normalizeTransaction in @metamask/transaction-controller@3.0.0

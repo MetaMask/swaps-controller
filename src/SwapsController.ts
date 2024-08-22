@@ -20,19 +20,6 @@ import abiERC20 from 'human-standard-token-abi';
 import type { Web3 as Web3Type } from 'web3';
 import * as web3 from 'web3';
 
-import type {
-  APIFetchQuotesMetadata,
-  APIFetchQuotesParams,
-  CustomEthGasPriceEstimate,
-  CustomGasFee,
-  Quote,
-  QuoteValues,
-  SwapsConfig,
-  SwapsControllerMessenger,
-  SwapsControllerOptions,
-  SwapsControllerState,
-  TxParams,
-} from './SwapsController.types';
 import {
   calcTokenAmount,
   calculateGasEstimateWithRefund,
@@ -60,6 +47,19 @@ import {
   shouldEnableDirectWrapping,
   SwapsError,
 } from './swapsUtil';
+import type {
+  APIFetchQuotesMetadata,
+  APIFetchQuotesParams,
+  CustomEthGasPriceEstimate,
+  CustomGasFee,
+  Quote,
+  QuoteValues,
+  SwapsConfig,
+  SwapsControllerMessenger,
+  SwapsControllerOptions,
+  SwapsControllerState,
+  TxParams,
+} from './types';
 
 // Hack to fix the issue with the web3 import that works different in app vs tests
 const Web3 = web3.Web3 === undefined ? web3.default : web3.Web3;

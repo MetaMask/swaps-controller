@@ -1,10 +1,6 @@
 import { toHex } from '@metamask/controller-utils';
 
-import type {
-  SwapsToken,
-  SwapsControllerState,
-  ChainData,
-} from './SwapsController.types';
+import type { SwapsToken, SwapsControllerState, ChainData } from './types';
 
 export const INITIAL_CHAIN_DATA: ChainData = {
   aggregatorMetadata: null,

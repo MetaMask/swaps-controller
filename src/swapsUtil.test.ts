@@ -3,11 +3,7 @@ import { BigNumber } from 'bignumber.js';
 import { BNToHex, query, toHex } from '@metamask/controller-utils';
 import { add0x } from '@metamask/utils';
 import { BN } from 'bn.js';
-import type {
-  QuoteValues,
-  SwapsToken,
-  TxParams,
-} from './SwapsController.types';
+import type { QuoteValues, SwapsToken, TxParams } from './types';
 import * as swapsUtil from './swapsUtil';
 
 /**
