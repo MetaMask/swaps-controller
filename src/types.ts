@@ -285,16 +285,6 @@ export type CustomGasFee = {
   selected?: 'low' | 'medium' | 'high';
 };
 
-export type SwapsConfig = {
-  clientId?: string;
-  maxGasLimit: number;
-  pollCountLimit: number;
-  fetchAggregatorMetadataThreshold: number;
-  fetchTokensThreshold: number;
-  fetchTopAssetsThreshold: number;
-  chainId: Hex;
-  supportedChainIds: Hex[];
-};
 
 export type SwapsControllerState = {
   quotes: { [key: string]: Quote };
