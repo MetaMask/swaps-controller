@@ -86,7 +86,6 @@ const metadata: StateMetadata<SwapsControllerState> = {
   usedGasEstimate: { persist: false, anonymous: false },
   usedCustomGas: { persist: false, anonymous: false },
   chainCache: { persist: false, anonymous: false },
-  config: { persist: false, anonymous: false },
 };
 
 export default class SwapsController extends BaseController<
