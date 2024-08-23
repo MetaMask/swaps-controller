@@ -524,7 +524,7 @@ export default class SwapsController extends BaseController<
       fetchGasFeeEstimates,
       fetchEstimatedMultiLayerL1Fee,
     }: SwapsControllerOptions,
-    state: Partial<SwapsControllerState>,
+    state: Partial<SwapsControllerState> = {},
   ) {
     super({
       name: controllerName,
