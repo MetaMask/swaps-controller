@@ -745,10 +745,6 @@ export default class SwapsController extends BaseController<
       this.stopPollingAndResetState.bind(this),
     );
 
-    this.messagingSystem.registerActionHandler(
-      `SwapsController:configure`,
-      this.configure.bind(this),
-    );
 
     this.#fetchGasFeeEstimates = opts.fetchGasFeeEstimates;
     this.#fetchEstimatedMultiLayerL1Fee = opts.fetchEstimatedMultiLayerL1Fee;
