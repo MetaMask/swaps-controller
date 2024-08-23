@@ -1063,23 +1063,6 @@ export default class SwapsController extends BaseController<
     this.ethQuery = new EthQuery(provider);
   }
 
-  public configure(config: Partial<SwapsConfig> & { provider?: any }) {
-    const { provider, ...serializableConfig } = config;
-    if (serializableConfig.chainId) {
-      this.#setChainId(serializableConfig.chainId);
-    }
-    if (provider) {
-      this.#setProvider(provider);
-    }
-
-    this.update((_state) => {
-      _state.config = {
-        ..._state.config,
-        ...serializableConfig,
-      };
-    });
-  }
-
   /**
    * Updates the state of the controller for testing purposes.
    * This method should not be used outside of testing.
