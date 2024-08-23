@@ -173,11 +173,7 @@ export type Quote = {
   approvalNeeded: TxParams | null;
   sourceAmount: string;
   destinationAmount: number;
-  error: {
-    name: string;
-    message: string;
-    stack: string;
-  } | null;
+  error: JsonRpcError | null;
   sourceToken: string;
   destinationToken: string;
   maxGas: number;
