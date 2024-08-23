@@ -7,8 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [9.0.9]
-### Uncategorized
-- 9.0.8 ([#292](https://github.com/MetaMask/swaps-controller/pull/292))
+### Changed
+- Re-release due to publishing failure
 
 ## [9.0.8]
 ### Fixed
