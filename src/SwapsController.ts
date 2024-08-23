@@ -1,3 +1,5 @@
+import { Contract } from '@ethersproject/contracts';
+import { Web3Provider } from '@ethersproject/providers';
 import type { StateMetadata } from '@metamask/base-controller';
 import { BaseController } from '@metamask/base-controller';
 import {
@@ -18,8 +20,6 @@ import { getKnownPropertyNames, type Hex } from '@metamask/utils';
 import { Mutex } from 'async-mutex';
 import { BigNumber } from 'bignumber.js';
 import abiERC20 from 'human-standard-token-abi';
-import type { Web3 as Web3Type } from 'web3';
-import * as web3 from 'web3';
 
 import {
   AVALANCHE_CHAIN_ID,
@@ -65,9 +65,6 @@ import type {
   SwapsControllerState,
   TxParams,
 } from './types';
-
-// Hack to fix the issue with the web3 import that works different in app vs tests
-const Web3 = web3.Web3 === undefined ? web3.default : web3.Web3;
 
 const metadata: StateMetadata<SwapsControllerState> = {
   quotes: { persist: false, anonymous: false },
@@ -119,8 +116,6 @@ export default class SwapsController extends BaseController<
   #pollCountLimit: number;
 
   #supportedChainIds: Hex[];
-
-  #web3: Web3Type;
 
   #chainId: Hex;
 
@@ -224,7 +219,18 @@ export default class SwapsController extends BaseController<
     contractAddress: string,
     walletAddress: string,
   ): Promise<BigNumber> {
-    const contract = new this.#web3.eth.Contract(abiERC20, contractAddress);
+    const networkClientId = this.messagingSystem.call(
+      'NetworkController:findNetworkClientIdByChainId',
+      this.#chainId,
+    );
+    const { provider } = this.messagingSystem.call(
+      'NetworkController:getNetworkClientById',
+      networkClientId,
+    );
+    const web3provider = new Web3Provider(provider as any);
+
+    const contract = new Contract(contractAddress, abiERC20, web3provider);
+
     const allowanceTimeout = new Promise<BigNumber>((_, reject) => {
       setTimeout(() => {
         reject(new Error(SwapsError.SWAPS_ALLOWANCE_TIMEOUT));
@@ -232,9 +238,11 @@ export default class SwapsController extends BaseController<
     });
 
     const allowancePromise = async () => {
-      const result: bigint = await contract.methods
-        .allowance(walletAddress, getSwapsContractAddress(this.#chainId))
-        .call();
+      const result = await contract.allowance(
+        walletAddress,
+        getSwapsContractAddress(this.#chainId),
+      );
+
       return new BigNumber(result.toString());
     };
 
@@ -1113,8 +1121,6 @@ export default class SwapsController extends BaseController<
     provider: Provider,
     opts?: { chainId: Hex; pollCountLimit: number },
   ): void {
-    // @ts-expect-error TODO: align `Web3` with EIP-1193 provider
-    this.#web3 = new Web3(provider);
     this.#ethQuery = new EthQuery(provider);
 
     if (opts?.chainId) {
@@ -1190,8 +1196,6 @@ export default class SwapsController extends BaseController<
         return this.#supportedChainIds;
       case '#clientId':
         return this.#clientId;
-      case '#web3':
-        return this.#web3;
       case '#ethQuery':
         return this.#ethQuery;
       case '#handle':
