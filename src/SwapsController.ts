@@ -999,8 +999,8 @@ export default class SwapsController extends BaseController<
     this.update((_state) => {
       const currentState = { ..._state };
       const defaultState = getDefaultSwapsControllerState();
-      Object.keys(defaultState).forEach((key) => {
-        const typedKey = key as keyof typeof defaultState;
+      getKnownPropertyTypes(defaultState).forEach((key) => {
+        const typedKey = key;
         (_state as any)[typedKey] = defaultState[typedKey];
       });
       _state.isInPolling = false;
