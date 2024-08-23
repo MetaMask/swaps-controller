@@ -443,7 +443,7 @@ export default class SwapsController extends BaseController<
 
   /* istanbul ignore next */
   private async timedoutGasReturn(
-    tradeTxParams: TxParams | null,
+    tradeTxParams: Omit<TxParams, 'gas'> & Partial<Pick<TxParams, 'gas'>> | null,
   ): Promise<{ gas: string | null }> {
     if (!tradeTxParams) {
       return { gas: null };
