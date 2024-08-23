@@ -363,6 +363,14 @@ export type SwapsControllerMessenger = RestrictedControllerMessenger<
 >;
 
 export type SwapsControllerOptions = {
+  clientId?: string;
+  maxGasLimit: number;
+  pollCountLimit: number;
+  fetchAggregatorMetadataThreshold: number;
+  fetchTokensThreshold: number;
+  fetchTopAssetsThreshold: number;
+  chainId: Hex;
+  supportedChainIds: Hex[];
   // TODO: Remove once GasFeeController exports this action type
   fetchGasFeeEstimates?: () => Promise<GasFeeState | undefined>;
   fetchEstimatedMultiLayerL1Fee?: (
@@ -373,6 +381,7 @@ export type SwapsControllerOptions = {
     },
   ) => Promise<string | undefined>;
   messenger: SwapsControllerMessenger;
+  state: Partial<SwapsControllerState>
 };
 
 /**
