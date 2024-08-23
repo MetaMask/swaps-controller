@@ -271,20 +271,4 @@ export const getDefaultSwapsControllerState = (): SwapsControllerState => ({
   chainCache: {
     '0x1': INITIAL_CHAIN_DATA,
   },
-  config: {
-    maxGasLimit: 2500000,
-    pollCountLimit: 3,
-    fetchAggregatorMetadataThreshold: 1000 * 60 * 60 * 24 * 15,
-    fetchTokensThreshold: 1000 * 60 * 60 * 24,
-    fetchTopAssetsThreshold: 1000 * 60 * 30,
-    chainId: '0x1',
-    supportedChainIds: [
-      ETH_CHAIN_ID,
-      BSC_CHAIN_ID,
-      SWAPS_TESTNET_CHAIN_ID,
-      POLYGON_CHAIN_ID,
-      AVALANCHE_CHAIN_ID,
-    ],
-    clientId: undefined,
-  },
 });
