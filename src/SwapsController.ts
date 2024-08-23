@@ -1052,10 +1052,11 @@ export default class SwapsController extends BaseController<
       _state.tokens = cachedData.tokens;
       _state.topAssets = cachedData.topAssets;
       _state.aggregatorMetadataLastFetched =
-        cachedData.aggregatorMetadataLastFetched;
-      _state.topAssetsLastFetched = cachedData.topAssetsLastFetched;
-      _state.tokensLastFetched = cachedData.tokensLastFetched;
-    });
+  #setProvider(provider: Provider) {
+    // @ts-expect-error TODO: align `Web3` with EIP-1193 provider
+    this.web3 = new Web3(provider);
+    this.ethQuery = new EthQuery(provider);
+  }
   }
 
   #setProvider(provider: any) {
