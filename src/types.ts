@@ -436,10 +436,3 @@ export type SwapsControllerStopPollingAndResetState = {
   handler: SwapsController['stopPollingAndResetState'];
 };
 
-/**
- * The action that configures the SwapsController {@link SwapsController}.
- */
-export type SwapsControllerConfigure = {
-  type: `SwapsController:configure`;
-  handler: SwapsController['configure'];
-};
