@@ -96,7 +96,7 @@ export default class SwapsController extends BaseController<
 > {
   web3: Web3Type;
 
-  ethQuery: any;
+  ethQuery: EthQuery;
 
   #pollCount = 0;
 
