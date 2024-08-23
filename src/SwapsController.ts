@@ -461,7 +461,7 @@ export default class SwapsController extends BaseController<
             from: tradeTxParams.from,
             to: tradeTxParams.to,
             value: tradeTxParams.value,
-          } as TxParams,
+          },
           this.ethQuery,
         ),
         gasTimeout,
