@@ -292,7 +292,7 @@ export type SwapsControllerState = {
   fetchParamsMetaData: APIFetchQuotesMetadata;
   topAggSavings: QuoteSavings | null;
   quotesLastFetched: null | number;
-  error: { key: null | SwapsError; description: null | string };
+  error: { key: null | keyof typeof SwapsError; description: null | string };
   topAggId: null | string;
   isInPolling: boolean;
   pollingCyclesLeft: number;
