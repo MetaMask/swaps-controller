@@ -308,7 +308,6 @@ export type SwapsControllerState = {
   topAssets: null | SwapsAsset[];
   topAssetsLastFetched: number;
   chainCache: ChainCache;
-  config: SwapsConfig;
 };
 
 /**
