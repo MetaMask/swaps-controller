@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [9.0.7]
+
+### Fixed
+
+- Remove setup node steps on publish ([#289](https://github.com/MetaMask/swaps-controller/pull/289))
+
 ## [9.0.6]
 
 ### Fixed
@@ -250,7 +256,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use standalone gas API endpoint ([#70](https://github.com/MetaMask/swaps-controller/pull/70))
 - Bump @metamask/controllers from 14.1.0 to 14.2.0 ([#69](https://github.com/MetaMask/swaps-controller/pull/69))
 
-[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v9.0.6...HEAD
+[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v9.0.7...HEAD
+[9.0.7]: https://github.com/MetaMask/swaps-controller/compare/v9.0.6...v9.0.7
 [9.0.6]: https://github.com/MetaMask/swaps-controller/compare/v9.0.5...v9.0.6
 [9.0.5]: https://github.com/MetaMask/swaps-controller/compare/v9.0.4...v9.0.5
 [9.0.4]: https://github.com/MetaMask/swaps-controller/compare/v9.0.3...v9.0.4
