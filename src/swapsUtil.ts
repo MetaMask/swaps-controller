@@ -5,6 +5,7 @@ import {
   query,
   timeoutFetch,
 } from '@metamask/controller-utils';
+import type EthQuery from '@metamask/eth-query';
 import type {
   EthGasPriceEstimate,
   GasFeeState,
@@ -15,7 +16,7 @@ import type {
 import { GAS_ESTIMATE_TYPES } from '@metamask/gas-fee-controller';
 import type { TransactionParams } from '@metamask/transaction-controller';
 import type { Hex } from '@metamask/utils';
-import { add0x } from '@metamask/utils';
+import { add0x, getKnownPropertyNames } from '@metamask/utils';
 import { BigNumber } from 'bignumber.js';
 import { BN } from 'bn.js';
 
@@ -57,19 +58,21 @@ import type {
 // /
 // / BEGIN: Lifted from now unexported normalizeTransaction in @metamask/transaction-controller@3.0.0
 // /
-export const TX_NORMALIZERS: { [param in keyof TransactionParams]: any } = {
+export const TX_NORMALIZERS = {
   data: (data: string) => add0x(data),
-  from: (from: string) => add0x(from).toLowerCase(),
+  from: (from: string) => add0x(from).toLowerCase() as Hex,
   gas: (gas: string) => add0x(gas),
   gasPrice: (gasPrice: string) => add0x(gasPrice),
   nonce: (nonce: string) => add0x(nonce),
-  to: (to: string) => add0x(to).toLowerCase(),
+  to: (to: string) => add0x(to).toLowerCase() as Hex,
   value: (value: string) => add0x(value),
   maxFeePerGas: (maxFeePerGas: string) => add0x(maxFeePerGas),
   maxPriorityFeePerGas: (maxPriorityFeePerGas: string) =>
     add0x(maxPriorityFeePerGas),
   estimatedBaseFee: (maxPriorityFeePerGas: string) =>
     add0x(maxPriorityFeePerGas),
+} satisfies {
+  [param in keyof TransactionParams]: (arg: string) => Hex;
 };
 
 /**
@@ -77,16 +80,17 @@ export const TX_NORMALIZERS: { [param in keyof TransactionParams]: any } = {
  * @param transaction - Transaction object to normalize.
  * @returns Normalized Transaction object.
  */
-export function normalizeTransaction(transaction: TransactionParams) {
+export function normalizeTransaction(
+  transaction: TransactionParams,
+): Pick<TransactionParams, keyof typeof TX_NORMALIZERS> {
   const normalizedTransaction: TransactionParams = { from: '' };
-  let key: keyof TransactionParams;
-  for (key in TX_NORMALIZERS) {
-    if (transaction[key]) {
+  getKnownPropertyNames(TX_NORMALIZERS).forEach((key) => {
+    if (key in transaction && transaction[key]) {
       normalizedTransaction[key] = TX_NORMALIZERS[key](
-        transaction[key],
-      ) as never;
+        transaction[key] as NonNullable<TransactionParams[typeof key]>,
+      );
     }
-  }
+  });
   return normalizedTransaction;
 }
 
@@ -287,7 +291,11 @@ export async function fetchTradesInfo(
   const tradeURL = `${getBaseApiURL(
     APIType.TRADES,
     chainId,
-  )}?${new URLSearchParams(urlParams as Record<any, any>).toString()}`;
+  )}?${new URLSearchParams(
+    Object.fromEntries(
+      Object.entries(urlParams).map(([key, value]) => [key, String(value)]),
+    ),
+  ).toString()}`;
 
   const tradesResponse = await timeoutFetch(
     tradeURL,
@@ -316,14 +324,13 @@ export async function fetchTradesInfo(
             : BNToHex(new BN(MAX_GAS_LIMIT)),
         });
 
-        return {
-          ...aggIdTradeMap,
+        return Object.assign(aggIdTradeMap, {
           [quote.aggregator]: {
             ...quote,
             slippage,
             trade: constructedTrade,
           },
-        };
+        });
       }
 
       return aggIdTradeMap;
@@ -737,7 +744,7 @@ export function calcTokenAmount(value: number | BigNumber, decimals: number) {
  */
 export async function estimateGas(
   transaction: Omit<TxParams, 'gas'> & Partial<Pick<TxParams, 'gas'>>,
-  ethQuery: any,
+  ethQuery: EthQuery,
 ) {
   const estimatedTransaction = { ...transaction };
   const { value, data } = estimatedTransaction;
@@ -785,7 +792,7 @@ export function constructTxParams({
   gas?: string;
   gasPrice?: string;
   amount?: string;
-}): any {
+}): Pick<TransactionParams, keyof typeof TX_NORMALIZERS> {
   const txParams: TransactionParams = {
     data,
     from,
@@ -842,7 +849,7 @@ export function isGasFeeStateLegacy(
  * @returns Whether the object is of type EthGasPriceEstimate.
  */
 export function isEthGasPriceEstimate(
-  object: any,
+  object: Record<string, unknown> | undefined,
 ): object is EthGasPriceEstimate {
   return Boolean(object) && object?.gasPrice !== undefined;
 }
@@ -853,7 +860,7 @@ export function isEthGasPriceEstimate(
  * @returns Whether the object is of type CustomEthGasPriceEstimate.
  */
 export function isCustomEthGasPriceEstimate(
-  object: any,
+  object: Record<string, unknown> | undefined,
 ): object is CustomEthGasPriceEstimate {
   return Boolean(object) && object?.gasPrice !== undefined;
 }
@@ -863,8 +870,11 @@ export function isCustomEthGasPriceEstimate(
  * @param object - The object to be evaluated.
  * @returns Whether the object is of type CustomGasFee.
  */
-export function isCustomGasFee(object: any): object is CustomGasFee {
+export function isCustomGasFee(
+  object: Record<string, unknown> | undefined,
+): object is CustomGasFee {
   return (
+    object !== undefined &&
     Boolean(object) &&
     'maxFeePerGas' in object &&
     'maxPriorityFeePerGas' in object

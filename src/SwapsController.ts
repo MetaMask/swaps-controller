@@ -14,7 +14,11 @@ import type {
 } from '@metamask/gas-fee-controller';
 import { GAS_ESTIMATE_TYPES } from '@metamask/gas-fee-controller';
 import type { Provider } from '@metamask/network-controller';
-import { getKnownPropertyNames, type Hex } from '@metamask/utils';
+import {
+  getKnownPropertyNames,
+  isErrorWithMessage,
+  type Hex,
+} from '@metamask/utils';
 import { Mutex } from 'async-mutex';
 import { BigNumber } from 'bignumber.js';
 import abiERC20 from 'human-standard-token-abi';
@@ -130,7 +134,7 @@ export default class SwapsController extends BaseController<
   ) => Promise<GasFeeState | undefined>;
 
   readonly #fetchEstimatedMultiLayerL1Fee?: (
-    eth: any,
+    eth: EthQuery,
     options: {
       txParams: TxParams;
       chainId: Hex;
@@ -477,11 +481,19 @@ export default class SwapsController extends BaseController<
         threshold: quotesLastFetched - timeStarted,
         usedGasEstimate: gasFeeEstimates,
       };
-    } catch (error: any) {
-      const errorKey = Object.values(SwapsError).includes(error.message)
-        ? error.message
-        : SwapsError.ERROR_FETCHING_QUOTES;
-      this.stopPollingAndResetState({ key: errorKey, description: error });
+    } catch (error: unknown) {
+      if (isErrorWithMessage(error)) {
+        const errorKey = ((message): message is SwapsError =>
+          Object.values(SwapsError).find(
+            (swapsError) => swapsError === message,
+          ) !== undefined)(error.message)
+          ? error.message
+          : SwapsError.ERROR_FETCHING_QUOTES;
+        this.stopPollingAndResetState({
+          key: errorKey,
+          description: JSON.stringify(error),
+        });
+      }
       return {
         nextQuotesState: null,
         threshold: null,
