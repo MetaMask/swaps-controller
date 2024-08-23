@@ -2,7 +2,6 @@ import SwapsController from './SwapsController';
 
 export * as swapsUtils from './swapsUtil';
 export type {
-  SwapsConfig,
   SwapsControllerState,
   SwapsControllerGetStateAction,
   SwapsControllerStateChangeEvent,
@@ -17,7 +16,6 @@ export type {
   SwapsControllerFetchTopAssetsWithCache,
   SwapsControllerFetchAggregatorMetadataWithCache,
   SwapsControllerStopPollingAndResetState,
-  SwapsControllerConfigure,
 } from './types';
 
 export default SwapsController;

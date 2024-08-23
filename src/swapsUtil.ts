@@ -735,7 +735,10 @@ export function calcTokenAmount(value: number | BigNumber, decimals: number) {
  * @param ethQuery - The ethQuery object.
  * @returns Promise resolving to an object containing gas and gasPrice.
  */
-export async function estimateGas(transaction: Omit<TxParams, 'gas'> & Partial<Pick<TxParams, 'gas'>>, ethQuery: any) {
+export async function estimateGas(
+  transaction: Omit<TxParams, 'gas'> & Partial<Pick<TxParams, 'gas'>>,
+  ethQuery: any,
+) {
   const estimatedTransaction = { ...transaction };
   const { value, data } = estimatedTransaction;
   const { gasLimit } = await query(ethQuery, 'getBlockByNumber', [

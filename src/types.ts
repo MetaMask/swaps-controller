@@ -9,7 +9,7 @@ import type {
   GasFeeEstimates,
   GasFeeState,
 } from '@metamask/gas-fee-controller';
-import type { Hex } from '@metamask/utils';
+import type { Hex, JsonRpcError } from '@metamask/utils';
 
 import type SwapsController from './SwapsController';
 import type { controllerName, SwapsError } from './swapsUtil';
@@ -281,14 +281,13 @@ export type CustomGasFee = {
   selected?: 'low' | 'medium' | 'high';
 };
 
-
 export type SwapsControllerState = {
   quotes: { [key: string]: Quote };
   fetchParams: APIFetchQuotesParams;
   fetchParamsMetaData: APIFetchQuotesMetadata;
   topAggSavings: QuoteSavings | null;
   quotesLastFetched: null | number;
-  error: { key: null | keyof typeof SwapsError; description: null | string };
+  error: { key: null | SwapsError; description: null | string };
   topAggId: null | string;
   isInPolling: boolean;
   pollingCyclesLeft: number;
@@ -339,8 +338,7 @@ export type SwapsControllerActions =
   | SwapsControllerFetchTokenWithCache
   | SwapsControllerFetchTopAssetsWithCache
   | SwapsControllerFetchAggregatorMetadataWithCache
-  | SwapsControllerStopPollingAndResetState
-  | SwapsControllerConfigure;
+  | SwapsControllerStopPollingAndResetState;
 
 /**
  * The events that the SwapsController can emit.
@@ -360,13 +358,12 @@ export type SwapsControllerMessenger = RestrictedControllerMessenger<
 
 export type SwapsControllerOptions = {
   clientId?: string;
-  maxGasLimit: number;
-  pollCountLimit: number;
-  fetchAggregatorMetadataThreshold: number;
-  fetchTokensThreshold: number;
-  fetchTopAssetsThreshold: number;
-  chainId: Hex;
-  supportedChainIds: Hex[];
+  pollCountLimit?: number;
+  fetchAggregatorMetadataThreshold?: number;
+  fetchTokensThreshold?: number;
+  fetchTopAssetsThreshold?: number;
+  chainId?: Hex;
+  supportedChainIds?: Hex[];
   // TODO: Remove once GasFeeController exports this action type
   fetchGasFeeEstimates?: () => Promise<GasFeeState | undefined>;
   fetchEstimatedMultiLayerL1Fee?: (
@@ -377,7 +374,6 @@ export type SwapsControllerOptions = {
     },
   ) => Promise<string | undefined>;
   messenger: SwapsControllerMessenger;
-  state: Partial<SwapsControllerState>
 };
 
 /**
@@ -435,4 +431,3 @@ export type SwapsControllerStopPollingAndResetState = {
   type: `SwapsController:stopPollingAndResetState`;
   handler: SwapsController['stopPollingAndResetState'];
 };
-

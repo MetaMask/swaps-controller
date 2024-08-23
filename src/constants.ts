@@ -269,6 +269,6 @@ export const getDefaultSwapsControllerState = (): SwapsControllerState => ({
   usedGasEstimate: null,
   usedCustomGas: null,
   chainCache: {
-    '0x1': INITIAL_CHAIN_DATA,
+    [ETH_CHAIN_ID]: INITIAL_CHAIN_DATA,
   },
 });
