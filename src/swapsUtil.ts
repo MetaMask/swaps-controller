@@ -1,16 +1,26 @@
 import {
+  BNToHex,
   convertHexToDecimal,
   handleFetch,
-  timeoutFetch,
-  BNToHex,
   query,
+  timeoutFetch,
 } from '@metamask/controller-utils';
+import type EthQuery from '@metamask/eth-query';
+import type {
+  EthGasPriceEstimate,
+  GasFeeState,
+  GasFeeStateEthGasPrice,
+  GasFeeStateFeeMarket,
+  GasFeeStateLegacy,
+} from '@metamask/gas-fee-controller';
+import { GAS_ESTIMATE_TYPES } from '@metamask/gas-fee-controller';
 import type { TransactionParams } from '@metamask/transaction-controller';
 import type { Hex } from '@metamask/utils';
-import { add0x } from '@metamask/utils';
+import { add0x, getKnownPropertyNames } from '@metamask/utils';
 import { BigNumber } from 'bignumber.js';
 import { BN } from 'bn.js';
 
+// eslint-disable-next-line import/order
 import {
   ALLOWED_CONTRACT_ADDRESSES,
   API_BASE_URL,
@@ -26,9 +36,14 @@ import {
   SWAPS_WRAPPED_TOKENS_ADDRESSES,
   TOKEN_TRANSFER_LOG_TOPIC_HASH,
 } from './constants';
+
 import type {
   APIAggregatorMetadata,
   APIFetchQuotesParams,
+  ChainCache,
+  ChainData,
+  CustomEthGasPriceEstimate,
+  CustomGasFee,
   FeatureFlags,
   NetworkFeatureFlags,
   NetworksFeatureStatus,
@@ -37,25 +52,27 @@ import type {
   SwapsAsset,
   SwapsToken,
   TransactionReceipt,
-} from './swapsInterfaces';
-import { APIType } from './swapsInterfaces';
+  TxParams,
+} from './types';
 
 // /
 // / BEGIN: Lifted from now unexported normalizeTransaction in @metamask/transaction-controller@3.0.0
 // /
-export const TX_NORMALIZERS: { [param in keyof TransactionParams]: any } = {
+export const TX_NORMALIZERS = {
   data: (data: string) => add0x(data),
-  from: (from: string) => add0x(from).toLowerCase(),
+  from: (from: string) => add0x(from).toLowerCase() as Hex,
   gas: (gas: string) => add0x(gas),
   gasPrice: (gasPrice: string) => add0x(gasPrice),
   nonce: (nonce: string) => add0x(nonce),
-  to: (to: string) => add0x(to).toLowerCase(),
+  to: (to: string) => add0x(to).toLowerCase() as Hex,
   value: (value: string) => add0x(value),
   maxFeePerGas: (maxFeePerGas: string) => add0x(maxFeePerGas),
   maxPriorityFeePerGas: (maxPriorityFeePerGas: string) =>
     add0x(maxPriorityFeePerGas),
   estimatedBaseFee: (maxPriorityFeePerGas: string) =>
     add0x(maxPriorityFeePerGas),
+} satisfies {
+  [param in keyof TransactionParams]: (arg: string) => Hex;
 };
 
 /**
@@ -63,16 +80,17 @@ export const TX_NORMALIZERS: { [param in keyof TransactionParams]: any } = {
  * @param transaction - Transaction object to normalize.
  * @returns Normalized Transaction object.
  */
-export function normalizeTransaction(transaction: TransactionParams) {
+export function normalizeTransaction(
+  transaction: TransactionParams,
+): Pick<TransactionParams, keyof typeof TX_NORMALIZERS> {
   const normalizedTransaction: TransactionParams = { from: '' };
-  let key: keyof TransactionParams;
-  for (key in TX_NORMALIZERS) {
-    if (transaction[key]) {
+  getKnownPropertyNames(TX_NORMALIZERS).forEach((key) => {
+    if (key in transaction && transaction[key]) {
       normalizedTransaction[key] = TX_NORMALIZERS[key](
-        transaction[key],
-      ) as never;
+        transaction[key] as NonNullable<TransactionParams[typeof key]>,
+      );
     }
-  }
+  });
   return normalizedTransaction;
 }
 
@@ -93,6 +111,17 @@ export enum SwapsError {
   SWAPS_ALLOWANCE_TIMEOUT = 'swaps-allowance-timeout',
   SWAPS_ALLOWANCE_ERROR = 'swaps-allowance-error',
 }
+
+export enum APIType {
+  TRADES = 'TRADES',
+  TOKENS = 'TOKENS',
+  TOP_ASSETS = 'TOP_ASSETS',
+  FEATURE_FLAG = 'FEATURE_FLAG',
+  AGGREGATOR_METADATA = 'AGGREGATOR_METADATA',
+  TOKEN = 'TOKEN',
+  GAS_PRICES = 'GAS_PRICES',
+}
+
 // Functions
 /**
  * Returns the client ID header.
@@ -262,7 +291,11 @@ export async function fetchTradesInfo(
   const tradeURL = `${getBaseApiURL(
     APIType.TRADES,
     chainId,
-  )}?${new URLSearchParams(urlParams as Record<any, any>).toString()}`;
+  )}?${new URLSearchParams(
+    Object.fromEntries(
+      Object.entries(urlParams).map(([key, value]) => [key, String(value)]),
+    ),
+  ).toString()}`;
 
   const tradesResponse = await timeoutFetch(
     tradeURL,
@@ -291,14 +324,13 @@ export async function fetchTradesInfo(
             : BNToHex(new BN(MAX_GAS_LIMIT)),
         });
 
-        return {
-          ...aggIdTradeMap,
+        return Object.assign(aggIdTradeMap, {
           [quote.aggregator]: {
             ...quote,
             slippage,
             trade: constructedTrade,
           },
-        };
+        });
       }
 
       return aggIdTradeMap;
@@ -711,8 +743,8 @@ export function calcTokenAmount(value: number | BigNumber, decimals: number) {
  * @returns Promise resolving to an object containing gas and gasPrice.
  */
 export async function estimateGas(
-  transaction: TransactionParams,
-  ethQuery: any,
+  transaction: Omit<TxParams, 'gas'> & Partial<Pick<TxParams, 'gas'>>,
+  ethQuery: EthQuery,
 ) {
   const estimatedTransaction = { ...transaction };
   const { value, data } = estimatedTransaction;
@@ -760,7 +792,7 @@ export function constructTxParams({
   gas?: string;
   gasPrice?: string;
   amount?: string;
-}): any {
+}): Pick<TransactionParams, keyof typeof TX_NORMALIZERS> {
   const txParams: TransactionParams = {
     data,
     from,
@@ -774,4 +806,98 @@ export function constructTxParams({
     txParams.to = to;
   }
   return normalizeTransaction(txParams);
+}
+
+// Functions to determine type of the return value from GasFeeController
+
+/**
+ * Checks if the given object is of type GasFeeStateEthGasPrice.
+ * @param object - The gas fee state to be checked.
+ * @returns Whether the given object is of type GasFeeStateEthGasPrice.
+ */
+export function isGasFeeStateEthGasPrice(
+  object: GasFeeState,
+): object is GasFeeStateEthGasPrice {
+  return object.gasEstimateType === GAS_ESTIMATE_TYPES.ETH_GASPRICE;
+}
+
+/**
+ * Determines if the given object is of type GasFeeStateFeeMarket based on its 'gasEstimateType'.
+ * @param object - The gas fee state to be evaluated.
+ * @returns Whether the object is of type GasFeeStateFeeMarket.
+ */
+export function isGasFeeStateFeeMarket(
+  object: GasFeeState,
+): object is GasFeeStateFeeMarket {
+  return object.gasEstimateType === GAS_ESTIMATE_TYPES.FEE_MARKET;
+}
+
+/**
+ * Determines if the given object is of type GasFeeStateLegacy based on its 'gasEstimateType'.
+ * @param object - The gas fee state to be evaluated.
+ * @returns Whether the object is of type GasFeeStateLegacy.
+ */
+export function isGasFeeStateLegacy(
+  object: GasFeeState,
+): object is GasFeeStateLegacy {
+  return object.gasEstimateType === GAS_ESTIMATE_TYPES.LEGACY;
+}
+
+/**
+ * Determines if the given object is of type EthGasPriceEstimate.
+ * @param object - The object to be evaluated.
+ * @returns Whether the object is of type EthGasPriceEstimate.
+ */
+export function isEthGasPriceEstimate(
+  object: Record<string, unknown> | undefined,
+): object is EthGasPriceEstimate {
+  return Boolean(object) && object?.gasPrice !== undefined;
+}
+
+/**
+ * Determines if the given object is of type CustomEthGasPriceEstimate.
+ * @param object - The object to be evaluated.
+ * @returns Whether the object is of type CustomEthGasPriceEstimate.
+ */
+export function isCustomEthGasPriceEstimate(
+  object: Record<string, unknown> | undefined,
+): object is CustomEthGasPriceEstimate {
+  return Boolean(object) && object?.gasPrice !== undefined;
+}
+
+/**
+ * Determines if the given object is of type CustomGasFee.
+ * @param object - The object to be evaluated.
+ * @returns Whether the object is of type CustomGasFee.
+ */
+export function isCustomGasFee(
+  object: Record<string, unknown> | undefined,
+): object is CustomGasFee {
+  return (
+    object !== undefined &&
+    Boolean(object) &&
+    'maxFeePerGas' in object &&
+    'maxPriorityFeePerGas' in object
+  );
+}
+
+/**
+ * Gets a new chainCache for a chainId with updated data.
+ * @param chainCache - Current chainCache from state.
+ * @param chainId - Current chainId from the config.
+ * @param data - Data to be updated.
+ * @returns The new chainCache.
+ */
+export function getNewChainCache(
+  chainCache: ChainCache,
+  chainId: Hex,
+  data: Partial<ChainData>,
+): ChainCache {
+  return {
+    ...chainCache,
+    [chainId]: {
+      ...chainCache?.[chainId],
+      ...data,
+    },
+  };
 }
