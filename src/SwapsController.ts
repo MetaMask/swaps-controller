@@ -447,7 +447,7 @@ export default class SwapsController extends BaseController<
             data: approvalTransaction.data,
             from: approvalTransaction.from,
             to: approvalTransaction.to,
-          } as TxParams);
+          });
 
           approvalTransaction = {
             ...approvalTransaction,
