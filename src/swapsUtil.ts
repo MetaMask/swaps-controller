@@ -86,9 +86,7 @@ export function normalizeTransaction(
   const normalizedTransaction: TransactionParams = { from: '' };
   getKnownPropertyNames(TX_NORMALIZERS).forEach((key) => {
     if (key in transaction && transaction[key]) {
-      normalizedTransaction[key] = TX_NORMALIZERS[key](
-        transaction[key] as NonNullable<TransactionParams[typeof key]>,
-      );
+      normalizedTransaction[key] = TX_NORMALIZERS[key](transaction[key]);
     }
   });
   return normalizedTransaction;
