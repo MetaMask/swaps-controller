@@ -82,6 +82,9 @@
     "bn.js": "^5.2.1",
     "human-standard-token-abi": "^2.0.0"
   },
+  "resolutions": {
+    "@ethersproject/providers/**/ws": "^7.5.10"
+  },
   "lavamoat": {
     "allowScripts": {
       "@lavamoat/preinstall-always-fail": false,
