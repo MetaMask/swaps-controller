@@ -146,19 +146,12 @@ jest.mock('@metamask/eth-query', () =>
   }),
 );
 
-// Mock implementation of web3
-jest.mock('web3', () => {
+jest.mock('@ethersproject/contracts', () => {
   return {
-    Web3: jest.fn(() => ({
-      eth: {
-        Contract: jest.fn(() => ({
-          methods: {
-            allowance: jest.fn(() => ({
-              call: jest.fn().mockResolvedValue('1000000000000000000'), // Mocked allowance value
-            })),
-          },
-        })),
-      },
+    Contract: jest.fn(() => ({
+      allowance: jest.fn(() => ({
+        call: jest.fn().mockResolvedValue('1000000000000000000'), // Mocked allowance value
+      })),
     })),
   };
 });
@@ -383,12 +376,10 @@ describe('SwapsController', () => {
         rpcUrl: 'test',
       } as unknown as Provider;
 
-      expect(swapsController.__test__getInternal('#web3')).toBeUndefined();
       expect(swapsController.__test__getInternal('#ethQuery')).toBeUndefined();
 
       swapsController.setProvider(provider);
 
-      expect(swapsController.__test__getInternal('#web3')).toBeDefined();
       expect(swapsController.__test__getInternal('#ethQuery')).toBeDefined();
     });
   });
@@ -402,7 +393,6 @@ describe('SwapsController', () => {
         rpcUrl: 'test',
       } as unknown as Provider;
 
-      expect(swapsController.__test__getInternal('#web3')).toBeUndefined();
       expect(swapsController.__test__getInternal('#ethQuery')).toBeUndefined();
 
       swapsController.setProvider(provider, {
@@ -410,7 +400,6 @@ describe('SwapsController', () => {
         pollCountLimit: 10,
       });
 
-      expect(swapsController.__test__getInternal('#web3')).toBeDefined();
       expect(swapsController.__test__getInternal('#ethQuery')).toBeDefined();
       expect(swapsController.__test__getInternal('#chainId')).toBe('0x23');
       expect(swapsController.__test__getInternal('#pollCountLimit')).toBe(10);

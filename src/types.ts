@@ -9,6 +9,10 @@ import type {
   GasFeeEstimates,
   GasFeeState,
 } from '@metamask/gas-fee-controller';
+import type {
+  NetworkControllerFindNetworkClientIdByChainIdAction,
+  NetworkControllerGetNetworkClientByIdAction,
+} from '@metamask/network-controller';
 import type { Hex, JsonRpcError } from '@metamask/utils';
 
 import type SwapsController from './SwapsController';
@@ -325,7 +329,9 @@ export type SwapsControllerStateChangeEvent = ControllerStateChangeEvent<
  * The external actions available to the {@link SwapsController}.
  * TODO: Add GasFeeControllerFetchGasFeeEstimates once GasFeeController exports this action type
  */
-export type AllowedActions = never;
+export type AllowedActions =
+  | NetworkControllerFindNetworkClientIdByChainIdAction
+  | NetworkControllerGetNetworkClientByIdAction;
 
 /**
  * The internal actions available to the SwapsController.
