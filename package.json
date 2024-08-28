@@ -70,6 +70,8 @@
     "typescript": "^5.1.0"
   },
   "dependencies": {
+    "@ethersproject/contracts": "^5.7.0",
+    "@ethersproject/providers": "^5.7.0",
     "@metamask/base-controller": "^4.1.1",
     "@metamask/controller-utils": "^8.0.2",
     "@metamask/eth-query": "^4.0.0",
@@ -79,8 +81,7 @@
     "async-mutex": "^0.4.1",
     "bignumber.js": "^9.0.1",
     "bn.js": "^5.2.1",
-    "human-standard-token-abi": "^2.0.0",
-    "web3": "^4.2.2"
+    "human-standard-token-abi": "^2.0.0"
   },
   "lavamoat": {
     "allowScripts": {
