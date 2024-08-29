@@ -138,19 +138,12 @@ jest.mock('@metamask/eth-query', () =>
   }),
 );
 
-// Mock implementation of web3
-jest.mock('web3', () => {
+jest.mock('@ethersproject/contracts', () => {
   return {
-    Web3: jest.fn(() => ({
-      eth: {
-        Contract: jest.fn(() => ({
-          methods: {
-            allowance: jest.fn(() => ({
-              call: jest.fn().mockResolvedValue('1000000000000000000'), // Mocked allowance value
-            })),
-          },
-        })),
-      },
+    Contract: jest.fn(() => ({
+      allowance: jest.fn(() => ({
+        call: jest.fn().mockResolvedValue('1000000000000000000'), // Mocked allowance value
+      })),
     })),
   };
 });
@@ -317,17 +310,16 @@ describe('SwapsController', () => {
 
   describe('provider', () => {
     it('should set provider', () => {
+      // Shape of provider object from Mobile@7.29.0 and network-controller@^19.0.0
       const provider = {
-        name: 'test',
-        type: 'test',
-        chainId: '0x1',
-        rpcUrl: 'test',
+        __UNINITIALIZED__: undefined, 
+        sendAsync: jest.fn()
       };
       expect(swapsController.defaultConfig.provider).toBeUndefined();
       swapsController.configure({
         provider,
       });
-      expect(swapsController.defaultConfig.provider.name).toBe(provider.name);
+      expect(swapsController.defaultConfig.provider.sendAsync).not.toBeUndefined();
     });
   });
 
