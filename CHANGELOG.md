@@ -7,8 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [9.0.10]
-### Uncategorized
-- chore: remove web3 and add ethers packages ([#301](https://github.com/MetaMask/swaps-controller/pull/301))
+### Changed
+- Use Ethers instead of Web3 package to read allowance from contracts in order to speed up Android startup times. ([#301](https://github.com/MetaMask/swaps-controller/pull/301))
 
 ## [9.0.9]
 ### Changed
