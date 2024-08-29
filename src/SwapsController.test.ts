@@ -310,6 +310,7 @@ describe('SwapsController', () => {
 
   describe('provider', () => {
     it('should set provider', () => {
+      // Shape of provider object from Mobile@7.29.0 and network-controller@^19.0.0
       const provider = {
         __UNINITIALIZED__: undefined, 
         sendAsync: jest.fn()
