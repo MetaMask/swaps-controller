@@ -311,16 +311,14 @@ describe('SwapsController', () => {
   describe('provider', () => {
     it('should set provider', () => {
       const provider = {
-        name: 'test',
-        type: 'test',
-        chainId: '0x1',
-        rpcUrl: 'test',
+        __UNINITIALIZED__: undefined, 
+        sendAsync: jest.fn()
       };
       expect(swapsController.defaultConfig.provider).toBeUndefined();
       swapsController.configure({
         provider,
       });
-      expect(swapsController.defaultConfig.provider.name).toBe(provider.name);
+      expect(swapsController.defaultConfig.provider.sendAsync).not.toBeUndefined();
     });
   });
 
