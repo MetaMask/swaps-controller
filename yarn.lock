@@ -967,12 +967,20 @@
     "@metamask/utils" "^8.3.0"
     immer "^9.0.6"
 
-"@metamask/base-controller@^5.0.0", "@metamask/base-controller@^5.0.2":
+"@metamask/base-controller@^5.0.2":
   version "5.0.2"
   resolved "https://registry.yarnpkg.com/@metamask/base-controller/-/base-controller-5.0.2.tgz#ab3584f67d9f2ff80958df21558e61650074e565"
   integrity sha512-izOaXXnLz9OXbdika0ZvIDf24pgsWNPI02Lm0E4eMU61ICpV78bzQB7YyIbMtF6MWnItw1RnX9jN6zNEmp5pdA==
   dependencies:
     "@metamask/utils" "^8.3.0"
+    immer "^9.0.6"
+
+"@metamask/base-controller@^6.0.3":
+  version "6.0.3"
+  resolved "https://registry.yarnpkg.com/@metamask/base-controller/-/base-controller-6.0.3.tgz#9bb4e74234c1de5f99842c343ffa053c08055db1"
+  integrity sha512-neUqsCXRT6QYcZO51y6Y5u9NPTHuxgNsW5Z4h///o1gDdV8lBeIG/b1ne+QPK422DZMAm4ChnkG1DDNf4PkErw==
+  dependencies:
+    "@metamask/utils" "^9.1.0"
     immer "^9.0.6"
 
 "@metamask/composable-controller@^4.0.0":
@@ -1406,7 +1414,7 @@
     semver "^7.5.4"
     uuid "^9.0.1"
 
-"@metamask/utils@^9.0.0":
+"@metamask/utils@^9.0.0", "@metamask/utils@^9.1.0":
   version "9.1.0"
   resolved "https://registry.yarnpkg.com/@metamask/utils/-/utils-9.1.0.tgz#54e5afcec07e6032d4dd4171e862b36daa52d77e"
   integrity sha512-g2REf+xSt0OZfMoNNdC4+/Yy8eP3KUqvIArel54XRFKPoXbHI6+YjFfrLtfykWBjffOp7DTfIc3Kvk5TLfuiyg==
