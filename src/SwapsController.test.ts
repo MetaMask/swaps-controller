@@ -138,19 +138,12 @@ jest.mock('@metamask/eth-query', () =>
   }),
 );
 
-// Mock implementation of web3
-jest.mock('web3', () => {
+jest.mock('@ethersproject/contracts', () => {
   return {
-    Web3: jest.fn(() => ({
-      eth: {
-        Contract: jest.fn(() => ({
-          methods: {
-            allowance: jest.fn(() => ({
-              call: jest.fn().mockResolvedValue('1000000000000000000'), // Mocked allowance value
-            })),
-          },
-        })),
-      },
+    Contract: jest.fn(() => ({
+      allowance: jest.fn(() => ({
+        call: jest.fn().mockResolvedValue('1000000000000000000'), // Mocked allowance value
+      })),
     })),
   };
 });
