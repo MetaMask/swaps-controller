@@ -1,3 +1,5 @@
+import { Contract } from '@ethersproject/contracts';
+import { Web3Provider } from '@ethersproject/providers';
 import type { BaseConfig, BaseState } from '@metamask/base-controller';
 import { BaseControllerV1 } from '@metamask/base-controller';
 import {
@@ -21,8 +23,6 @@ import type { Hex } from '@metamask/utils';
 import { Mutex } from 'async-mutex';
 import { BigNumber } from 'bignumber.js';
 import abiERC20 from 'human-standard-token-abi';
-import * as web3 from 'web3';
-import type { Web3 as Web3Type } from 'web3';
 
 import type {
   APIAggregatorMetadata,
@@ -58,9 +58,6 @@ import {
   OPTIMISM_CHAIN_ID,
   shouldEnableDirectWrapping,
 } from './swapsUtil';
-
-// Hack to fix the issue with the web3 import that works different in app vs tests
-const Web3 = web3.Web3 === undefined ? web3.default : web3.Web3;
 
 // Functions to determine type of the return value from GasFeeController
 
@@ -225,7 +222,7 @@ export default class SwapsController extends BaseControllerV1<
 > {
   private handle?: NodeJS.Timeout;
 
-  private web3: Web3Type;
+  private web3Provider: Web3Provider;
 
   private ethQuery: any;
 
@@ -549,7 +546,7 @@ export default class SwapsController extends BaseControllerV1<
     contractAddress: string,
     walletAddress: string,
   ): Promise<BigNumber> {
-    const contract = new this.web3.eth.Contract(abiERC20, contractAddress);
+    const contract = new Contract(contractAddress, abiERC20, this.web3Provider);
     const allowanceTimeout = new Promise<BigNumber>((_, reject) => {
       setTimeout(() => {
         reject(new Error(SwapsError.SWAPS_ALLOWANCE_TIMEOUT));
@@ -557,9 +554,10 @@ export default class SwapsController extends BaseControllerV1<
     });
 
     const allowancePromise = async () => {
-      const result: bigint = await contract.methods
-        .allowance(walletAddress, getSwapsContractAddress(this.config.chainId))
-        .call();
+      const result = await contract.allowance(
+        walletAddress,
+        getSwapsContractAddress(this.config.chainId),
+      );
       return new BigNumber(result.toString());
     };
 
@@ -906,7 +904,7 @@ export default class SwapsController extends BaseControllerV1<
   set provider(provider: any) {
     if (provider) {
       this.ethQuery = new EthQuery(provider);
-      this.web3 = new Web3(provider);
+      this.web3Provider = new Web3Provider(provider);
     }
   }
 
