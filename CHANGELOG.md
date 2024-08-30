@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [9.0.11]
 
-### Change
+### Changed
 
 - Allow v9.x as a branch we can publish from ([#306](https://github.com/MetaMask/swaps-controller/pull/306))
 
