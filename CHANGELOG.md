@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [9.0.11]
+
+### Changed
+
+- Allow v9.x as a branch we can publish from ([#306](https://github.com/MetaMask/swaps-controller/pull/306))
+
 ## [9.0.10]
 
 ### Changed
@@ -274,7 +280,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use standalone gas API endpoint ([#70](https://github.com/MetaMask/swaps-controller/pull/70))
 - Bump @metamask/controllers from 14.1.0 to 14.2.0 ([#69](https://github.com/MetaMask/swaps-controller/pull/69))
 
-[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v9.0.10...HEAD
+[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v9.0.11...HEAD
+[9.0.11]: https://github.com/MetaMask/swaps-controller/compare/v9.0.10...v9.0.11
 [9.0.10]: https://github.com/MetaMask/swaps-controller/compare/v9.0.9...v9.0.10
 [9.0.9]: https://github.com/MetaMask/swaps-controller/compare/v9.0.8...v9.0.9
 [9.0.8]: https://github.com/MetaMask/swaps-controller/compare/v9.0.7...v9.0.8
