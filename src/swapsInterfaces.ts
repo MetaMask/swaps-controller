@@ -1,22 +1,15 @@
-import type {
-  RestrictedControllerMessenger,
-  ControllerStateChangeEvent,
-  ControllerGetStateAction,
-} from '@metamask/base-controller';
-import type EthQuery from '@metamask/eth-query';
-import type {
-  EthGasPriceEstimate,
-  GasFeeEstimates,
-  GasFeeState,
-} from '@metamask/gas-fee-controller';
-import type {
-  NetworkControllerFindNetworkClientIdByChainIdAction,
-  NetworkControllerGetNetworkClientByIdAction,
-} from '@metamask/network-controller';
-import type { Hex, JsonRpcError } from '@metamask/utils';
+import type { TransactionParams } from '@metamask/transaction-controller';
+import type { BigNumber } from 'bignumber.js';
 
-import type SwapsController from './SwapsController';
-import type { controllerName, SwapsError } from './swapsUtil';
+export enum APIType {
+  TRADES = 'TRADES',
+  TOKENS = 'TOKENS',
+  TOP_ASSETS = 'TOP_ASSETS',
+  FEATURE_FLAG = 'FEATURE_FLAG',
+  AGGREGATOR_METADATA = 'AGGREGATOR_METADATA',
+  TOKEN = 'TOKEN',
+  GAS_PRICES = 'GAS_PRICES',
+}
 
 export type SwapsAsset = {
   address: string;
@@ -31,11 +24,8 @@ export type SwapsToken = {
 } & SwapsAsset;
 
 export type NetworkFeatureFlags = {
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   mobile_active: boolean;
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   extension_active: boolean;
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   fallback_to_v1?: boolean;
 };
 
@@ -44,11 +34,8 @@ export type NetworksFeatureStatus = {
 };
 
 export type NetworkFeatureFlagsAll = {
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   mobile_active: boolean;
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   extension_active: boolean;
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   fallback_to_v1?: boolean;
   fallbackToV1: boolean;
   mobileActive: boolean;
@@ -68,11 +55,8 @@ export type NetworksFeatureStatusAll = {
 };
 
 export type GlobalFeatureFlags = {
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   smart_transactions: {
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     mobile_active: boolean;
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     extension_active: boolean;
   };
   smartTransactions: {
@@ -132,17 +116,17 @@ export type APIAggregatorMetadata = {
 
 type QuoteTransaction = {
   value: string;
-} & TxParams;
+} & TransactionParams;
 
 /**
  * Savings of a quote
  * @interface QuoteSavings
  */
 export type QuoteSavings = {
-  total: string;
-  performance: string;
-  fee: string;
-  medianMetaMaskFee: string;
+  total: BigNumber;
+  performance: BigNumber;
+  fee: BigNumber;
+  medianMetaMaskFee: BigNumber;
 };
 
 /**
@@ -174,10 +158,15 @@ export type QuoteSavings = {
  */
 export type Quote = {
   trade: QuoteTransaction;
-  approvalNeeded: TxParams | null;
+  approvalNeeded: null | {
+    data: string;
+    to: string;
+    from: string;
+    gas: string;
+  };
   sourceAmount: string;
   destinationAmount: number;
-  error: JsonRpcError | null;
+  error: null | Error;
   sourceToken: string;
   destinationToken: string;
   maxGas: number;
@@ -194,7 +183,7 @@ export type Quote = {
   gasEstimateWithRefund: string | null;
   destinationTokenRate: number | null;
   sourceTokenRate: number | null;
-  multiLayerL1TradeFeeTotal: string | null;
+  multiLayerL1TradeFeeTotal: string | undefined;
 };
 
 /**
@@ -249,16 +238,6 @@ export type TransactionReceipt = {
   status: string;
 };
 
-export type TxParams = {
-  from: string;
-  to: string;
-  value?: string;
-  data?: string;
-  gas: string;
-  gasPrice?: string;
-  nonce?: string;
-};
-
 export type ChainData = {
   aggregatorMetadata: null | { [key: string]: APIAggregatorMetadata };
   tokens: null | SwapsToken[];
@@ -270,170 +249,4 @@ export type ChainData = {
 
 export type ChainCache = {
   [key: string]: ChainData;
-};
-
-// Custom types for custom gas values
-export type CustomEthGasPriceEstimate = {
-  gasPrice: string; // a GWEI dec string
-  selected?: 'low' | 'medium' | 'high';
-};
-
-export type CustomGasFee = {
-  maxFeePerGas: string; // a GWEI dec string
-  maxPriorityFeePerGas: string; // a GWEI dec string
-  estimatedBaseFee?: string; // a GWEI dec string
-  selected?: 'low' | 'medium' | 'high';
-};
-
-export type SwapsControllerState = {
-  quotes: { [key: string]: Quote };
-  fetchParams: APIFetchQuotesParams;
-  fetchParamsMetaData: APIFetchQuotesMetadata;
-  topAggSavings: QuoteSavings | null;
-  quotesLastFetched: null | number;
-  error: { key: null | SwapsError; description: null | string };
-  topAggId: null | string;
-  isInPolling: boolean;
-  pollingCyclesLeft: number;
-  approvalTransaction: TxParams | null;
-  quoteValues: { [key: string]: QuoteValues } | null;
-  quoteRefreshSeconds: number | null;
-  usedGasEstimate: EthGasPriceEstimate | GasFeeEstimates | null;
-  usedCustomGas: CustomEthGasPriceEstimate | CustomGasFee | null;
-  aggregatorMetadata: null | { [key: string]: APIAggregatorMetadata };
-  aggregatorMetadataLastFetched: number;
-  tokens: null | SwapsToken[];
-  tokensLastFetched: number;
-  topAssets: null | SwapsAsset[];
-  topAssetsLastFetched: number;
-  chainCache: ChainCache;
-};
-
-/**
- * The action that fetches the state of the {@link SwapsController}.
- */
-export type SwapsControllerGetStateAction = ControllerGetStateAction<
-  typeof controllerName,
-  SwapsControllerState
->;
-
-/**
- * The event that {@link SwapsController} can emit.
- */
-export type SwapsControllerStateChangeEvent = ControllerStateChangeEvent<
-  typeof controllerName,
-  SwapsControllerState
->;
-
-/**
- * The external actions available to the {@link SwapsController}.
- * TODO: Add GasFeeControllerFetchGasFeeEstimates once GasFeeController exports this action type
- */
-export type AllowedActions =
-  | NetworkControllerFindNetworkClientIdByChainIdAction
-  | NetworkControllerGetNetworkClientByIdAction;
-
-/**
- * The internal actions available to the SwapsController.
- */
-export type SwapsControllerActions =
-  | SwapsControllerGetStateAction
-  | SwapsControllerUpdateQuotesWithGasPrice
-  | SwapsControllerUpdateSelectedQuoteWithGasLimit
-  | SwapsControllerStartFetchAndSetQuotes
-  | SwapsControllerFetchTokenWithCache
-  | SwapsControllerFetchTopAssetsWithCache
-  | SwapsControllerFetchAggregatorMetadataWithCache
-  | SwapsControllerStopPollingAndResetState;
-
-/**
- * The events that the SwapsController can emit.
- */
-export type SwapsControllerEvents = SwapsControllerStateChangeEvent;
-
-/**
- * The messenger for the SwapsController.
- */
-export type SwapsControllerMessenger = RestrictedControllerMessenger<
-  typeof controllerName,
-  SwapsControllerActions | AllowedActions,
-  SwapsControllerEvents,
-  AllowedActions['type'],
-  never
->;
-
-export type SwapsControllerOptions = {
-  clientId?: string;
-  pollCountLimit?: number;
-  fetchAggregatorMetadataThreshold?: number;
-  fetchTokensThreshold?: number;
-  fetchTopAssetsThreshold?: number;
-  chainId?: Hex;
-  supportedChainIds?: Hex[];
-  // TODO: Remove once GasFeeController exports this action type
-  fetchGasFeeEstimates?: () => Promise<GasFeeState | undefined>;
-  fetchEstimatedMultiLayerL1Fee?: (
-    eth: EthQuery,
-    options: {
-      txParams: TxParams;
-      chainId: Hex;
-    },
-  ) => Promise<string | undefined>;
-  messenger: SwapsControllerMessenger;
-};
-
-/**
- * The action that updates quotes with gas price {@link SwapsController}.
- */
-export type SwapsControllerUpdateQuotesWithGasPrice = {
-  type: `SwapsController:updateQuotesWithGasPrice`;
-  handler: SwapsController['updateQuotesWithGasPrice'];
-};
-
-/**
- * The action that updates the selected quote with gas limit {@link SwapsController}.
- */
-export type SwapsControllerUpdateSelectedQuoteWithGasLimit = {
-  type: `SwapsController:updateSelectedQuoteWithGasLimit`;
-  handler: SwapsController['updateSelectedQuoteWithGasLimit'];
-};
-
-/**
- * The action that starts fetching and setting quotes {@link SwapsController}.
- */
-export type SwapsControllerStartFetchAndSetQuotes = {
-  type: `SwapsController:startFetchAndSetQuotes`;
-  handler: SwapsController['startFetchAndSetQuotes'];
-};
-
-/**
- * The action that fetches a token with cache {@link SwapsController}.
- */
-export type SwapsControllerFetchTokenWithCache = {
-  type: `SwapsController:fetchTokenWithCache`;
-  handler: SwapsController['fetchTokenWithCache'];
-};
-
-/**
- * The action that fetches top assets with cache {@link SwapsController}.
- */
-export type SwapsControllerFetchTopAssetsWithCache = {
-  type: `SwapsController:fetchTopAssetsWithCache`;
-  handler: SwapsController['fetchTopAssetsWithCache'];
-};
-
-/**
- * The action that fetches aggregator metadata with cache {@link SwapsController}.
- */
-export type SwapsControllerFetchAggregatorMetadataWithCache = {
-  type: `SwapsController:fetchAggregatorMetadataWithCache`;
-  handler: SwapsController['fetchAggregatorMetadataWithCache'];
-};
-
-/**
- * The action that stops polling and resets state {@link SwapsController}.
- */
-export type SwapsControllerStopPollingAndResetState = {
-  type: `SwapsController:stopPollingAndResetState`;
-  handler: SwapsController['stopPollingAndResetState'];
 };
