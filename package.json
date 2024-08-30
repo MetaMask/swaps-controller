@@ -33,7 +33,7 @@
   },
   "peerDependencies": {
     "@metamask/composable-controller": "^4.0.0",
-    "@metamask/network-controller": "^18.1.0"
+    "@metamask/network-controller": "^3.0.0"
   },
   "devDependencies": {
     "@babel/runtime": "^7.0.0",
@@ -70,20 +70,17 @@
     "typescript": "^5.1.0"
   },
   "dependencies": {
-    "@ethersproject/contracts": "^5.7.0",
-    "@ethersproject/providers": "^5.7.0",
-    "@metamask/base-controller": "^5.0.0",
-    "@metamask/controller-utils": "^10.0.0",
+    "@metamask/base-controller": "^4.1.1",
+    "@metamask/controller-utils": "^8.0.2",
     "@metamask/eth-query": "^4.0.0",
-    "@metamask/gas-fee-controller": "^15.1.2",
+    "@metamask/gas-fee-controller": "^12.0.0",
     "@metamask/utils": "^8.3.0",
-    "async-mutex": "^0.5.0",
+    "abort-controller": "^3.0.0",
+    "async-mutex": "^0.4.1",
     "bignumber.js": "^9.0.1",
     "bn.js": "^5.2.1",
-    "human-standard-token-abi": "^2.0.0"
-  },
-  "resolutions": {
-    "@ethersproject/providers/**/ws": "^7.5.10"
+    "human-standard-token-abi": "^2.0.0",
+    "web3": "^4.2.2"
   },
   "lavamoat": {
     "allowScripts": {
@@ -93,10 +90,8 @@
       "@metamask/transaction-controller>babel-runtime>core-js": false,
       "babel-runtime>core-js": false,
       "@metamask/controller-utils>ethereumjs-util>ethereum-cryptography>keccak": false,
-      "@metamask/controller-utils>ethereumjs-util>ethereum-cryptography>secp256k1": false,
-      "@metamask/transaction-controller>ethereumjs-util>ethereum-cryptography>keccak": false,
-      "@metamask/transaction-controller>ethereumjs-util>ethereum-cryptography>secp256k1": false
+      "@metamask/controller-utils>ethereumjs-util>ethereum-cryptography>secp256k1": false
     }
   },
-  "packageManager": "yarn@1.22.22+sha256.c17d3797fb9a9115bf375e31bfd30058cac6bc9c3b8807a3d8cb2094794b51ca"
+  "packageManager": "yarn@4.4.0"
 }
