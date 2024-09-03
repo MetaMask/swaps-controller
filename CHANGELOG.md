@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [9.0.12]
+
+### Changed
+
+- Remove Web3 and use Ethers to read allowance from contracts, speeding up performance on Android ([#309](https://github.com/MetaMask/swaps-controller/pull/309))
+
 ## [9.0.9]
 
 ### Changed
@@ -268,7 +274,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use standalone gas API endpoint ([#70](https://github.com/MetaMask/swaps-controller/pull/70))
 - Bump @metamask/controllers from 14.1.0 to 14.2.0 ([#69](https://github.com/MetaMask/swaps-controller/pull/69))
 
-[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v9.0.9...HEAD
+[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v9.0.12...HEAD
+[9.0.12]: https://github.com/MetaMask/swaps-controller/compare/v9.0.9...v9.0.12
 [9.0.9]: https://github.com/MetaMask/swaps-controller/compare/v9.0.8...v9.0.9
 [9.0.8]: https://github.com/MetaMask/swaps-controller/compare/v9.0.7...v9.0.8
 [9.0.7]: https://github.com/MetaMask/swaps-controller/compare/v9.0.6...v9.0.7
