@@ -163,8 +163,8 @@ export const BSC_SWAPS_TOKEN_OBJECT: SwapsToken = {
 };
 
 export const POLYGON_SWAPS_TOKEN_OBJECT: SwapsToken = {
-  symbol: 'MATIC',
-  name: 'Matic',
+  symbol: 'POL',
+  name: 'Polygon',
   address: NATIVE_SWAPS_TOKEN_ADDRESS,
   decimals: 18,
 };
