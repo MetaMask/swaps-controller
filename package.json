@@ -32,7 +32,7 @@
     "prepack": "./scripts/prepack.sh"
   },
   "peerDependencies": {
-    "@metamask/composable-controller": "^4.0.0",
+    "@metamask/composable-controller": "^9.0.0",
     "@metamask/network-controller": "^18.1.0"
   },
   "devDependencies": {
@@ -40,7 +40,7 @@
     "@lavamoat/allow-scripts": "^3.0.0",
     "@metamask/approval-controller": "^5.1.1",
     "@metamask/auto-changelog": "^3.4.4",
-    "@metamask/composable-controller": "^4.0.0",
+    "@metamask/composable-controller": "^9.0.0",
     "@metamask/eslint-config": "^12.2.0",
     "@metamask/eslint-config-jest": "^12.1.0",
     "@metamask/eslint-config-nodejs": "^12.1.0",
