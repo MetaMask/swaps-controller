@@ -1,12 +1,10 @@
 import { BigNumber } from 'bignumber.js';
 
-import type { QuoteValues, SwapsToken } from './swapsInterfaces';
-import { APIType } from './swapsInterfaces';
-import * as swapsUtil from './swapsUtil';
 import { BNToHex, query, toHex } from '@metamask/controller-utils';
-import { BN } from 'bn.js';
-import { TransactionParams } from '@metamask/transaction-controller';
 import { add0x } from '@metamask/utils';
+import { BN } from 'bn.js';
+import type { QuoteValues, SwapsToken, TxParams } from './types';
+import * as swapsUtil from './swapsUtil';
 
 /**
  * Mocks the fetch function for testing purposes.
@@ -171,20 +169,30 @@ const FAKE_SWAPS_TOKEN = {
 describe('SwapsUtil', () => {
   describe('getBaseApiURL', () => {
     it('should return expected values', () => {
-      expect(swapsUtil.getBaseApiURL(APIType.TRADES, '0x1')).toBeDefined();
-      expect(swapsUtil.getBaseApiURL(APIType.TOKENS, '0x1')).toBeDefined();
-      expect(swapsUtil.getBaseApiURL(APIType.TOKEN, '0x1')).toBeDefined();
-      expect(swapsUtil.getBaseApiURL(APIType.TOP_ASSETS, '0x1')).toBeDefined();
       expect(
-        swapsUtil.getBaseApiURL(APIType.FEATURE_FLAG, '0x1'),
+        swapsUtil.getBaseApiURL(swapsUtil.APIType.TRADES, '0x1'),
+      ).toBeDefined();
+      expect(
+        swapsUtil.getBaseApiURL(swapsUtil.APIType.TOKENS, '0x1'),
+      ).toBeDefined();
+      expect(
+        swapsUtil.getBaseApiURL(swapsUtil.APIType.TOKEN, '0x1'),
+      ).toBeDefined();
+      expect(
+        swapsUtil.getBaseApiURL(swapsUtil.APIType.TOP_ASSETS, '0x1'),
+      ).toBeDefined();
+      expect(
+        swapsUtil.getBaseApiURL(swapsUtil.APIType.FEATURE_FLAG, '0x1'),
       ).toBeDefined();
 
       expect(
-        swapsUtil.getBaseApiURL(APIType.AGGREGATOR_METADATA, '0x1'),
+        swapsUtil.getBaseApiURL(swapsUtil.APIType.AGGREGATOR_METADATA, '0x1'),
       ).toBeDefined();
-      expect(swapsUtil.getBaseApiURL(APIType.GAS_PRICES, '0x1')).toBeDefined();
+      expect(
+        swapsUtil.getBaseApiURL(swapsUtil.APIType.GAS_PRICES, '0x1'),
+      ).toBeDefined();
       expect(() =>
-        swapsUtil.getBaseApiURL('error value' as APIType, '0x1'),
+        swapsUtil.getBaseApiURL('error value' as swapsUtil.APIType, '0x1'),
       ).toThrow();
     });
   });
@@ -1436,7 +1444,7 @@ describe('SwapsUtil', () => {
     });
 
     it('should estimate gas correctly for a given transaction', async () => {
-      const transaction: TransactionParams = {
+      const transaction: TxParams = {
         from: '0x1234',
         to: '0x5678',
         value: '0x0',
@@ -1461,7 +1469,7 @@ describe('SwapsUtil', () => {
     });
 
     it('should handle transactions without data correctly', async () => {
-      const transaction: TransactionParams = {
+      const transaction: TxParams = {
         from: '0x1234',
         to: '0x5678',
         value: '0x0',

@@ -1,17 +1,25 @@
-import { ComposableController } from '@metamask/composable-controller';
-
-import SwapsController, {
-  INITIAL_CHAIN_DATA,
-  isGasFeeStateEthGasPrice,
-  isGasFeeStateLegacy,
-} from './SwapsController';
-import * as swapsUtil from './swapsUtil';
-import { Quote } from './swapsInterfaces';
-import BigNumber from 'bignumber.js';
-import { GasFeeEstimates } from '@metamask/gas-fee-controller';
 import { ChainId } from '@metamask/controller-utils';
+import { GasFeeEstimates } from '@metamask/gas-fee-controller';
+import SwapsController from './SwapsController';
+import { Quote, SwapsControllerMessenger } from './types';
+import * as swapsUtil from './swapsUtil';
+import { Provider } from '@metamask/network-controller';
 
-const POLL_COUNT_LIMIT = 3;
+const INITIAL_CONTROLLER_OPTIONS = {
+  pollCountLimit: 3,
+  fetchAggregatorMetadataThreshold: 1000 * 60 * 60 * 24 * 15,
+  fetchTokensThreshold: 1000 * 60 * 60 * 24,
+  fetchTopAssetsThreshold: 1000 * 60 * 30,
+  chainId: swapsUtil.ETH_CHAIN_ID,
+  supportedChainIds: [
+    swapsUtil.ETH_CHAIN_ID,
+    swapsUtil.BSC_CHAIN_ID,
+    swapsUtil.SWAPS_TESTNET_CHAIN_ID,
+    swapsUtil.POLYGON_CHAIN_ID,
+    swapsUtil.AVALANCHE_CHAIN_ID,
+  ],
+  clientId: undefined,
+};
 
 const API_TRADES: {
   [key: string]: Quote;
@@ -45,10 +53,10 @@ const API_TRADES: {
     gasMultiplier: 1.5,
     quoteRefreshSeconds: 60,
     savings: {
-      total: new BigNumber(0),
-      performance: new BigNumber(0),
-      fee: new BigNumber(0),
-      medianMetaMaskFee: new BigNumber(0),
+      total: '0',
+      performance: '0',
+      fee: '0',
+      medianMetaMaskFee: '0',
     },
     gasEstimate: '100000',
     gasEstimateWithRefund: '90000',
@@ -85,10 +93,10 @@ const API_TRADES: {
     gasMultiplier: 1.5,
     quoteRefreshSeconds: 60,
     savings: {
-      total: new BigNumber(0),
-      performance: new BigNumber(0),
-      fee: new BigNumber(0),
-      medianMetaMaskFee: new BigNumber(0),
+      total: '0',
+      performance: '0',
+      fee: '0',
+      medianMetaMaskFee: '0',
     },
     gasEstimate: '100000',
     gasEstimateWithRefund: '90000',
@@ -98,18 +106,18 @@ const API_TRADES: {
   },
 };
 
-const mockFlags: { [key: string]: any } = {
-  estimateGas: null,
-};
+// Create a single mock object
+const messengerMock = {
+  call: jest.fn(),
+  registerActionHandler: jest.fn(),
+  registerInitialEventPayload: jest.fn(),
+  publish: jest.fn(),
+} as unknown as jest.Mocked<SwapsControllerMessenger>;
 
 jest.mock('@metamask/eth-query', () =>
   jest.fn().mockImplementation(() => {
     return {
       estimateGas: (_transaction: any, callback: any) => {
-        if (mockFlags.estimateGas) {
-          callback(new Error(mockFlags.estimateGas));
-          return;
-        }
         callback(undefined, '0x0');
       },
       gasPrice: (callback: any) => {
@@ -165,19 +173,18 @@ describe('SwapsController', () => {
       estimatedGasFeeTimeBounds: {},
       gasEstimateType: 'none',
     }));
-
-    fetchGasFeeEstimates = jest.fn();
+    fetchEstimatedMultiLayerL1Fee = jest.fn().mockImplementation(() => '0x0');
 
     swapsController = new SwapsController(
       {
+        ...INITIAL_CONTROLLER_OPTIONS,
+        messenger: messengerMock,
+        // TODO: Remove once GasFeeController exports this action type
         fetchGasFeeEstimates,
         fetchEstimatedMultiLayerL1Fee,
       },
-      {
-        pollCountLimit: POLL_COUNT_LIMIT,
-      },
+      swapsUtil.getDefaultSwapsControllerState(),
     );
-    new ComposableController([swapsController]);
 
     swapsUtilFetchTokens = jest
       .spyOn(swapsUtil, 'fetchTokens')
@@ -209,23 +216,42 @@ describe('SwapsController', () => {
     swapsUtilEstimateGas.mockRestore();
   });
 
-  it('should set default config', () => {
-    expect(swapsController.config).toStrictEqual(swapsController.defaultConfig);
-    expect(swapsController.config).toStrictEqual({
-      chainId: '0x1',
-      supportedChainIds: ['0x1', '0x38', '0x539', '0x89', '0xa86a'],
-      maxGasLimit: 2500000,
-      pollCountLimit: 3,
-      fetchAggregatorMetadataThreshold: 1000 * 60 * 60 * 24 * 15,
-      fetchTokensThreshold: 1000 * 60 * 60 * 24,
-      fetchTopAssetsThreshold: 1000 * 60 * 30,
-      provider: undefined,
-      clientId: undefined,
-    });
+  it('should set default options', () => {
+    expect(swapsController.__test__getInternal('#chainId')).toStrictEqual(
+      INITIAL_CONTROLLER_OPTIONS.chainId,
+    );
+    expect(
+      swapsController.__test__getInternal('#supportedChainIds'),
+    ).toStrictEqual(INITIAL_CONTROLLER_OPTIONS.supportedChainIds);
+    expect(
+      swapsController.__test__getInternal('#pollCountLimit'),
+    ).toStrictEqual(INITIAL_CONTROLLER_OPTIONS.pollCountLimit);
+    expect(
+      swapsController.__test__getInternal('#fetchAggregatorMetadataThreshold'),
+    ).toStrictEqual(
+      INITIAL_CONTROLLER_OPTIONS.fetchAggregatorMetadataThreshold,
+    );
+    expect(
+      swapsController.__test__getInternal('#fetchTokensThreshold'),
+    ).toStrictEqual(INITIAL_CONTROLLER_OPTIONS.fetchTokensThreshold);
+    expect(
+      swapsController.__test__getInternal('#fetchTopAssetsThreshold'),
+    ).toStrictEqual(INITIAL_CONTROLLER_OPTIONS.fetchTopAssetsThreshold);
+    expect(swapsController.__test__getInternal('#clientId')).toStrictEqual(
+      INITIAL_CONTROLLER_OPTIONS.clientId,
+    );
+    expect(swapsController.__test__getInternal('#fetchGasFeeEstimates')).toBe(
+      fetchGasFeeEstimates,
+    );
+    expect(
+      swapsController.__test__getInternal('#fetchEstimatedMultiLayerL1Fee'),
+    ).toBe(fetchEstimatedMultiLayerL1Fee);
   });
 
   it('should set default state', () => {
-    expect(swapsController.state).toStrictEqual(swapsController.defaultState);
+    expect(swapsController.state).toStrictEqual(
+      swapsUtil.getDefaultSwapsControllerState(),
+    );
     expect(swapsController.state).toStrictEqual({
       quotes: {},
       quoteValues: {},
@@ -277,9 +303,46 @@ describe('SwapsController', () => {
     });
   });
 
+  it('should set default options if not present', () => {
+    swapsController = new SwapsController(
+      {
+        messenger: messengerMock,
+        fetchGasFeeEstimates,
+        fetchEstimatedMultiLayerL1Fee,
+      },
+      {},
+    );
+
+    expect(swapsController.__test__getInternal('#chainId')).toStrictEqual(
+      INITIAL_CONTROLLER_OPTIONS.chainId,
+    );
+    expect(
+      swapsController.__test__getInternal('#supportedChainIds'),
+    ).toStrictEqual(INITIAL_CONTROLLER_OPTIONS.supportedChainIds);
+    expect(
+      swapsController.__test__getInternal('#pollCountLimit'),
+    ).toStrictEqual(INITIAL_CONTROLLER_OPTIONS.pollCountLimit);
+    expect(
+      swapsController.__test__getInternal('#fetchAggregatorMetadataThreshold'),
+    ).toStrictEqual(
+      INITIAL_CONTROLLER_OPTIONS.fetchAggregatorMetadataThreshold,
+    );
+    expect(
+      swapsController.__test__getInternal('#fetchTokensThreshold'),
+    ).toStrictEqual(INITIAL_CONTROLLER_OPTIONS.fetchTokensThreshold);
+    expect(
+      swapsController.__test__getInternal('#fetchTopAssetsThreshold'),
+    ).toStrictEqual(INITIAL_CONTROLLER_OPTIONS.fetchTopAssetsThreshold);
+    expect(swapsController.__test__getInternal('#clientId')).toStrictEqual(
+      INITIAL_CONTROLLER_OPTIONS.clientId,
+    );
+  });
+
   it('should set a default value for pollingCyclesLeft', () => {
     swapsController = new SwapsController(
       {
+        ...INITIAL_CONTROLLER_OPTIONS,
+        messenger: messengerMock,
         fetchGasFeeEstimates,
         fetchEstimatedMultiLayerL1Fee,
       },
@@ -288,125 +351,138 @@ describe('SwapsController', () => {
     expect(swapsController.state.pollingCyclesLeft).toBe(3);
   });
 
-  it('should use INITIAL_CHAIN_DATA when chainCache does not have data for the chainId', () => {
+  it('should use swapsUtil.INITIAL_CHAIN_DATA when chainCache does not have data for the chainId', () => {
     const chainId = ChainId.aurora;
 
-    // add to supportedChainIds
-    swapsController.configure({
-      supportedChainIds: [chainId],
-    });
+    swapsController.__test__updatePrivate('#supportedChainIds', [chainId]);
 
-    // clear chainCache
-    swapsController.update({
+    // add to supportedChainIds, clear chainCache and set chainId
+    swapsController.__test__updateState({
       chainCache: {},
     });
 
-    // set chainId
-    swapsController.configure({ chainId });
+    swapsController.setChainId(chainId);
 
     const cachedData = swapsController.state.chainCache[chainId];
-    expect(cachedData).toEqual(INITIAL_CHAIN_DATA);
+    expect(cachedData).toEqual(swapsUtil.INITIAL_CHAIN_DATA);
   });
 
   describe('provider', () => {
     it('should set provider', () => {
-      // Shape of provider object from Mobile@7.29.0 and network-controller@^19.0.0
       const provider = {
-        __UNINITIALIZED__: undefined, 
-        sendAsync: jest.fn()
-      };
-      expect(swapsController.defaultConfig.provider).toBeUndefined();
-      swapsController.configure({
-        provider,
+        name: 'test',
+        type: 'test',
+        chainId: '0x1',
+        rpcUrl: 'test',
+      } as unknown as Provider;
+
+      expect(swapsController.__test__getInternal('#ethQuery')).toBeUndefined();
+
+      swapsController.setProvider(provider);
+
+      expect(swapsController.__test__getInternal('#ethQuery')).toBeDefined();
+    });
+  });
+
+  describe('provider', () => {
+    it('should set provider with options', () => {
+      const provider = {
+        name: 'test',
+        type: 'test',
+        chainId: '0x1',
+        rpcUrl: 'test',
+      } as unknown as Provider;
+
+      expect(swapsController.__test__getInternal('#ethQuery')).toBeUndefined();
+
+      swapsController.setProvider(provider, {
+        chainId: '0x23',
+        pollCountLimit: 10,
       });
-      expect(swapsController.defaultConfig.provider.sendAsync).not.toBeUndefined();
+
+      expect(swapsController.__test__getInternal('#ethQuery')).toBeDefined();
+      expect(swapsController.__test__getInternal('#chainId')).toBe('0x23');
+      expect(swapsController.__test__getInternal('#pollCountLimit')).toBe(10);
     });
   });
 
   describe('chain cache', () => {
-    it('should update cache configuration', () => {
-      expect(swapsController.config).toMatchObject({
-        fetchAggregatorMetadataThreshold: 1000 * 60 * 60 * 24 * 15,
-        fetchTokensThreshold: 1000 * 60 * 60 * 24,
-        fetchTopAssetsThreshold: 1000 * 60 * 30,
-      });
-
-      swapsController.configure({
-        fetchAggregatorMetadataThreshold: 0,
-        fetchTokensThreshold: 0,
-        fetchTopAssetsThreshold: 0,
-      });
-
-      expect(swapsController.config).toMatchObject({
-        fetchAggregatorMetadataThreshold: 0,
-        fetchTokensThreshold: 0,
-        fetchTopAssetsThreshold: 0,
-      });
-    });
-
     it('should update chainId configuration', () => {
-      swapsController.configure({ chainId: '0x23' });
-      expect(swapsController.config.chainId).toBe('0x23');
+      swapsController.__test__updatePrivate('#supportedChainIds', [
+        '0x23',
+        '0x24',
+        '0x291',
+      ]);
+      swapsController.setChainId('0x23');
+      expect(swapsController.__test__getInternal('#chainId')).toBe('0x23');
 
-      swapsController.configure({ chainId: '0x24' });
-      expect(swapsController.config.chainId).toBe('0x24');
+      swapsController.setChainId('0x24');
+      expect(swapsController.__test__getInternal('#chainId')).toBe('0x24');
 
-      swapsController.configure({ chainId: '0x291' });
-      expect(swapsController.config.chainId).toBe('0x291');
+      swapsController.setChainId('0x291');
+      expect(swapsController.__test__getInternal('#chainId')).toBe('0x291');
     });
 
     it('should create default cache for supported chainIds', () => {
-      swapsController.configure({
-        supportedChainIds: ['0x23', '0x24', '0x291'],
-      });
-      swapsController.configure({ chainId: '0x23' });
+      swapsController.__test__updatePrivate('#supportedChainIds', [
+        '0x23',
+        '0x24',
+        '0x291',
+      ]);
+      swapsController.setChainId('0x23');
       expect(swapsController.state.chainCache['0x23']).toStrictEqual(
-        INITIAL_CHAIN_DATA,
+        swapsUtil.INITIAL_CHAIN_DATA,
       );
 
-      swapsController.configure({ chainId: '0x24' });
+      swapsController.setChainId('0x24');
       expect(swapsController.state.chainCache['0x24']).toStrictEqual(
-        INITIAL_CHAIN_DATA,
+        swapsUtil.INITIAL_CHAIN_DATA,
       );
 
-      swapsController.configure({ chainId: '0x291' });
+      swapsController.setChainId('0x291');
       expect(swapsController.state.chainCache['0x291']).toStrictEqual(
-        INITIAL_CHAIN_DATA,
+        swapsUtil.INITIAL_CHAIN_DATA,
       );
     });
 
-    it('should not create default cache for supported chainIds', () => {
-      swapsController.configure({ chainId: '0x23' });
+    it('should not create default cache for unsupported chainIds', () => {
+      swapsController.setChainId('0x23');
       expect(swapsController.state.chainCache['0x23']).toBeUndefined();
 
-      swapsController.configure({ chainId: '0x24' });
+      swapsController.setChainId('0x24');
       expect(swapsController.state.chainCache['0x24']).toBeUndefined();
 
-      swapsController.configure({ chainId: '0x291' });
+      swapsController.setChainId('0x291');
       expect(swapsController.state.chainCache['0x291']).toBeUndefined();
     });
 
     it('should load existing cache for chainId', () => {
+      swapsController.__test__updatePrivate('#supportedChainIds', [
+        '0x23',
+        '0x24',
+        '0x291',
+      ]);
+
       const chainData23 = {
-        ...INITIAL_CHAIN_DATA,
+        ...swapsUtil.INITIAL_CHAIN_DATA,
         tokensLastFetched: 231,
         topAssetsLastFetched: 232,
         aggregatorMetadataLastFetched: 233,
       };
       const chainData24 = {
-        ...INITIAL_CHAIN_DATA,
+        ...swapsUtil.INITIAL_CHAIN_DATA,
         tokensLastFetched: 241,
         topAssetsLastFetched: 242,
         aggregatorMetadataLastFetched: 243,
       };
       const chainData0x123 = {
-        ...INITIAL_CHAIN_DATA,
+        ...swapsUtil.INITIAL_CHAIN_DATA,
         tokensLastFetched: 2911,
         topAssetsLastFetched: 2912,
         aggregatorMetadataLastFetched: 2913,
       };
 
-      swapsController.update({
+      swapsController.__test__updateState({
         chainCache: {
           '0x23': chainData23,
           '0x24': chainData24,
@@ -414,17 +490,17 @@ describe('SwapsController', () => {
         },
       });
 
-      swapsController.configure({ chainId: '0x23' });
+      swapsController.setChainId('0x23');
       expect(swapsController.state.chainCache['0x23']).toStrictEqual(
         chainData23,
       );
 
-      swapsController.configure({ chainId: '0x24' });
+      swapsController.setChainId('0x24');
       expect(swapsController.state.chainCache['0x24']).toStrictEqual(
         chainData24,
       );
 
-      swapsController.configure({ chainId: '0x291' });
+      swapsController.setChainId('0x291');
       expect(swapsController.state.chainCache['0x291']).toStrictEqual(
         chainData0x123,
       );
@@ -433,7 +509,7 @@ describe('SwapsController', () => {
 
   describe('tokens cache', () => {
     it('should fetch tokens when no tokens in state', async () => {
-      swapsController.update({
+      swapsController.__test__updateState({
         tokens: [],
       });
       await swapsController.fetchTokenWithCache();
@@ -441,7 +517,7 @@ describe('SwapsController', () => {
     });
 
     it('should fetch tokens when last fetched is 0', async () => {
-      swapsController.update({
+      swapsController.__test__updateState({
         tokens: [],
         tokensLastFetched: 0,
       });
@@ -451,8 +527,8 @@ describe('SwapsController', () => {
 
     it('should fetch tokens when last fetched is over threshold', async () => {
       const threshold = 5000;
-      swapsController.configure({ fetchTokensThreshold: threshold });
-      swapsController.update({
+      swapsController.__test__updatePrivate('#fetchTokensThreshold', threshold);
+      swapsController.__test__updateState({
         tokens: [],
         tokensLastFetched: Date.now() - threshold - 1,
       });
@@ -461,7 +537,7 @@ describe('SwapsController', () => {
     });
 
     it('should not fetch tokens when no threshold reached', async () => {
-      swapsController.update({
+      swapsController.__test__updateState({
         tokens: [],
         tokensLastFetched: Date.now(),
       });
@@ -470,7 +546,7 @@ describe('SwapsController', () => {
     });
 
     it('should not fetch tokens when no threshold reached or tokens are available', async () => {
-      swapsController.update({
+      swapsController.__test__updateState({
         tokens: [],
         tokensLastFetched: Date.now(),
       });
@@ -483,8 +559,8 @@ describe('SwapsController', () => {
         throw new Error();
       });
       const threshold = 5000;
-      swapsController.configure({ fetchTokensThreshold: threshold });
-      swapsController.update({
+      swapsController.__test__updatePrivate('#fetchTokensThreshold', threshold);
+      swapsController.__test__updateState({
         tokens: [],
         tokensLastFetched: Date.now() - threshold - 1,
       });
@@ -494,12 +570,13 @@ describe('SwapsController', () => {
     });
 
     it('should not fetch tokens if chain id is not supported', async () => {
-      swapsController.configure({
-        supportedChainIds: ['0x1'],
+      swapsController.__test__updateState({
+        tokens: [],
+        tokensLastFetched: 0,
       });
-      swapsController.state.tokens = [];
-      swapsController.state.tokensLastFetched = 0;
-      swapsController.configure({ chainId: '0x2' });
+      swapsController.__test__updatePrivate('#supportedChainIds', ['0x1']);
+      swapsController.setChainId('0x2');
+
       await swapsController.fetchTokenWithCache();
       expect(swapsUtilFetchTokens).not.toHaveBeenCalled();
     });
@@ -507,7 +584,7 @@ describe('SwapsController', () => {
 
   describe('top assets cache', () => {
     it('should fetch top assets when no top assets in state', async () => {
-      swapsController.update({
+      swapsController.__test__updateState({
         topAssets: null,
       });
       await swapsController.fetchTopAssetsWithCache();
@@ -515,7 +592,7 @@ describe('SwapsController', () => {
     });
 
     it('should fetch top assets when last fetched is 0', async () => {
-      swapsController.update({
+      swapsController.__test__updateState({
         topAssets: [],
         topAssetsLastFetched: 0,
       });
@@ -525,8 +602,11 @@ describe('SwapsController', () => {
 
     it('should fetch top assets when last fetched is over threshold', async () => {
       const threshold = 5000;
-      swapsController.configure({ fetchTopAssetsThreshold: threshold });
-      swapsController.update({
+      swapsController.__test__updatePrivate(
+        '#fetchTopAssetsThreshold',
+        threshold,
+      );
+      swapsController.__test__updateState({
         topAssets: [],
         topAssetsLastFetched: Date.now() - threshold - 1,
       });
@@ -535,7 +615,7 @@ describe('SwapsController', () => {
     });
 
     it('should not fetch top assets when no threshold reached', async () => {
-      swapsController.update({
+      swapsController.__test__updateState({
         topAssets: [],
         topAssetsLastFetched: Date.now(),
       });
@@ -544,7 +624,7 @@ describe('SwapsController', () => {
     });
 
     it('should not fetch top assets when no threshold reached or tokens are available', async () => {
-      swapsController.update({
+      swapsController.__test__updateState({
         topAssets: [],
         topAssetsLastFetched: Date.now(),
       });
@@ -557,8 +637,11 @@ describe('SwapsController', () => {
         throw new Error();
       });
       const threshold = 5000;
-      swapsController.configure({ fetchTopAssetsThreshold: threshold });
-      swapsController.update({
+      swapsController.__test__updatePrivate(
+        '#fetchTopAssetsThreshold',
+        threshold,
+      );
+      swapsController.__test__updateState({
         topAssets: [],
         topAssetsLastFetched: Date.now() - threshold - 1,
       });
@@ -568,12 +651,13 @@ describe('SwapsController', () => {
     });
 
     it('should return undefined if chain id is not supported', async () => {
-      swapsController.configure({
-        supportedChainIds: ['0x1'],
+      swapsController.__test__updatePrivate('#supportedChainIds', ['0x1']);
+      swapsController.__test__updateState({
+        topAssets: [],
+        topAssetsLastFetched: 0,
       });
-      swapsController.state.topAssets = [];
-      swapsController.state.topAssetsLastFetched = 0;
-      swapsController.configure({ chainId: '0x2' });
+
+      swapsController.setChainId('0x2');
       await swapsController.fetchTopAssetsWithCache();
       expect(swapsUtilFetchTopAssets).not.toHaveBeenCalled();
     });
@@ -581,7 +665,7 @@ describe('SwapsController', () => {
 
   describe('aggregator metadata cache', () => {
     it('should fetch aggregator metadata when no aggregator metadata in state', async () => {
-      swapsController.update({
+      swapsController.__test__updateState({
         aggregatorMetadata: null,
       });
       await swapsController.fetchAggregatorMetadataWithCache();
@@ -589,7 +673,7 @@ describe('SwapsController', () => {
     });
 
     it('should fetch aggregator metadata when last fetched is 0', async () => {
-      swapsController.update({
+      swapsController.__test__updateState({
         aggregatorMetadata: {},
         aggregatorMetadataLastFetched: 0,
       });
@@ -599,10 +683,11 @@ describe('SwapsController', () => {
 
     it('should fetch aggregator metadata when last fetched is over threshold', async () => {
       const threshold = 5000;
-      swapsController.configure({
-        fetchAggregatorMetadataThreshold: threshold,
-      });
-      swapsController.update({
+      swapsController.__test__updatePrivate(
+        '#fetchAggregatorMetadataThreshold',
+        threshold,
+      );
+      swapsController.__test__updateState({
         aggregatorMetadata: {},
         aggregatorMetadataLastFetched: Date.now() - threshold - 1,
       });
@@ -611,7 +696,7 @@ describe('SwapsController', () => {
     });
 
     it('should not fetch aggregator metadata when no threshold reached', async () => {
-      swapsController.update({
+      swapsController.__test__updateState({
         aggregatorMetadata: {},
         aggregatorMetadataLastFetched: Date.now(),
       });
@@ -620,7 +705,7 @@ describe('SwapsController', () => {
     });
 
     it('should not fetch aggregator metadata when no threshold reached or tokens are available', async () => {
-      swapsController.update({
+      swapsController.__test__updateState({
         aggregatorMetadata: {},
         aggregatorMetadataLastFetched: Date.now(),
       });
@@ -633,10 +718,11 @@ describe('SwapsController', () => {
         throw new Error();
       });
       const threshold = 5000;
-      swapsController.configure({
-        fetchAggregatorMetadataThreshold: threshold,
-      });
-      swapsController.update({
+      swapsController.__test__updatePrivate(
+        '#fetchAggregatorMetadataThreshold',
+        threshold,
+      );
+      swapsController.__test__updateState({
         aggregatorMetadata: {},
         aggregatorMetadataLastFetched: Date.now() - threshold - 1,
       });
@@ -645,12 +731,12 @@ describe('SwapsController', () => {
       expect(swapsController.state.aggregatorMetadataLastFetched).toBe(0);
     });
     it('should return undefined if chain id is not supported', async () => {
-      swapsController.configure({
-        supportedChainIds: ['0x1'],
+      swapsController.__test__updatePrivate('#supportedChainIds', ['0x1']);
+      swapsController.__test__updateState({
+        aggregatorMetadata: {},
+        aggregatorMetadataLastFetched: 0,
       });
-      swapsController.state.aggregatorMetadata = {};
-      swapsController.state.aggregatorMetadataLastFetched = 0;
-      swapsController.configure({ chainId: '0x2' });
+      swapsController.setChainId('0x2');
       await swapsController.fetchAggregatorMetadataWithCache();
       expect(swapsUtilFetchAggregatorMetadata).not.toHaveBeenCalled();
     });
@@ -664,8 +750,10 @@ describe('SwapsController', () => {
         gasPrice: '20',
       };
 
-      swapsController.state.quotes = API_TRADES;
-      swapsController.state.usedGasEstimate = usedGasEstimate;
+      swapsController.__test__updateState({
+        quotes: API_TRADES,
+        usedGasEstimate,
+      });
 
       swapsController.updateQuotesWithGasPrice(customGasFee);
 
@@ -677,7 +765,10 @@ describe('SwapsController', () => {
       const customGasFee = {
         gasPrice: '10',
       };
-      swapsController.state.usedGasEstimate = null;
+
+      swapsController.__test__updateState({
+        usedGasEstimate: null,
+      });
 
       swapsController.updateQuotesWithGasPrice(customGasFee);
 
@@ -688,17 +779,20 @@ describe('SwapsController', () => {
   describe('updateSelectedQuoteWithGasLimit', () => {
     it('should update selected quote with custom gas limit', () => {
       const customGasLimit = '0x5208'; // 21000 in hex
-      swapsController.state.topAggId = 'paraswap';
-      swapsController.state.quotes = API_TRADES;
-      swapsController.state.quoteValues = {
-        paraswap: {
-          ...swapsController.state.quoteValues!.paraswap,
-          maxEthFee: '0',
+
+      swapsController.__test__updateState({
+        topAggId: 'paraswap',
+        quotes: API_TRADES,
+        quoteValues: {
+          paraswap: {
+            ...swapsController.state.quoteValues!.paraswap,
+            maxEthFee: '0',
+          },
         },
-      };
-      swapsController.state.usedGasEstimate = {
-        gasPrice: '20',
-      };
+        usedGasEstimate: {
+          gasPrice: '20',
+        },
+      });
 
       swapsController.updateSelectedQuoteWithGasLimit(customGasLimit);
 
@@ -708,8 +802,11 @@ describe('SwapsController', () => {
 
     it('should not update selected quote if topAggId or usedGasEstimate is null', () => {
       const customGasLimit = '0x5208'; // 21000 in hex
-      swapsController.state.topAggId = null;
-      swapsController.state.usedGasEstimate = null;
+
+      swapsController.__test__updateState({
+        topAggId: null,
+        usedGasEstimate: null,
+      });
 
       swapsController.updateSelectedQuoteWithGasLimit(customGasLimit);
 
@@ -781,13 +878,18 @@ describe('SwapsController', () => {
       expect(swapsController.state.quoteValues).toEqual({});
     });
 
-    it('should clear timeout if this.handle is set', () => {
+    it('should clear timeout if this.#handle is set', () => {
       const clearTimeoutSpy = jest.spyOn(global, 'clearTimeout');
-      swapsController['handle'] = setTimeout(() => {}, 1000); // Set a timeout
+      swapsController.__test__updatePrivate(
+        '#handle',
+        setTimeout(() => {}, 1000),
+      );
 
       swapsController.stopPollingAndResetState();
 
-      expect(clearTimeoutSpy).toHaveBeenCalledWith(swapsController['handle']);
+      expect(clearTimeoutSpy).toHaveBeenCalledWith(
+        swapsController.__test__getInternal('#handle'),
+      );
       clearTimeoutSpy.mockRestore();
     });
   });
@@ -812,11 +914,11 @@ describe('SwapsController', () => {
 
       swapsController = new SwapsController(
         {
+          ...INITIAL_CONTROLLER_OPTIONS,
+          messenger: messengerMock,
           fetchGasFeeEstimates,
         },
-        {
-          pollCountLimit: POLL_COUNT_LIMIT,
-        },
+        swapsUtil.getDefaultSwapsControllerState(),
       );
     });
 
@@ -843,11 +945,11 @@ describe('SwapsController', () => {
 
       swapsController = new SwapsController(
         {
+          ...INITIAL_CONTROLLER_OPTIONS,
+          messenger: messengerMock,
           fetchGasFeeEstimates,
         },
-        {
-          pollCountLimit: POLL_COUNT_LIMIT,
-        },
+        swapsUtil.getDefaultSwapsControllerState(),
       );
 
       // @ts-expect-error - testing private method
@@ -859,11 +961,11 @@ describe('SwapsController', () => {
     it('should fetch gas price from fetchGasPrices if fetchGasFeeEstimates is not defined', async () => {
       swapsController = new SwapsController(
         {
+          ...INITIAL_CONTROLLER_OPTIONS,
+          messenger: messengerMock,
           fetchGasFeeEstimates: undefined,
         },
-        {
-          pollCountLimit: POLL_COUNT_LIMIT,
-        },
+        swapsUtil.getDefaultSwapsControllerState(),
       );
 
       const fetchGasPricesSpy = jest
@@ -901,11 +1003,11 @@ describe('SwapsController', () => {
 
       swapsController = new SwapsController(
         {
+          ...INITIAL_CONTROLLER_OPTIONS,
+          messenger: messengerMock,
           fetchGasFeeEstimates,
         },
-        {
-          pollCountLimit: POLL_COUNT_LIMIT,
-        },
+        swapsUtil.getDefaultSwapsControllerState(),
       );
     });
 
@@ -1014,11 +1116,11 @@ describe('SwapsController', () => {
 
       swapsController = new SwapsController(
         {
+          ...INITIAL_CONTROLLER_OPTIONS,
+          messenger: messengerMock,
           fetchGasFeeEstimates,
         },
-        {
-          pollCountLimit: POLL_COUNT_LIMIT,
-        },
+        swapsUtil.getDefaultSwapsControllerState(),
       );
     });
 
@@ -1095,11 +1197,11 @@ describe('SwapsController', () => {
 
       swapsController = new SwapsController(
         {
+          ...INITIAL_CONTROLLER_OPTIONS,
+          messenger: messengerMock,
           fetchGasFeeEstimates,
         },
-        {
-          pollCountLimit: POLL_COUNT_LIMIT,
-        },
+        swapsUtil.getDefaultSwapsControllerState(),
       );
     });
 
@@ -1112,7 +1214,7 @@ describe('SwapsController', () => {
       };
 
       // @ts-expect-error - incomplete type
-      const result = isGasFeeStateEthGasPrice(gasFeeState);
+      const result = swapsUtil.isGasFeeStateEthGasPrice(gasFeeState);
 
       expect(result).toBe(true);
     });
@@ -1129,7 +1231,7 @@ describe('SwapsController', () => {
       };
 
       // @ts-expect-error - incomplete type
-      const result = isGasFeeStateEthGasPrice(gasFeeState);
+      const result = swapsUtil.isGasFeeStateEthGasPrice(gasFeeState);
 
       expect(result).toBe(false);
     });
@@ -1141,11 +1243,11 @@ describe('SwapsController', () => {
 
       swapsController = new SwapsController(
         {
+          ...INITIAL_CONTROLLER_OPTIONS,
+          messenger: messengerMock,
           fetchGasFeeEstimates,
         },
-        {
-          pollCountLimit: POLL_COUNT_LIMIT,
-        },
+        swapsUtil.getDefaultSwapsControllerState(),
       );
     });
 
@@ -1158,7 +1260,7 @@ describe('SwapsController', () => {
       };
 
       // @ts-expect-error - incomplete type
-      const result = isGasFeeStateLegacy(gasFeeState);
+      const result = swapsUtil.isGasFeeStateLegacy(gasFeeState);
 
       expect(result).toBe(true);
     });
@@ -1175,7 +1277,7 @@ describe('SwapsController', () => {
       };
 
       // @ts-expect-error - incomplete type
-      const result = isGasFeeStateLegacy(gasFeeState);
+      const result = swapsUtil.isGasFeeStateLegacy(gasFeeState);
 
       expect(result).toBe(false);
     });
@@ -1186,7 +1288,7 @@ describe('SwapsController', () => {
       };
 
       // @ts-expect-error - incomplete type
-      const result = isGasFeeStateLegacy(gasFeeState);
+      const result = swapsUtil.isGasFeeStateLegacy(gasFeeState);
 
       expect(result).toBe(false);
     });
