@@ -1,6 +1,15 @@
 import { toHex } from '@metamask/controller-utils';
 
-import type { SwapsToken } from './swapsInterfaces';
+import type { SwapsToken, SwapsControllerState, ChainData } from './types';
+
+export const INITIAL_CHAIN_DATA: ChainData = {
+  aggregatorMetadata: null,
+  tokens: null,
+  topAssets: null,
+  aggregatorMetadataLastFetched: 0,
+  topAssetsLastFetched: 0,
+  tokensLastFetched: 0,
+};
 
 //* Chain IDs and names
 
@@ -218,3 +227,48 @@ export const DEFAULT_ERC20_APPROVE_GAS = '0x1d4c0';
 
 // The MAX_GAS_LIMIT is a number that is higher than the maximum gas costs we have observed on any aggregator
 export const MAX_GAS_LIMIT = 2500000;
+
+export const controllerName = 'SwapsController';
+
+export const getDefaultSwapsControllerState = (): SwapsControllerState => ({
+  quotes: {},
+  quoteValues: {},
+  fetchParams: {
+    slippage: 0,
+    sourceToken: '',
+    sourceAmount: 0,
+    destinationToken: '',
+    walletAddress: '',
+  },
+  fetchParamsMetaData: {
+    sourceTokenInfo: {
+      decimals: 0,
+      address: '',
+      symbol: '',
+    },
+    destinationTokenInfo: {
+      decimals: 0,
+      address: '',
+      symbol: '',
+    },
+  },
+  topAggSavings: null,
+  aggregatorMetadata: null,
+  tokens: null,
+  topAssets: null,
+  approvalTransaction: null,
+  aggregatorMetadataLastFetched: 0,
+  quotesLastFetched: 0,
+  topAssetsLastFetched: 0,
+  error: { key: null, description: null },
+  topAggId: null,
+  tokensLastFetched: 0,
+  isInPolling: false,
+  pollingCyclesLeft: 3,
+  quoteRefreshSeconds: null,
+  usedGasEstimate: null,
+  usedCustomGas: null,
+  chainCache: {
+    [ETH_CHAIN_ID]: INITIAL_CHAIN_DATA,
+  },
+});
