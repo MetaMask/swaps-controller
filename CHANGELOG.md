@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [10.0.0]
+
+### Changed
+
+- **BREAKING**: Upgrade controller to BaseController V2 ([#277](https://github.com/MetaMask/swaps-controller/pull/277))
+
+### Fixed
+
+- Fix incorrect version after revert ([#318](https://github.com/MetaMask/swaps-controller/pull/318))
+- Update name of Polygon network token from MATIC to POL ([#312](https://github.com/MetaMask/swaps-controller/pull/312))
+
 ## [9.0.12]
 
 ### Changed
@@ -274,7 +285,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use standalone gas API endpoint ([#70](https://github.com/MetaMask/swaps-controller/pull/70))
 - Bump @metamask/controllers from 14.1.0 to 14.2.0 ([#69](https://github.com/MetaMask/swaps-controller/pull/69))
 
-[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v9.0.12...HEAD
+[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v10.0.0...HEAD
+[10.0.0]: https://github.com/MetaMask/swaps-controller/compare/v9.0.12...v10.0.0
 [9.0.12]: https://github.com/MetaMask/swaps-controller/compare/v9.0.9...v9.0.12
 [9.0.9]: https://github.com/MetaMask/swaps-controller/compare/v9.0.8...v9.0.9
 [9.0.8]: https://github.com/MetaMask/swaps-controller/compare/v9.0.7...v9.0.8
