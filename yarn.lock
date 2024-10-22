@@ -959,7 +959,7 @@
     semver "^7.3.5"
     yargs "^17.0.1"
 
-"@metamask/base-controller@^4.0.0", "@metamask/base-controller@^4.0.1", "@metamask/base-controller@^4.1.1":
+"@metamask/base-controller@^4.0.1", "@metamask/base-controller@^4.1.1":
   version "4.1.1"
   resolved "https://registry.yarnpkg.com/@metamask/base-controller/-/base-controller-4.1.1.tgz#9b411adf4822de7382fe69d07bb6b3fc3e738923"
   integrity sha512-sJdsd/XlyOa0kRJ16qbM+xeQ8peV1yZcYumJmHCClPK09MkAlxq7EzsrahVZXUCFwcxtSucf244pbttnVqNthw==
@@ -975,12 +975,12 @@
     "@metamask/utils" "^9.1.0"
     immer "^9.0.6"
 
-"@metamask/composable-controller@^4.0.0":
-  version "4.0.0"
-  resolved "https://registry.yarnpkg.com/@metamask/composable-controller/-/composable-controller-4.0.0.tgz#ea504abb358e26b1c9791bace3b0d6a07158ce41"
-  integrity sha512-+/DfZ9PY9URjy1DWujUakG8S0a2knjQIpV2SwVTr5L7qahp8dI7CYV78SK+SAxhWs0H+fM9wVObUc0LqAadKSg==
+"@metamask/composable-controller@^9.0.1":
+  version "9.0.1"
+  resolved "https://registry.yarnpkg.com/@metamask/composable-controller/-/composable-controller-9.0.1.tgz#6d32b85f6a138ff1d23e1d20d58365de583a28a9"
+  integrity sha512-z83kF3I3LV/saWI9+bu35aBeENZPqcC2aUpcs7VOxfTIKEvjrAhXgxPThU+BsO0cjsuQV7dP04J+5vDs5qGbIw==
   dependencies:
-    "@metamask/base-controller" "^4.0.0"
+    "@metamask/base-controller" "^7.0.1"
 
 "@metamask/controller-utils@^11.3.0":
   version "11.3.0"
