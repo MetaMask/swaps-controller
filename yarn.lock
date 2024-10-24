@@ -983,9 +983,9 @@
     "@metamask/base-controller" "^7.0.1"
 
 "@metamask/controller-utils@^11.3.0":
-  version "11.3.0"
-  resolved "https://registry.yarnpkg.com/@metamask/controller-utils/-/controller-utils-11.3.0.tgz#530fd22289f717b752b4a7b6e504e1f2911b30a4"
-  integrity sha512-5b+Jg9sKKESzvQcuipHC1D7KSh98MVIi7hXQUk7iX+YVMl4KoKDv94Bl+li8g+jCBshMOV9bRMRh25/hdEvTZQ==
+  version "11.4.0"
+  resolved "https://registry.yarnpkg.com/@metamask/controller-utils/-/controller-utils-11.4.0.tgz#09275d109988f3c765777cd4f56b96b82f6017d6"
+  integrity sha512-LlXC4APL4b45TS2Qefo3ACE7LctviVm5+F303YNY6bfY2g8ag1EucQ6lOCiD+M8NNgJoRsLr4b/mLHdV5Ns6Rw==
   dependencies:
     "@ethereumjs/util" "^8.1.0"
     "@metamask/eth-query" "^4.0.0"
