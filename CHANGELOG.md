@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [11.0.0]
+
+### Changed
+
+- **BREAKING**: Bump `@metamask/network-controller` peer dependency from `^18.1.0` to `^21.1.0` ([#332](https://github.com/MetaMask/swaps-controller/pull/332))
+- **BREAKING**: `@metamask/gas-fee-controller` is now listed as peer dependency ([#331](https://github.com/MetaMask/swaps-controller/pull/331))
+  - The package version has been bumped from `^15.1.2` to `^21.0.0`
+- Bump `@metamask/transaction-controller` from `^19.0.1` to `^37.3.0` ([#333](https://github.com/MetaMask/swaps-controller/pull/333))
+- Bump `@metamask/approval-controller` from `^5.1.1` to `^7.1.0` ([#333](https://github.com/MetaMask/swaps-controller/pull/333))
+- Bump `@metamask/utils` from `^8.5.0` to `^10.0.0` ([#330](https://github.com/MetaMask/swaps-controller/pull/330))
+- Bump `@metamask/controller-utils` from `^10.0.0` to `^11.3.0` ([#322](https://github.com/MetaMask/swaps-controller/pull/322))
+- Bump `@metamask/base-controller` from `^5.0.2` to `^7.0.1` ([#319](https://github.com/MetaMask/swaps-controller/pull/319))
+- Bump `@metamask/safe-event-emitter` from `^3.1.1` to `^3.1.2` ([#329](https://github.com/MetaMask/swaps-controller/pull/329))
+- Bump `secp256k1` in the npm_and_yarn group ([#327](https://github.com/MetaMask/swaps-controller/pull/327))
+- Bump `@metamask/rpc-errors` from `^6.3.1` to `^6.4.0` ([#325](https://github.com/MetaMask/swaps-controller/pull/325))
+- Update `LICENSE` ([#338](https://github.com/MetaMask/swaps-controller/pull/338))
+
 ## [10.0.0]
 
 ### Changed
@@ -285,7 +302,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use standalone gas API endpoint ([#70](https://github.com/MetaMask/swaps-controller/pull/70))
 - Bump @metamask/controllers from 14.1.0 to 14.2.0 ([#69](https://github.com/MetaMask/swaps-controller/pull/69))
 
-[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v10.0.0...HEAD
+[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v11.0.0...HEAD
+[11.0.0]: https://github.com/MetaMask/swaps-controller/compare/v10.0.0...v11.0.0
 [10.0.0]: https://github.com/MetaMask/swaps-controller/compare/v9.0.12...v10.0.0
 [9.0.12]: https://github.com/MetaMask/swaps-controller/compare/v9.0.9...v9.0.12
 [9.0.9]: https://github.com/MetaMask/swaps-controller/compare/v9.0.8...v9.0.9
