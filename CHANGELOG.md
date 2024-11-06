@@ -14,7 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **BREAKING**: Bump `@metamask/network-controller` peer dependency from `^18.1.0` to `^21.1.0` ([#332](https://github.com/MetaMask/swaps-controller/pull/332))
 - **BREAKING**: `@metamask/gas-fee-controller` is now listed as peer dependency ([#331](https://github.com/MetaMask/swaps-controller/pull/331))
   - The package version has been bumped from `^15.1.2` to `^21.0.0`
-- Bump `@metamask/{transaction, approval}-controller` ([#333](https://github.com/MetaMask/swaps-controller/pull/333))
+- Bump `@metamask/transaction-controller` from `^19.0.1` to `^37.3.0` ([#333](https://github.com/MetaMask/swaps-controller/pull/333))
+- Bump `@metamask/approval-controller` from `^5.1.1` to `^7.1.0` ([#333](https://github.com/MetaMask/swaps-controller/pull/333))
 - Bump `@metamask/utils` from `^8.5.0` to `^10.0.0` ([#330](https://github.com/MetaMask/swaps-controller/pull/330))
 - Bump `@metamask/controller-utils` from `^10.0.0` to `^11.3.0` ([#322](https://github.com/MetaMask/swaps-controller/pull/322))
 - Bump `@metamask/base-controller` from `^5.0.2` to `^7.0.1` ([#319](https://github.com/MetaMask/swaps-controller/pull/319))
