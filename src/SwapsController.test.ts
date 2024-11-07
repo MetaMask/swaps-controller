@@ -1,9 +1,62 @@
-import { ChainId } from '@metamask/controller-utils';
 import { GasFeeEstimates } from '@metamask/gas-fee-controller';
 import SwapsController from './SwapsController';
-import { Quote, SwapsControllerMessenger } from './types';
+import {
+  APIFetchQuotesMetadata,
+  APIFetchQuotesParams,
+  Quote,
+  SwapsControllerMessenger,
+  SwapsControllerOptions,
+  SwapsControllerState,
+} from './types';
 import * as swapsUtil from './swapsUtil';
-import { Provider } from '@metamask/network-controller';
+import {
+  NetworkClientId,
+  NetworkControllerGetNetworkClientByIdAction,
+  NetworkControllerNetworkDidChangeEvent,
+} from '@metamask/network-controller';
+import { FakeProvider } from '../tests/fake-provider';
+import { Hex } from '@metamask/utils';
+import { ControllerMessenger } from '@metamask/base-controller';
+import * as ethQueryModule from '@metamask/eth-query';
+import * as ethersContracts from '@ethersproject/contracts';
+import * as ethersProviders from '@ethersproject/providers';
+import { Interface } from '@ethersproject/abi';
+import abiERC20 from 'human-standard-token-abi';
+
+// Override this module so that its members can be spied on
+jest.mock('@metamask/eth-query', () => {
+  return {
+    __esModule: true,
+    default: jest.requireActual('@metamask/eth-query'),
+  };
+});
+
+// Override this module so that its members can be spied on
+jest.mock('@ethersproject/contracts', () => {
+  return {
+    ...jest.requireActual('@ethersproject/contracts'),
+    __esModule: true,
+  };
+});
+
+const originalSetTimeout = setTimeout;
+const OriginalEthQuery = ethQueryModule.default;
+const OriginalWeb3Provider = ethersProviders.Web3Provider;
+
+const {
+  ARBITRUM_CHAIN_ID,
+  AVALANCHE_CHAIN_ID,
+  BASE_CHAIN_ID,
+  BSC_CHAIN_ID,
+  CHAIN_ID_TO_NAME_MAP,
+  ETH_CHAIN_ID,
+  LINEA_CHAIN_ID,
+  OPTIMISM_CHAIN_ID,
+  POLYGON_CHAIN_ID,
+  SWAPS_CONTRACT_ADDRESSES,
+  SWAPS_TESTNET_CHAIN_ID,
+  ZKSYNC_ERA_CHAIN_ID,
+} = swapsUtil;
 
 const INITIAL_CONTROLLER_OPTIONS = {
   pollCountLimit: 3,
@@ -112,54 +165,140 @@ const messengerMock = {
   registerActionHandler: jest.fn(),
   registerInitialEventPayload: jest.fn(),
   publish: jest.fn(),
+  subscribe: jest.fn(),
 } as unknown as jest.Mocked<SwapsControllerMessenger>;
 
-jest.mock('@metamask/eth-query', () =>
-  jest.fn().mockImplementation(() => {
-    return {
-      estimateGas: (_transaction: any, callback: any) => {
-        callback(undefined, '0x0');
-      },
-      gasPrice: (callback: any) => {
-        callback(undefined, '0x0');
-      },
-      getBlockByNumber: (
-        _blocknumber: any,
-        _fetchTxs: boolean,
-        callback: any,
-      ) => {
-        callback(undefined, { gasLimit: '0x0' });
-      },
-      getCode: (_to: any, callback: any) => {
-        callback(undefined, '0x0');
-      },
-      getTransactionByHash: (_hash: any, callback: any) => {
-        callback(undefined, { blockNumber: '0x1' });
-      },
-      getTransactionCount: (_from: any, _to: any, callback: any) => {
-        callback(undefined, '0x0');
-      },
-      sendRawTransaction: (_transaction: any, callback: any) => {
-        callback(undefined, '1337');
-      },
-    };
-  }),
-);
+const networkControllerGetNetworkClientByIdCallbackMock = jest.fn();
 
-jest.mock('@ethersproject/contracts', () => {
+function mockNetworkControllerGetNetworkClientById(
+  networkClientsById: Record<
+    NetworkClientId,
+    {
+      provider: FakeProvider;
+      configuration: {
+        chainId: Hex;
+      };
+    }
+  >,
+) {
+  networkControllerGetNetworkClientByIdCallbackMock.mockImplementation(
+    (networkClientId) => {
+      const foundNetworkClient = networkClientsById[networkClientId];
+      if (foundNetworkClient === undefined) {
+        throw new Error(`Unknown network client ID '${networkClientId}'`);
+      }
+      return foundNetworkClient;
+    },
+  );
+}
+
+function buildAPIFetchQuotesParams(
+  overrides: Partial<APIFetchQuotesParams> = {},
+): APIFetchQuotesParams {
   return {
-    Contract: jest.fn(() => ({
-      allowance: jest.fn(() => ({
-        call: jest.fn().mockResolvedValue('1000000000000000000'), // Mocked allowance value
-      })),
-    })),
+    slippage: 1,
+    sourceToken: '0x6B175474E89094C44Da98b954EedeAC495271d0F',
+    sourceAmount: 1000,
+    destinationToken: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+    walletAddress: '0xe18035bf8712672935fdb4e5e431b1a0183d2dfc',
+    ...overrides,
   };
-});
+}
+
+function buildAPIFetchQuotesMetadata(
+  overrides: Partial<APIFetchQuotesMetadata> = {},
+): APIFetchQuotesMetadata {
+  return {
+    sourceTokenInfo: {
+      decimals: 18,
+      address: '0x6b175474e89094c44da98b954eedeac495271d0f',
+      symbol: 'TOKEN1',
+    },
+    destinationTokenInfo: {
+      decimals: 18,
+      address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+      symbol: 'TOKEN2',
+    },
+    networkClientId: 'ZZZZ-ZZZZ-ZZZZ-ZZZZ',
+    ...overrides,
+  };
+}
+
+function buildGasFeeEstimates(overrides: Partial<GasFeeEstimates> = {}) {
+  return {
+    gasFeeEstimates: {
+      high: {
+        suggestedMaxFeePerGas: '100',
+        suggestedMaxPriorityFeePerGas: '10',
+      },
+      medium: '20',
+      low: '5',
+      estimatedBaseFee: '50',
+    },
+    estimatedGasFeeTimeBounds: {},
+    gasEstimateType: 'fee-market',
+    ...overrides,
+  };
+}
+
+function buildNetVersionRequestStub(chainId: Hex) {
+  return {
+    request: {
+      method: 'net_version',
+      params: [],
+    },
+    response: {
+      result: chainId,
+    },
+  };
+}
+
+function buildErc20AllowanceCallStub(
+  chainId: Hex,
+  fetchParams: APIFetchQuotesParams,
+  {
+    contractAddress = fetchParams.sourceToken as Hex,
+    walletAddress = fetchParams.walletAddress as Hex,
+    allowance = '285604723479784',
+  }: {
+    contractAddress?: Hex;
+    walletAddress?: Hex;
+    allowance?: number | string;
+  } = {},
+) {
+  const swapsContractAddress = SWAPS_CONTRACT_ADDRESSES[chainId];
+  const iface = new Interface(abiERC20);
+  const data = iface.encodeFunctionData('allowance', [
+    walletAddress,
+    swapsContractAddress,
+  ]);
+  const result = iface.encodeFunctionResult('allowance', [allowance]);
+
+  return {
+    request: {
+      method: 'eth_call',
+      params: [
+        {
+          to: contractAddress.toLowerCase(),
+          data,
+        },
+        'latest',
+      ],
+    },
+    response: {
+      result,
+    },
+  };
+}
 
 describe('SwapsController', () => {
   /* Setup */
   let fetchGasFeeEstimates: jest.Mock;
   let fetchEstimatedMultiLayerL1Fee: jest.Mock;
+  let getSwapsController: (args?: {
+    options?: Partial<SwapsControllerOptions>;
+    state?: Partial<SwapsControllerState>;
+  }) => SwapsController;
   let swapsController: SwapsController;
   let swapsUtilFetchTokens: jest.SpyInstance;
   let swapsUtilFetchTopAssets: jest.SpyInstance;
@@ -175,16 +314,28 @@ describe('SwapsController', () => {
     }));
     fetchEstimatedMultiLayerL1Fee = jest.fn().mockImplementation(() => '0x0');
 
-    swapsController = new SwapsController(
-      {
-        ...INITIAL_CONTROLLER_OPTIONS,
-        messenger: messengerMock,
-        // TODO: Remove once GasFeeController exports this action type
-        fetchGasFeeEstimates,
-        fetchEstimatedMultiLayerL1Fee,
-      },
-      swapsUtil.getDefaultSwapsControllerState(),
-    );
+    messengerMock.call.mockImplementation((actionName, ...args) => {
+      if (actionName === 'NetworkController:getNetworkClientById') {
+        return networkControllerGetNetworkClientByIdCallbackMock(...args);
+      }
+      return undefined;
+    });
+
+    getSwapsController = ({ options, state } = {}) => {
+      return new SwapsController(
+        {
+          clientId: '1',
+          messenger: messengerMock,
+          // TODO: Remove once GasFeeController exports this action type
+          fetchGasFeeEstimates,
+          fetchEstimatedMultiLayerL1Fee,
+          ...options,
+        },
+        state,
+      );
+    };
+
+    swapsController = getSwapsController();
 
     swapsUtilFetchTokens = jest
       .spyOn(swapsUtil, 'fetchTokens')
@@ -200,7 +351,10 @@ describe('SwapsController', () => {
 
     swapsUtilFetchTradesInfo = jest
       .spyOn(swapsUtil, 'fetchTradesInfo')
-      .mockImplementation(() => API_TRADES as any);
+      .mockResolvedValue({
+        paraswap: { ...API_TRADES.paraswap },
+        oneInch: { ...API_TRADES.oneInch },
+      } as any);
 
     swapsUtilEstimateGas = jest
       .spyOn(swapsUtil, 'estimateGas')
@@ -216,529 +370,3098 @@ describe('SwapsController', () => {
     swapsUtilEstimateGas.mockRestore();
   });
 
-  it('should set default options', () => {
-    expect(swapsController.__test__getInternal('#chainId')).toStrictEqual(
-      INITIAL_CONTROLLER_OPTIONS.chainId,
-    );
-    expect(
-      swapsController.__test__getInternal('#supportedChainIds'),
-    ).toStrictEqual(INITIAL_CONTROLLER_OPTIONS.supportedChainIds);
-    expect(
-      swapsController.__test__getInternal('#pollCountLimit'),
-    ).toStrictEqual(INITIAL_CONTROLLER_OPTIONS.pollCountLimit);
-    expect(
-      swapsController.__test__getInternal('#fetchAggregatorMetadataThreshold'),
-    ).toStrictEqual(
-      INITIAL_CONTROLLER_OPTIONS.fetchAggregatorMetadataThreshold,
-    );
-    expect(
-      swapsController.__test__getInternal('#fetchTokensThreshold'),
-    ).toStrictEqual(INITIAL_CONTROLLER_OPTIONS.fetchTokensThreshold);
-    expect(
-      swapsController.__test__getInternal('#fetchTopAssetsThreshold'),
-    ).toStrictEqual(INITIAL_CONTROLLER_OPTIONS.fetchTopAssetsThreshold);
-    expect(swapsController.__test__getInternal('#clientId')).toStrictEqual(
-      INITIAL_CONTROLLER_OPTIONS.clientId,
-    );
-    expect(swapsController.__test__getInternal('#fetchGasFeeEstimates')).toBe(
-      fetchGasFeeEstimates,
-    );
-    expect(
-      swapsController.__test__getInternal('#fetchEstimatedMultiLayerL1Fee'),
-    ).toBe(fetchEstimatedMultiLayerL1Fee);
-  });
+  describe('constructor', () => {
+    it('initializes state with purely defaults when no initial state given', () => {
+      const controller = getSwapsController();
 
-  it('should set default state', () => {
-    expect(swapsController.state).toStrictEqual(
-      swapsUtil.getDefaultSwapsControllerState(),
-    );
-    expect(swapsController.state).toStrictEqual({
-      quotes: {},
-      quoteValues: {},
-      fetchParams: {
-        slippage: 0,
-        sourceToken: '',
-        sourceAmount: 0,
-        destinationToken: '',
-        walletAddress: '',
-      },
-      fetchParamsMetaData: {
-        sourceTokenInfo: {
-          decimals: 0,
-          address: '',
-          symbol: '',
+      expect(controller.state).toStrictEqual({
+        quotes: {},
+        quoteValues: {},
+        fetchParams: {
+          slippage: 0,
+          sourceToken: '',
+          sourceAmount: 0,
+          destinationToken: '',
+          walletAddress: '',
         },
-        destinationTokenInfo: {
-          decimals: 0,
-          address: '',
-          symbol: '',
+        fetchParamsMetaData: {
+          sourceTokenInfo: {
+            decimals: 0,
+            address: '',
+            symbol: '',
+          },
+          destinationTokenInfo: {
+            decimals: 0,
+            address: '',
+            symbol: '',
+          },
+          networkClientId: 'mainnet',
         },
-      },
-      topAggSavings: null,
-      aggregatorMetadata: null,
-      tokens: null,
-      topAssets: null,
-      approvalTransaction: null,
-      aggregatorMetadataLastFetched: 0,
-      quotesLastFetched: 0,
-      topAssetsLastFetched: 0,
-      error: { description: null, key: null },
-      topAggId: null,
-      tokensLastFetched: 0,
-      isInPolling: false,
-      pollingCyclesLeft: 3,
-      quoteRefreshSeconds: null,
-      usedGasEstimate: null,
-      usedCustomGas: null,
-      chainCache: {
-        '0x1': {
-          aggregatorMetadataLastFetched: 0,
-          tokensLastFetched: 0,
-          topAssetsLastFetched: 0,
-          aggregatorMetadata: null,
-          tokens: null,
-          topAssets: null,
-        },
-      },
-    });
-  });
-
-  it('should set default options if not present', () => {
-    swapsController = new SwapsController(
-      {
-        messenger: messengerMock,
-        fetchGasFeeEstimates,
-        fetchEstimatedMultiLayerL1Fee,
-      },
-      {},
-    );
-
-    expect(swapsController.__test__getInternal('#chainId')).toStrictEqual(
-      INITIAL_CONTROLLER_OPTIONS.chainId,
-    );
-    expect(
-      swapsController.__test__getInternal('#supportedChainIds'),
-    ).toStrictEqual(INITIAL_CONTROLLER_OPTIONS.supportedChainIds);
-    expect(
-      swapsController.__test__getInternal('#pollCountLimit'),
-    ).toStrictEqual(INITIAL_CONTROLLER_OPTIONS.pollCountLimit);
-    expect(
-      swapsController.__test__getInternal('#fetchAggregatorMetadataThreshold'),
-    ).toStrictEqual(
-      INITIAL_CONTROLLER_OPTIONS.fetchAggregatorMetadataThreshold,
-    );
-    expect(
-      swapsController.__test__getInternal('#fetchTokensThreshold'),
-    ).toStrictEqual(INITIAL_CONTROLLER_OPTIONS.fetchTokensThreshold);
-    expect(
-      swapsController.__test__getInternal('#fetchTopAssetsThreshold'),
-    ).toStrictEqual(INITIAL_CONTROLLER_OPTIONS.fetchTopAssetsThreshold);
-    expect(swapsController.__test__getInternal('#clientId')).toStrictEqual(
-      INITIAL_CONTROLLER_OPTIONS.clientId,
-    );
-  });
-
-  it('should set a default value for pollingCyclesLeft', () => {
-    swapsController = new SwapsController(
-      {
-        ...INITIAL_CONTROLLER_OPTIONS,
-        messenger: messengerMock,
-        fetchGasFeeEstimates,
-        fetchEstimatedMultiLayerL1Fee,
-      },
-      {},
-    );
-    expect(swapsController.state.pollingCyclesLeft).toBe(3);
-  });
-
-  it('should use swapsUtil.INITIAL_CHAIN_DATA when chainCache does not have data for the chainId', () => {
-    const chainId = ChainId.aurora;
-
-    swapsController.__test__updatePrivate('#supportedChainIds', [chainId]);
-
-    // add to supportedChainIds, clear chainCache and set chainId
-    swapsController.__test__updateState({
-      chainCache: {},
-    });
-
-    swapsController.setChainId(chainId);
-
-    const cachedData = swapsController.state.chainCache[chainId];
-    expect(cachedData).toEqual(swapsUtil.INITIAL_CHAIN_DATA);
-  });
-
-  describe('provider', () => {
-    it('should set provider', () => {
-      const provider = {
-        name: 'test',
-        type: 'test',
-        chainId: '0x1',
-        rpcUrl: 'test',
-      } as unknown as Provider;
-
-      expect(swapsController.__test__getInternal('#ethQuery')).toBeUndefined();
-
-      swapsController.setProvider(provider);
-
-      expect(swapsController.__test__getInternal('#ethQuery')).toBeDefined();
-    });
-  });
-
-  describe('provider', () => {
-    it('should set provider with options', () => {
-      const provider = {
-        name: 'test',
-        type: 'test',
-        chainId: '0x1',
-        rpcUrl: 'test',
-      } as unknown as Provider;
-
-      expect(swapsController.__test__getInternal('#ethQuery')).toBeUndefined();
-
-      swapsController.setProvider(provider, {
-        chainId: '0x23',
-        pollCountLimit: 10,
-      });
-
-      expect(swapsController.__test__getInternal('#ethQuery')).toBeDefined();
-      expect(swapsController.__test__getInternal('#chainId')).toBe('0x23');
-      expect(swapsController.__test__getInternal('#pollCountLimit')).toBe(10);
-    });
-  });
-
-  describe('chain cache', () => {
-    it('should update chainId configuration', () => {
-      swapsController.__test__updatePrivate('#supportedChainIds', [
-        '0x23',
-        '0x24',
-        '0x291',
-      ]);
-      swapsController.setChainId('0x23');
-      expect(swapsController.__test__getInternal('#chainId')).toBe('0x23');
-
-      swapsController.setChainId('0x24');
-      expect(swapsController.__test__getInternal('#chainId')).toBe('0x24');
-
-      swapsController.setChainId('0x291');
-      expect(swapsController.__test__getInternal('#chainId')).toBe('0x291');
-    });
-
-    it('should create default cache for supported chainIds', () => {
-      swapsController.__test__updatePrivate('#supportedChainIds', [
-        '0x23',
-        '0x24',
-        '0x291',
-      ]);
-      swapsController.setChainId('0x23');
-      expect(swapsController.state.chainCache['0x23']).toStrictEqual(
-        swapsUtil.INITIAL_CHAIN_DATA,
-      );
-
-      swapsController.setChainId('0x24');
-      expect(swapsController.state.chainCache['0x24']).toStrictEqual(
-        swapsUtil.INITIAL_CHAIN_DATA,
-      );
-
-      swapsController.setChainId('0x291');
-      expect(swapsController.state.chainCache['0x291']).toStrictEqual(
-        swapsUtil.INITIAL_CHAIN_DATA,
-      );
-    });
-
-    it('should not create default cache for unsupported chainIds', () => {
-      swapsController.setChainId('0x23');
-      expect(swapsController.state.chainCache['0x23']).toBeUndefined();
-
-      swapsController.setChainId('0x24');
-      expect(swapsController.state.chainCache['0x24']).toBeUndefined();
-
-      swapsController.setChainId('0x291');
-      expect(swapsController.state.chainCache['0x291']).toBeUndefined();
-    });
-
-    it('should load existing cache for chainId', () => {
-      swapsController.__test__updatePrivate('#supportedChainIds', [
-        '0x23',
-        '0x24',
-        '0x291',
-      ]);
-
-      const chainData23 = {
-        ...swapsUtil.INITIAL_CHAIN_DATA,
-        tokensLastFetched: 231,
-        topAssetsLastFetched: 232,
-        aggregatorMetadataLastFetched: 233,
-      };
-      const chainData24 = {
-        ...swapsUtil.INITIAL_CHAIN_DATA,
-        tokensLastFetched: 241,
-        topAssetsLastFetched: 242,
-        aggregatorMetadataLastFetched: 243,
-      };
-      const chainData0x123 = {
-        ...swapsUtil.INITIAL_CHAIN_DATA,
-        tokensLastFetched: 2911,
-        topAssetsLastFetched: 2912,
-        aggregatorMetadataLastFetched: 2913,
-      };
-
-      swapsController.__test__updateState({
-        chainCache: {
-          '0x23': chainData23,
-          '0x24': chainData24,
-          '0x291': chainData0x123,
-        },
-      });
-
-      swapsController.setChainId('0x23');
-      expect(swapsController.state.chainCache['0x23']).toStrictEqual(
-        chainData23,
-      );
-
-      swapsController.setChainId('0x24');
-      expect(swapsController.state.chainCache['0x24']).toStrictEqual(
-        chainData24,
-      );
-
-      swapsController.setChainId('0x291');
-      expect(swapsController.state.chainCache['0x291']).toStrictEqual(
-        chainData0x123,
-      );
-    });
-  });
-
-  describe('tokens cache', () => {
-    it('should fetch tokens when no tokens in state', async () => {
-      swapsController.__test__updateState({
-        tokens: [],
-      });
-      await swapsController.fetchTokenWithCache();
-      expect(swapsUtilFetchTokens).toHaveBeenCalled();
-    });
-
-    it('should fetch tokens when last fetched is 0', async () => {
-      swapsController.__test__updateState({
-        tokens: [],
-        tokensLastFetched: 0,
-      });
-      await swapsController.fetchTokenWithCache();
-      expect(swapsUtilFetchTokens).toHaveBeenCalled();
-    });
-
-    it('should fetch tokens when last fetched is over threshold', async () => {
-      const threshold = 5000;
-      swapsController.__test__updatePrivate('#fetchTokensThreshold', threshold);
-      swapsController.__test__updateState({
-        tokens: [],
-        tokensLastFetched: Date.now() - threshold - 1,
-      });
-      await swapsController.fetchTokenWithCache();
-      expect(swapsUtilFetchTokens).toHaveBeenCalled();
-    });
-
-    it('should not fetch tokens when no threshold reached', async () => {
-      swapsController.__test__updateState({
-        tokens: [],
-        tokensLastFetched: Date.now(),
-      });
-      await swapsController.fetchTokenWithCache();
-      expect(swapsUtilFetchTokens).not.toHaveBeenCalled();
-    });
-
-    it('should not fetch tokens when no threshold reached or tokens are available', async () => {
-      swapsController.__test__updateState({
-        tokens: [],
-        tokensLastFetched: Date.now(),
-      });
-      await swapsController.fetchTokenWithCache();
-      expect(swapsUtilFetchTokens).not.toHaveBeenCalled();
-    });
-
-    it('should set tokensLastFetched to 0 when fetchTokens throws', async () => {
-      swapsUtilFetchTokens.mockImplementation(() => {
-        throw new Error();
-      });
-      const threshold = 5000;
-      swapsController.__test__updatePrivate('#fetchTokensThreshold', threshold);
-      swapsController.__test__updateState({
-        tokens: [],
-        tokensLastFetched: Date.now() - threshold - 1,
-      });
-      await swapsController.fetchTokenWithCache();
-      expect(swapsUtilFetchTokens).toHaveBeenCalled();
-      expect(swapsController.state.tokensLastFetched).toBe(0);
-    });
-
-    it('should not fetch tokens if chain id is not supported', async () => {
-      swapsController.__test__updateState({
-        tokens: [],
-        tokensLastFetched: 0,
-      });
-      swapsController.__test__updatePrivate('#supportedChainIds', ['0x1']);
-      swapsController.setChainId('0x2');
-
-      await swapsController.fetchTokenWithCache();
-      expect(swapsUtilFetchTokens).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('top assets cache', () => {
-    it('should fetch top assets when no top assets in state', async () => {
-      swapsController.__test__updateState({
-        topAssets: null,
-      });
-      await swapsController.fetchTopAssetsWithCache();
-      expect(swapsUtilFetchTopAssets).toHaveBeenCalled();
-    });
-
-    it('should fetch top assets when last fetched is 0', async () => {
-      swapsController.__test__updateState({
-        topAssets: [],
-        topAssetsLastFetched: 0,
-      });
-      await swapsController.fetchTopAssetsWithCache();
-      expect(swapsUtilFetchTopAssets).toHaveBeenCalled();
-    });
-
-    it('should fetch top assets when last fetched is over threshold', async () => {
-      const threshold = 5000;
-      swapsController.__test__updatePrivate(
-        '#fetchTopAssetsThreshold',
-        threshold,
-      );
-      swapsController.__test__updateState({
-        topAssets: [],
-        topAssetsLastFetched: Date.now() - threshold - 1,
-      });
-      await swapsController.fetchTopAssetsWithCache();
-      expect(swapsUtilFetchTopAssets).toHaveBeenCalled();
-    });
-
-    it('should not fetch top assets when no threshold reached', async () => {
-      swapsController.__test__updateState({
-        topAssets: [],
-        topAssetsLastFetched: Date.now(),
-      });
-      await swapsController.fetchTopAssetsWithCache();
-      expect(swapsUtilFetchTopAssets).not.toHaveBeenCalled();
-    });
-
-    it('should not fetch top assets when no threshold reached or tokens are available', async () => {
-      swapsController.__test__updateState({
-        topAssets: [],
-        topAssetsLastFetched: Date.now(),
-      });
-      await swapsController.fetchTopAssetsWithCache();
-      expect(swapsUtilFetchTopAssets).not.toHaveBeenCalled();
-    });
-
-    it('should set topAssetsLastFetched to 0 when fetchTopAssets throws', async () => {
-      swapsUtilFetchTopAssets.mockImplementation(() => {
-        throw new Error();
-      });
-      const threshold = 5000;
-      swapsController.__test__updatePrivate(
-        '#fetchTopAssetsThreshold',
-        threshold,
-      );
-      swapsController.__test__updateState({
-        topAssets: [],
-        topAssetsLastFetched: Date.now() - threshold - 1,
-      });
-      await swapsController.fetchTopAssetsWithCache();
-      expect(swapsUtilFetchTopAssets).toHaveBeenCalled();
-      expect(swapsController.state.topAssetsLastFetched).toBe(0);
-    });
-
-    it('should return undefined if chain id is not supported', async () => {
-      swapsController.__test__updatePrivate('#supportedChainIds', ['0x1']);
-      swapsController.__test__updateState({
-        topAssets: [],
-        topAssetsLastFetched: 0,
-      });
-
-      swapsController.setChainId('0x2');
-      await swapsController.fetchTopAssetsWithCache();
-      expect(swapsUtilFetchTopAssets).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('aggregator metadata cache', () => {
-    it('should fetch aggregator metadata when no aggregator metadata in state', async () => {
-      swapsController.__test__updateState({
+        topAggSavings: null,
         aggregatorMetadata: null,
-      });
-      await swapsController.fetchAggregatorMetadataWithCache();
-      expect(swapsUtilFetchAggregatorMetadata).toHaveBeenCalled();
-    });
-
-    it('should fetch aggregator metadata when last fetched is 0', async () => {
-      swapsController.__test__updateState({
-        aggregatorMetadata: {},
+        tokens: null,
+        topAssets: null,
+        approvalTransaction: null,
         aggregatorMetadataLastFetched: 0,
+        quotesLastFetched: 0,
+        topAssetsLastFetched: 0,
+        error: { key: null, description: null },
+        topAggId: null,
+        tokensLastFetched: 0,
+        isInPolling: false,
+        pollingCyclesLeft: 3,
+        quoteRefreshSeconds: null,
+        usedGasEstimate: null,
+        usedCustomGas: null,
+        chainCache: {
+          '0x1': {
+            aggregatorMetadata: null,
+            tokens: null,
+            topAssets: null,
+            aggregatorMetadataLastFetched: 0,
+            topAssetsLastFetched: 0,
+            tokensLastFetched: 0,
+          },
+        },
       });
-      await swapsController.fetchAggregatorMetadataWithCache();
-      expect(swapsUtilFetchAggregatorMetadata).toHaveBeenCalled();
     });
 
-    it('should fetch aggregator metadata when last fetched is over threshold', async () => {
-      const threshold = 5000;
-      swapsController.__test__updatePrivate(
-        '#fetchAggregatorMetadataThreshold',
-        threshold,
-      );
-      swapsController.__test__updateState({
-        aggregatorMetadata: {},
-        aggregatorMetadataLastFetched: Date.now() - threshold - 1,
+    it('allows overriding any part of default state', () => {
+      const controller = getSwapsController({
+        state: {
+          fetchParams: {
+            slippage: 0,
+            sourceToken: '0x12345',
+            sourceAmount: 0,
+            destinationToken: '',
+            walletAddress: '0x99999',
+          },
+          quoteRefreshSeconds: 3,
+        },
       });
-      await swapsController.fetchAggregatorMetadataWithCache();
-      expect(swapsUtilFetchAggregatorMetadata).toHaveBeenCalled();
-    });
 
-    it('should not fetch aggregator metadata when no threshold reached', async () => {
-      swapsController.__test__updateState({
-        aggregatorMetadata: {},
-        aggregatorMetadataLastFetched: Date.now(),
-      });
-      await swapsController.fetchAggregatorMetadataWithCache();
-      expect(swapsUtilFetchAggregatorMetadata).not.toHaveBeenCalled();
-    });
-
-    it('should not fetch aggregator metadata when no threshold reached or tokens are available', async () => {
-      swapsController.__test__updateState({
-        aggregatorMetadata: {},
-        aggregatorMetadataLastFetched: Date.now(),
-      });
-      await swapsController.fetchAggregatorMetadataWithCache();
-      expect(swapsUtilFetchAggregatorMetadata).not.toHaveBeenCalled();
-    });
-
-    it('should set aggregatorMetadataLastFetched to 0 when fetchAggregatorMetadata throws', async () => {
-      swapsUtilFetchAggregatorMetadata.mockImplementation(() => {
-        throw new Error();
-      });
-      const threshold = 5000;
-      swapsController.__test__updatePrivate(
-        '#fetchAggregatorMetadataThreshold',
-        threshold,
-      );
-      swapsController.__test__updateState({
-        aggregatorMetadata: {},
-        aggregatorMetadataLastFetched: Date.now() - threshold - 1,
-      });
-      await swapsController.fetchAggregatorMetadataWithCache();
-      expect(swapsUtilFetchAggregatorMetadata).toHaveBeenCalled();
-      expect(swapsController.state.aggregatorMetadataLastFetched).toBe(0);
-    });
-    it('should return undefined if chain id is not supported', async () => {
-      swapsController.__test__updatePrivate('#supportedChainIds', ['0x1']);
-      swapsController.__test__updateState({
-        aggregatorMetadata: {},
+      expect(controller.state).toStrictEqual({
+        quotes: {},
+        quoteValues: {},
+        fetchParams: {
+          slippage: 0,
+          sourceToken: '0x12345',
+          sourceAmount: 0,
+          destinationToken: '',
+          walletAddress: '0x99999',
+        },
+        fetchParamsMetaData: {
+          sourceTokenInfo: {
+            decimals: 0,
+            address: '',
+            symbol: '',
+          },
+          destinationTokenInfo: {
+            decimals: 0,
+            address: '',
+            symbol: '',
+          },
+          networkClientId: 'mainnet',
+        },
+        topAggSavings: null,
+        aggregatorMetadata: null,
+        tokens: null,
+        topAssets: null,
+        approvalTransaction: null,
         aggregatorMetadataLastFetched: 0,
+        quotesLastFetched: 0,
+        topAssetsLastFetched: 0,
+        error: { key: null, description: null },
+        topAggId: null,
+        tokensLastFetched: 0,
+        isInPolling: false,
+        pollingCyclesLeft: 3,
+        quoteRefreshSeconds: 3,
+        usedGasEstimate: null,
+        usedCustomGas: null,
+        chainCache: {
+          '0x1': {
+            aggregatorMetadata: null,
+            tokens: null,
+            topAssets: null,
+            aggregatorMetadataLastFetched: 0,
+            topAssetsLastFetched: 0,
+            tokensLastFetched: 0,
+          },
+        },
       });
-      swapsController.setChainId('0x2');
-      await swapsController.fetchAggregatorMetadataWithCache();
-      expect(swapsUtilFetchAggregatorMetadata).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('on NetworkController:networkDidChange', () => {
+    it('copies previously cached values for the new chain ID into the main part of state', async () => {
+      const networkClientId = 'AAAA-BBBB-CCCC-DDDD';
+      const chainId = BSC_CHAIN_ID;
+      const cachedData = {
+        aggregatorMetadata: {
+          test: {
+            color: 'red',
+            title: 'Title',
+            icon: 'icon',
+            iconPng: 'icon.png',
+          },
+        },
+        tokens: [
+          {
+            address: '0x9999999',
+            symbol: 'TOKEN9999',
+            decimals: 9999,
+          },
+        ],
+        topAssets: [
+          {
+            address: '0x9999999',
+            symbol: 'TOKEN9999',
+          },
+        ],
+        aggregatorMetadataLastFetched: 1,
+        topAssetsLastFetched: 2,
+        tokensLastFetched: 3,
+      };
+      const rootMessenger = new ControllerMessenger<
+        NetworkControllerGetNetworkClientByIdAction,
+        NetworkControllerNetworkDidChangeEvent
+      >();
+      rootMessenger.registerActionHandler(
+        'NetworkController:getNetworkClientById',
+        // @ts-expect-error Intentionally not providing a full
+        // NetworkConfiguration object.
+        (givenNetworkClientId) => {
+          if (givenNetworkClientId === networkClientId) {
+            return {
+              configuration: {
+                chainId,
+              },
+            };
+          }
+          throw new Error(
+            `Unrecognized network client ID '${givenNetworkClientId}'`,
+          );
+        },
+      );
+      const swapsControllerMessenger = rootMessenger.getRestricted({
+        name: 'SwapsController',
+        allowedActions: ['NetworkController:getNetworkClientById'],
+        allowedEvents: ['NetworkController:networkDidChange'],
+      });
+      const controller = getSwapsController({
+        options: {
+          messenger: swapsControllerMessenger,
+        },
+        state: {
+          chainCache: {
+            [chainId]: cachedData,
+          },
+        },
+      });
+
+      // @ts-expect-error Intentionally not providing full NetworkState object.
+      rootMessenger.publish('NetworkController:networkDidChange', {
+        selectedNetworkClientId: networkClientId,
+      });
+
+      expect(controller.state).toMatchObject(cachedData);
+    });
+
+    it('clears the main part of state and initializes the cached data for the new chain ID if none previously existed', async () => {
+      const networkClientId = 'AAAA-BBBB-CCCC-DDDD';
+      const chainId = BSC_CHAIN_ID;
+      const rootMessenger = new ControllerMessenger<
+        NetworkControllerGetNetworkClientByIdAction,
+        NetworkControllerNetworkDidChangeEvent
+      >();
+      rootMessenger.registerActionHandler(
+        'NetworkController:getNetworkClientById',
+        // @ts-expect-error Intentionally not providing a full
+        // NetworkConfiguration object.
+        (givenNetworkClientId) => {
+          if (givenNetworkClientId === networkClientId) {
+            return {
+              configuration: {
+                chainId,
+              },
+            };
+          }
+          throw new Error(
+            `Unrecognized network client ID '${givenNetworkClientId}'`,
+          );
+        },
+      );
+      const swapsControllerMessenger = rootMessenger.getRestricted({
+        name: 'SwapsController',
+        allowedActions: ['NetworkController:getNetworkClientById'],
+        allowedEvents: ['NetworkController:networkDidChange'],
+      });
+      const controller = getSwapsController({
+        options: {
+          messenger: swapsControllerMessenger,
+        },
+        state: {
+          chainCache: {},
+        },
+      });
+
+      // @ts-expect-error Intentionally not providing full NetworkState object.
+      rootMessenger.publish('NetworkController:networkDidChange', {
+        selectedNetworkClientId: networkClientId,
+      });
+
+      expect(controller.state).toMatchObject({
+        aggregatorMetadata: null,
+        tokens: null,
+        topAssets: null,
+        aggregatorMetadataLastFetched: 0,
+        topAssetsLastFetched: 0,
+        tokensLastFetched: 0,
+        chainCache: {
+          [chainId]: {
+            aggregatorMetadata: null,
+            tokens: null,
+            topAssets: null,
+            aggregatorMetadataLastFetched: 0,
+            topAssetsLastFetched: 0,
+            tokensLastFetched: 0,
+          },
+        },
+      });
+    });
+
+    it('does not change state if the new chain ID is not among the list of supported chain IDs', async () => {
+      const networkClientId = 'AAAA-BBBB-CCCC-DDDD';
+      const chainId = '0x99999999';
+      const rootMessenger = new ControllerMessenger<
+        NetworkControllerGetNetworkClientByIdAction,
+        NetworkControllerNetworkDidChangeEvent
+      >();
+      rootMessenger.registerActionHandler(
+        'NetworkController:getNetworkClientById',
+        // @ts-expect-error Intentionally not providing a full
+        // NetworkConfiguration object.
+        (givenNetworkClientId) => {
+          if (givenNetworkClientId === networkClientId) {
+            return {
+              configuration: {
+                chainId,
+              },
+            };
+          }
+          throw new Error(
+            `Unrecognized network client ID '${givenNetworkClientId}'`,
+          );
+        },
+      );
+      const swapsControllerMessenger = rootMessenger.getRestricted({
+        name: 'SwapsController',
+        allowedActions: ['NetworkController:getNetworkClientById'],
+        allowedEvents: ['NetworkController:networkDidChange'],
+      });
+      const controller = getSwapsController({
+        options: {
+          messenger: swapsControllerMessenger,
+          supportedChainIds: [],
+        },
+        state: {
+          chainCache: {},
+        },
+      });
+      const initialState = controller.state;
+
+      // @ts-expect-error Intentionally not providing full NetworkState object.
+      rootMessenger.publish('NetworkController:networkDidChange', {
+        selectedNetworkClientId: networkClientId,
+      });
+
+      expect(controller.state).toBe(initialState);
+    });
+  });
+
+  describe('fetchTokenWithCache', () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    describe('if the chain ID belonging to the given network is not supported', () => {
+      it('does not attempt to fetch tokens', async () => {
+        const networkClientId = 'AAAA-BBBB-CCCC-DDDD';
+        const chainId = '0x99999999';
+        const controller = getSwapsController();
+        mockNetworkControllerGetNetworkClientById({
+          [networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId },
+          },
+        });
+
+        await controller.fetchTokenWithCache({ networkClientId });
+
+        expect(swapsUtilFetchTokens).not.toHaveBeenCalled();
+      });
+
+      it('does not update state', async () => {
+        const networkClientId = 'AAAA-BBBB-CCCC-DDDD';
+        const chainId = '0x99999999';
+        const controller = getSwapsController();
+        mockNetworkControllerGetNetworkClientById({
+          [networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId },
+          },
+        });
+        const initialState = controller.state;
+
+        await controller.fetchTokenWithCache({ networkClientId });
+
+        expect(controller.state).toBe(initialState);
+      });
+    });
+
+    describe('when no tokens have been fetched yet', () => {
+      it('persists fetched tokens from simultaneous invocations to the chain cache but keeps the tokens from the most recent successful invocation only in the main part of state', async () => {
+        const clientId = 'client-id';
+        const invocations = [
+          {
+            networkClientId: 'AAAA-AAAA-AAAA-AAAA',
+            chainId: POLYGON_CHAIN_ID,
+            fetchedTokens: [
+              {
+                address: '0x1111111',
+                symbol: 'TOKEN1',
+                decimals: 1,
+              },
+              {
+                address: '0x2222222',
+                symbol: 'TOKEN1',
+                decimals: 2,
+              },
+            ],
+          },
+          {
+            networkClientId: 'CCCC-CCCC-CCCC-CCCC',
+            chainId: AVALANCHE_CHAIN_ID,
+            fetchedTokens: [
+              {
+                address: '0x2222222',
+                symbol: 'TOKEN2',
+                decimals: 3,
+              },
+              {
+                address: '0x3333333',
+                symbol: 'TOKEN3',
+                decimals: 4,
+              },
+            ],
+          },
+        ];
+        const controller = getSwapsController({
+          options: {
+            clientId,
+          },
+        });
+        mockNetworkControllerGetNetworkClientById({
+          [invocations[0].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[0].chainId },
+          },
+          [invocations[1].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[1].chainId },
+          },
+        });
+        swapsUtilFetchTokens.mockImplementation(
+          async (givenChainId, givenClientId) => {
+            if (
+              givenChainId === invocations[0].chainId &&
+              givenClientId === clientId
+            ) {
+              // Simulate the first fetchTokens call taking longer, to ensure
+              // that the mutex is in place
+              await new Promise((resolve) => originalSetTimeout(resolve, 0));
+              return invocations[0].fetchedTokens;
+            }
+            if (
+              givenChainId === invocations[1].chainId &&
+              givenClientId === clientId
+            ) {
+              return invocations[1].fetchedTokens;
+            }
+            throw new Error(
+              `Unknown chain ID '${givenChainId}' and/or client ID '${givenClientId}'`,
+            );
+          },
+        );
+
+        await Promise.all([
+          controller.fetchTokenWithCache({
+            networkClientId: invocations[0].networkClientId,
+          }),
+          controller.fetchTokenWithCache({
+            networkClientId: invocations[1].networkClientId,
+          }),
+        ]);
+
+        expect(controller.state.tokens).toStrictEqual(
+          invocations[1].fetchedTokens,
+        );
+        expect(controller.state.tokensLastFetched).toStrictEqual(Date.now());
+        expect(controller.state.chainCache).toStrictEqual({
+          '0x1': {
+            aggregatorMetadata: null,
+            tokens: null,
+            topAssets: null,
+            aggregatorMetadataLastFetched: 0,
+            topAssetsLastFetched: 0,
+            tokensLastFetched: 0,
+          },
+          [invocations[0].chainId]: {
+            tokens: invocations[0].fetchedTokens,
+            tokensLastFetched: Date.now(),
+          },
+          [invocations[1].chainId]: {
+            tokens: invocations[1].fetchedTokens,
+            tokensLastFetched: Date.now(),
+          },
+        });
+      });
+
+      it('clears the last fetch time in state if the fetch from the most recent invocation fails', async () => {
+        const clientId = 'client-id';
+        const invocations = [
+          {
+            networkClientId: 'AAAA-AAAA-AAAA-AAAA',
+            chainId: POLYGON_CHAIN_ID,
+            fetchedTokens: [
+              {
+                address: '0x1111111',
+                symbol: 'TOKEN1',
+                decimals: 1,
+              },
+              {
+                address: '0x2222222',
+                symbol: 'TOKEN1',
+                decimals: 2,
+              },
+            ],
+          },
+          {
+            networkClientId: 'BBBB-BBBB-BBBB-BBBB',
+            chainId: BSC_CHAIN_ID,
+          },
+        ];
+        const controller = getSwapsController({
+          options: {
+            clientId,
+          },
+          state: {
+            tokens: null,
+          },
+        });
+        mockNetworkControllerGetNetworkClientById({
+          [invocations[0].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[0].chainId },
+          },
+          [invocations[1].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[1].chainId },
+          },
+        });
+        swapsUtilFetchTokens.mockImplementation(
+          async (givenChainId, givenClientId) => {
+            if (
+              givenChainId === invocations[0].chainId &&
+              givenClientId === clientId
+            ) {
+              // Simulate the first fetchTokens call taking longer, to ensure
+              // that the mutex is in place
+              await new Promise((resolve) => originalSetTimeout(resolve, 0));
+              return invocations[0].fetchedTokens;
+            }
+            if (
+              givenChainId === invocations[1].chainId &&
+              givenClientId === clientId
+            ) {
+              throw new Error('some error');
+            }
+            throw new Error(
+              `Unknown chain ID '${givenChainId}' and/or client ID '${givenClientId}'`,
+            );
+          },
+        );
+
+        await Promise.all([
+          controller.fetchTokenWithCache({
+            networkClientId: invocations[0].networkClientId,
+          }),
+          controller.fetchTokenWithCache({
+            networkClientId: invocations[1].networkClientId,
+          }),
+        ]);
+
+        expect(controller.state.tokens).toStrictEqual(
+          invocations[0].fetchedTokens,
+        );
+        expect(controller.state.tokensLastFetched).toStrictEqual(0);
+        expect(controller.state.chainCache).toStrictEqual({
+          '0x1': {
+            aggregatorMetadata: null,
+            tokens: null,
+            topAssets: null,
+            aggregatorMetadataLastFetched: 0,
+            topAssetsLastFetched: 0,
+            tokensLastFetched: 0,
+          },
+          [invocations[0].chainId]: {
+            tokens: invocations[0].fetchedTokens,
+            tokensLastFetched: Date.now(),
+          },
+          [invocations[1].chainId]: {
+            tokensLastFetched: 0,
+          },
+        });
+      });
+    });
+
+    describe('when tokens in state is null', () => {
+      it('persists fetched tokens from simultaneous invocations to the chain cache but keeps the tokens from the most recent successful invocation only in the main part of state', async () => {
+        const clientId = 'client-id';
+        const invocations = [
+          {
+            networkClientId: 'AAAA-AAAA-AAAA-AAAA',
+            chainId: POLYGON_CHAIN_ID,
+            fetchedTokens: [
+              {
+                address: '0x1111111',
+                symbol: 'TOKEN1',
+                decimals: 1,
+              },
+              {
+                address: '0x2222222',
+                symbol: 'TOKEN1',
+                decimals: 2,
+              },
+            ],
+          },
+          {
+            networkClientId: 'CCCC-CCCC-CCCC-CCCC',
+            chainId: AVALANCHE_CHAIN_ID,
+            fetchedTokens: [
+              {
+                address: '0x2222222',
+                symbol: 'TOKEN2',
+                decimals: 3,
+              },
+              {
+                address: '0x3333333',
+                symbol: 'TOKEN3',
+                decimals: 4,
+              },
+            ],
+          },
+        ];
+        const controller = getSwapsController({
+          options: {
+            clientId,
+          },
+          state: {
+            tokens: null,
+          },
+        });
+        mockNetworkControllerGetNetworkClientById({
+          [invocations[0].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[0].chainId },
+          },
+          [invocations[1].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[1].chainId },
+          },
+        });
+        swapsUtilFetchTokens.mockImplementation(
+          async (givenChainId, givenClientId) => {
+            if (
+              givenChainId === invocations[0].chainId &&
+              givenClientId === clientId
+            ) {
+              // Simulate the first fetchTokens call taking longer, to ensure
+              // that the mutex is in place
+              await new Promise((resolve) => originalSetTimeout(resolve, 0));
+              return invocations[0].fetchedTokens;
+            }
+            if (
+              givenChainId === invocations[1].chainId &&
+              givenClientId === clientId
+            ) {
+              return invocations[1].fetchedTokens;
+            }
+            throw new Error(
+              `Unknown chain ID '${givenChainId}' and/or client ID '${givenClientId}'`,
+            );
+          },
+        );
+
+        await Promise.all([
+          controller.fetchTokenWithCache({
+            networkClientId: invocations[0].networkClientId,
+          }),
+          controller.fetchTokenWithCache({
+            networkClientId: invocations[1].networkClientId,
+          }),
+        ]);
+
+        expect(controller.state.tokens).toStrictEqual(
+          invocations[1].fetchedTokens,
+        );
+        expect(controller.state.tokensLastFetched).toStrictEqual(Date.now());
+        expect(controller.state.chainCache).toStrictEqual({
+          '0x1': {
+            aggregatorMetadata: null,
+            tokens: null,
+            topAssets: null,
+            aggregatorMetadataLastFetched: 0,
+            topAssetsLastFetched: 0,
+            tokensLastFetched: 0,
+          },
+          [invocations[0].chainId]: {
+            tokens: invocations[0].fetchedTokens,
+            tokensLastFetched: Date.now(),
+          },
+          [invocations[1].chainId]: {
+            tokens: invocations[1].fetchedTokens,
+            tokensLastFetched: Date.now(),
+          },
+        });
+      });
+
+      it('clears the last fetch time in state if the fetch from the most recent invocation fails', async () => {
+        const clientId = 'client-id';
+        const invocations = [
+          {
+            networkClientId: 'AAAA-AAAA-AAAA-AAAA',
+            chainId: POLYGON_CHAIN_ID,
+            fetchedTokens: [
+              {
+                address: '0x1111111',
+                symbol: 'TOKEN1',
+                decimals: 1,
+              },
+              {
+                address: '0x2222222',
+                symbol: 'TOKEN1',
+                decimals: 2,
+              },
+            ],
+          },
+          {
+            networkClientId: 'BBBB-BBBB-BBBB-BBBB',
+            chainId: BSC_CHAIN_ID,
+          },
+        ];
+        const controller = getSwapsController({
+          options: {
+            clientId,
+          },
+          state: {
+            tokens: null,
+          },
+        });
+        mockNetworkControllerGetNetworkClientById({
+          [invocations[0].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[0].chainId },
+          },
+          [invocations[1].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[1].chainId },
+          },
+        });
+        swapsUtilFetchTokens.mockImplementation(
+          async (givenChainId, givenClientId) => {
+            if (
+              givenChainId === invocations[0].chainId &&
+              givenClientId === clientId
+            ) {
+              // Simulate the first fetchTokens call taking longer, to ensure
+              // that the mutex is in place
+              await new Promise((resolve) => originalSetTimeout(resolve, 0));
+              return invocations[0].fetchedTokens;
+            }
+            if (
+              givenChainId === invocations[1].chainId &&
+              givenClientId === clientId
+            ) {
+              throw new Error('some error');
+            }
+            throw new Error(
+              `Unknown chain ID '${givenChainId}' and/or client ID '${givenClientId}'`,
+            );
+          },
+        );
+
+        await Promise.all([
+          controller.fetchTokenWithCache({
+            networkClientId: invocations[0].networkClientId,
+          }),
+          controller.fetchTokenWithCache({
+            networkClientId: invocations[1].networkClientId,
+          }),
+        ]);
+
+        expect(controller.state.tokens).toStrictEqual(
+          invocations[0].fetchedTokens,
+        );
+        expect(controller.state.tokensLastFetched).toStrictEqual(0);
+        expect(controller.state.chainCache).toStrictEqual({
+          '0x1': {
+            aggregatorMetadata: null,
+            tokens: null,
+            topAssets: null,
+            aggregatorMetadataLastFetched: 0,
+            topAssetsLastFetched: 0,
+            tokensLastFetched: 0,
+          },
+          [invocations[0].chainId]: {
+            tokens: invocations[0].fetchedTokens,
+            tokensLastFetched: Date.now(),
+          },
+          [invocations[1].chainId]: {
+            tokensLastFetched: 0,
+          },
+        });
+      });
+    });
+
+    describe('when tokens in state is empty and the last fetch time is the default', () => {
+      it('persists fetched tokens from simultaneous invocations to the chain cache but keeps the tokens from the most recent successful invocation only in the main part of state', async () => {
+        const clientId = 'client-id';
+        const invocations = [
+          {
+            networkClientId: 'AAAA-AAAA-AAAA-AAAA',
+            chainId: POLYGON_CHAIN_ID,
+            fetchedTokens: [
+              {
+                address: '0x1111111',
+                symbol: 'TOKEN1',
+                decimals: 1,
+              },
+              {
+                address: '0x2222222',
+                symbol: 'TOKEN1',
+                decimals: 2,
+              },
+            ],
+          },
+          {
+            networkClientId: 'CCCC-CCCC-CCCC-CCCC',
+            chainId: AVALANCHE_CHAIN_ID,
+            fetchedTokens: [
+              {
+                address: '0x2222222',
+                symbol: 'TOKEN2',
+                decimals: 3,
+              },
+              {
+                address: '0x3333333',
+                symbol: 'TOKEN3',
+                decimals: 4,
+              },
+            ],
+          },
+        ];
+        const controller = getSwapsController({
+          options: {
+            clientId,
+          },
+          state: {
+            tokens: [],
+          },
+        });
+        mockNetworkControllerGetNetworkClientById({
+          [invocations[0].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[0].chainId },
+          },
+          [invocations[1].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[1].chainId },
+          },
+        });
+        swapsUtilFetchTokens.mockImplementation(
+          async (givenChainId, givenClientId) => {
+            if (
+              givenChainId === invocations[0].chainId &&
+              givenClientId === clientId
+            ) {
+              // Simulate the first fetchTokens call taking longer, to ensure
+              // that the mutex is in place
+              await new Promise((resolve) => originalSetTimeout(resolve, 0));
+              return invocations[0].fetchedTokens;
+            }
+            if (
+              givenChainId === invocations[1].chainId &&
+              givenClientId === clientId
+            ) {
+              return invocations[1].fetchedTokens;
+            }
+            throw new Error(
+              `Unknown chain ID '${givenChainId}' and/or client ID '${givenClientId}'`,
+            );
+          },
+        );
+
+        await Promise.all([
+          controller.fetchTokenWithCache({
+            networkClientId: invocations[0].networkClientId,
+          }),
+          controller.fetchTokenWithCache({
+            networkClientId: invocations[1].networkClientId,
+          }),
+        ]);
+
+        expect(controller.state.tokens).toStrictEqual(
+          invocations[1].fetchedTokens,
+        );
+        expect(controller.state.tokensLastFetched).toStrictEqual(Date.now());
+        expect(controller.state.chainCache).toStrictEqual({
+          '0x1': {
+            aggregatorMetadata: null,
+            tokens: null,
+            topAssets: null,
+            aggregatorMetadataLastFetched: 0,
+            topAssetsLastFetched: 0,
+            tokensLastFetched: 0,
+          },
+          [invocations[0].chainId]: {
+            tokens: invocations[0].fetchedTokens,
+            tokensLastFetched: Date.now(),
+          },
+          [invocations[1].chainId]: {
+            tokens: invocations[1].fetchedTokens,
+            tokensLastFetched: Date.now(),
+          },
+        });
+      });
+
+      it('clears the last fetch time in state if the fetch from the most recent invocation fails', async () => {
+        const clientId = 'client-id';
+        const invocations = [
+          {
+            networkClientId: 'AAAA-AAAA-AAAA-AAAA',
+            chainId: POLYGON_CHAIN_ID,
+            fetchedTokens: [
+              {
+                address: '0x1111111',
+                symbol: 'TOKEN1',
+                decimals: 1,
+              },
+              {
+                address: '0x2222222',
+                symbol: 'TOKEN1',
+                decimals: 2,
+              },
+            ],
+          },
+          {
+            networkClientId: 'BBBB-BBBB-BBBB-BBBB',
+            chainId: BSC_CHAIN_ID,
+          },
+        ];
+        const controller = getSwapsController({
+          options: {
+            clientId,
+          },
+          state: {
+            tokens: [],
+          },
+        });
+        mockNetworkControllerGetNetworkClientById({
+          [invocations[0].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[0].chainId },
+          },
+          [invocations[1].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[1].chainId },
+          },
+        });
+        swapsUtilFetchTokens.mockImplementation(
+          async (givenChainId, givenClientId) => {
+            if (
+              givenChainId === invocations[0].chainId &&
+              givenClientId === clientId
+            ) {
+              // Simulate the first fetchTokens call taking longer, to ensure
+              // that the mutex is in place
+              await new Promise((resolve) => originalSetTimeout(resolve, 0));
+              return invocations[0].fetchedTokens;
+            }
+            if (
+              givenChainId === invocations[1].chainId &&
+              givenClientId === clientId
+            ) {
+              throw new Error('some error');
+            }
+            throw new Error(
+              `Unknown chain ID '${givenChainId}' and/or client ID '${givenClientId}'`,
+            );
+          },
+        );
+
+        await Promise.all([
+          controller.fetchTokenWithCache({
+            networkClientId: invocations[0].networkClientId,
+          }),
+          controller.fetchTokenWithCache({
+            networkClientId: invocations[1].networkClientId,
+          }),
+        ]);
+
+        expect(controller.state.tokens).toStrictEqual(
+          invocations[0].fetchedTokens,
+        );
+        expect(controller.state.tokensLastFetched).toStrictEqual(0);
+        expect(controller.state.chainCache).toStrictEqual({
+          '0x1': {
+            aggregatorMetadata: null,
+            tokens: null,
+            topAssets: null,
+            aggregatorMetadataLastFetched: 0,
+            topAssetsLastFetched: 0,
+            tokensLastFetched: 0,
+          },
+          [invocations[0].chainId]: {
+            tokens: invocations[0].fetchedTokens,
+            tokensLastFetched: Date.now(),
+          },
+          [invocations[1].chainId]: {
+            tokensLastFetched: 0,
+          },
+        });
+      });
+    });
+
+    describe('when there are tokens in state and they were last fetched beyond the configured threshold', () => {
+      it('persists fetched tokens from simultaneous invocations to the chain cache but keeps the tokens from the most recent successful invocation only in the main part of state', async () => {
+        const clientId = 'client-id';
+        const invocations = [
+          {
+            networkClientId: 'AAAA-AAAA-AAAA-AAAA',
+            chainId: POLYGON_CHAIN_ID,
+            fetchedTokens: [
+              {
+                address: '0x1111111',
+                symbol: 'TOKEN1',
+                decimals: 1,
+              },
+              {
+                address: '0x2222222',
+                symbol: 'TOKEN1',
+                decimals: 2,
+              },
+            ],
+          },
+          {
+            networkClientId: 'CCCC-CCCC-CCCC-CCCC',
+            chainId: AVALANCHE_CHAIN_ID,
+            fetchedTokens: [
+              {
+                address: '0x2222222',
+                symbol: 'TOKEN2',
+                decimals: 3,
+              },
+              {
+                address: '0x3333333',
+                symbol: 'TOKEN3',
+                decimals: 4,
+              },
+            ],
+          },
+        ];
+        const fetchTokensThreshold = 5000;
+        const controller = getSwapsController({
+          options: {
+            clientId,
+            fetchTokensThreshold,
+          },
+          state: {
+            tokens: [
+              {
+                address: '0x9999999',
+                symbol: 'TOKEN9999',
+                decimals: 9999,
+              },
+            ],
+            tokensLastFetched: Date.now() - fetchTokensThreshold - 1,
+          },
+        });
+        mockNetworkControllerGetNetworkClientById({
+          [invocations[0].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[0].chainId },
+          },
+          [invocations[1].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[1].chainId },
+          },
+        });
+        swapsUtilFetchTokens.mockImplementation(
+          async (givenChainId, givenClientId) => {
+            if (
+              givenChainId === invocations[0].chainId &&
+              givenClientId === clientId
+            ) {
+              // Simulate the first fetchTokens call taking longer, to ensure
+              // that the mutex is in place
+              await new Promise((resolve) => originalSetTimeout(resolve, 0));
+              return invocations[0].fetchedTokens;
+            }
+            if (
+              givenChainId === invocations[1].chainId &&
+              givenClientId === clientId
+            ) {
+              return invocations[1].fetchedTokens;
+            }
+            throw new Error(
+              `Unknown chain ID '${givenChainId}' and/or client ID '${givenClientId}'`,
+            );
+          },
+        );
+
+        await Promise.all([
+          controller.fetchTokenWithCache({
+            networkClientId: invocations[0].networkClientId,
+          }),
+          controller.fetchTokenWithCache({
+            networkClientId: invocations[1].networkClientId,
+          }),
+        ]);
+
+        expect(controller.state.tokens).toStrictEqual(
+          invocations[1].fetchedTokens,
+        );
+        expect(controller.state.tokensLastFetched).toStrictEqual(Date.now());
+        expect(controller.state.chainCache).toStrictEqual({
+          '0x1': {
+            aggregatorMetadata: null,
+            tokens: null,
+            topAssets: null,
+            aggregatorMetadataLastFetched: 0,
+            topAssetsLastFetched: 0,
+            tokensLastFetched: 0,
+          },
+          [invocations[0].chainId]: {
+            tokens: invocations[0].fetchedTokens,
+            tokensLastFetched: Date.now(),
+          },
+          [invocations[1].chainId]: {
+            tokens: invocations[1].fetchedTokens,
+            tokensLastFetched: Date.now(),
+          },
+        });
+      });
+
+      it('clears the last fetch time in state if the fetch from the most recent invocation fails', async () => {
+        const clientId = 'client-id';
+        const invocations = [
+          {
+            networkClientId: 'AAAA-AAAA-AAAA-AAAA',
+            chainId: POLYGON_CHAIN_ID,
+            fetchedTokens: [
+              {
+                address: '0x1111111',
+                symbol: 'TOKEN1',
+                decimals: 1,
+              },
+              {
+                address: '0x2222222',
+                symbol: 'TOKEN1',
+                decimals: 2,
+              },
+            ],
+          },
+          {
+            networkClientId: 'BBBB-BBBB-BBBB-BBBB',
+            chainId: BSC_CHAIN_ID,
+          },
+        ];
+        const fetchTokensThreshold = 5000;
+        const controller = getSwapsController({
+          options: {
+            clientId,
+            fetchTokensThreshold,
+          },
+          state: {
+            tokens: [
+              {
+                address: '0x9999999',
+                symbol: 'TOKEN9999',
+                decimals: 9999,
+              },
+            ],
+            tokensLastFetched: Date.now() - fetchTokensThreshold - 1,
+          },
+        });
+        mockNetworkControllerGetNetworkClientById({
+          [invocations[0].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[0].chainId },
+          },
+          [invocations[1].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[1].chainId },
+          },
+        });
+        swapsUtilFetchTokens.mockImplementation(
+          async (givenChainId, givenClientId) => {
+            if (
+              givenChainId === invocations[0].chainId &&
+              givenClientId === clientId
+            ) {
+              // Simulate the first fetchTokens call taking longer, to ensure
+              // that the mutex is in place
+              await new Promise((resolve) => originalSetTimeout(resolve, 0));
+              return invocations[0].fetchedTokens;
+            }
+            if (
+              givenChainId === invocations[1].chainId &&
+              givenClientId === clientId
+            ) {
+              throw new Error('some error');
+            }
+            throw new Error(
+              `Unknown chain ID '${givenChainId}' and/or client ID '${givenClientId}'`,
+            );
+          },
+        );
+
+        await Promise.all([
+          controller.fetchTokenWithCache({
+            networkClientId: invocations[0].networkClientId,
+          }),
+          controller.fetchTokenWithCache({
+            networkClientId: invocations[1].networkClientId,
+          }),
+        ]);
+
+        expect(controller.state.tokens).toStrictEqual(
+          invocations[0].fetchedTokens,
+        );
+        expect(controller.state.tokensLastFetched).toStrictEqual(0);
+        expect(controller.state.chainCache).toStrictEqual({
+          '0x1': {
+            aggregatorMetadata: null,
+            tokens: null,
+            topAssets: null,
+            aggregatorMetadataLastFetched: 0,
+            topAssetsLastFetched: 0,
+            tokensLastFetched: 0,
+          },
+          [invocations[0].chainId]: {
+            tokens: invocations[0].fetchedTokens,
+            tokensLastFetched: Date.now(),
+          },
+          [invocations[1].chainId]: {
+            tokensLastFetched: 0,
+          },
+        });
+      });
+    });
+
+    describe('when there are tokens in state but tokens were last fetched below the configured threshold', () => {
+      it('does not fetch tokens', async () => {
+        const networkClientId = 'AAAA-BBBB-CCCC-DDDD';
+        const chainId = '0x89'; // Polygon
+        const controller = getSwapsController({
+          state: {
+            tokens: [
+              {
+                address: '0x999999999999',
+                symbol: 'TEST',
+                decimals: 1,
+              },
+            ],
+            tokensLastFetched: Date.now(),
+          },
+        });
+        mockNetworkControllerGetNetworkClientById({
+          [networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId },
+          },
+        });
+
+        await controller.fetchTokenWithCache({ networkClientId });
+
+        expect(swapsUtilFetchTokens).not.toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe('fetchTopAssetsWithCache', () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    describe('if the chain ID belonging to the given network is not supported', () => {
+      it('does not attempt to fetch top assets', async () => {
+        const networkClientId = 'AAAA-BBBB-CCCC-DDDD';
+        const chainId = '0x99999999';
+        const controller = getSwapsController();
+        mockNetworkControllerGetNetworkClientById({
+          [networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId },
+          },
+        });
+
+        await controller.fetchTopAssetsWithCache({ networkClientId });
+
+        expect(swapsUtilFetchTopAssets).not.toHaveBeenCalled();
+      });
+
+      it('does not update state', async () => {
+        const networkClientId = 'AAAA-BBBB-CCCC-DDDD';
+        const chainId = '0x99999999';
+        const controller = getSwapsController();
+        mockNetworkControllerGetNetworkClientById({
+          [networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId },
+          },
+        });
+        const initialState = controller.state;
+
+        await controller.fetchTopAssetsWithCache({ networkClientId });
+
+        expect(controller.state).toBe(initialState);
+      });
+    });
+
+    describe('when no top assets have been fetched yet', () => {
+      it('persists fetched top assets from simultaneous invocations to the chain cache but keeps the top assets from the most recent successful invocation only in the main part of state', async () => {
+        const clientId = 'client-id';
+        const invocations = [
+          {
+            networkClientId: 'AAAA-AAAA-AAAA-AAAA',
+            chainId: POLYGON_CHAIN_ID,
+            fetchedTokens: [
+              {
+                address: '0x1111111',
+                symbol: 'TOKEN1',
+                decimals: 1,
+              },
+              {
+                address: '0x2222222',
+                symbol: 'TOKEN1',
+                decimals: 2,
+              },
+            ],
+          },
+          {
+            networkClientId: 'CCCC-CCCC-CCCC-CCCC',
+            chainId: AVALANCHE_CHAIN_ID,
+            fetchedTokens: [
+              {
+                address: '0x2222222',
+                symbol: 'TOKEN2',
+                decimals: 3,
+              },
+              {
+                address: '0x3333333',
+                symbol: 'TOKEN3',
+                decimals: 4,
+              },
+            ],
+          },
+        ];
+        const controller = getSwapsController({
+          options: {
+            clientId,
+          },
+        });
+        mockNetworkControllerGetNetworkClientById({
+          [invocations[0].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[0].chainId },
+          },
+          [invocations[1].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[1].chainId },
+          },
+        });
+        swapsUtilFetchTopAssets.mockImplementation(
+          async (givenChainId, givenClientId) => {
+            if (
+              givenChainId === invocations[0].chainId &&
+              givenClientId === clientId
+            ) {
+              // Simulate the first fetchTopAssets call taking longer, to ensure
+              // that the mutex is in place
+              await new Promise((resolve) => originalSetTimeout(resolve, 0));
+              return invocations[0].fetchedTokens;
+            }
+            if (
+              givenChainId === invocations[1].chainId &&
+              givenClientId === clientId
+            ) {
+              return invocations[1].fetchedTokens;
+            }
+            throw new Error(
+              `Unknown chain ID '${givenChainId}' and/or client ID '${givenClientId}'`,
+            );
+          },
+        );
+
+        await Promise.all([
+          controller.fetchTopAssetsWithCache({
+            networkClientId: invocations[0].networkClientId,
+          }),
+          controller.fetchTopAssetsWithCache({
+            networkClientId: invocations[1].networkClientId,
+          }),
+        ]);
+
+        expect(controller.state.topAssets).toStrictEqual(
+          invocations[1].fetchedTokens,
+        );
+        expect(controller.state.topAssetsLastFetched).toStrictEqual(Date.now());
+        expect(controller.state.chainCache).toStrictEqual({
+          '0x1': {
+            aggregatorMetadata: null,
+            tokens: null,
+            topAssets: null,
+            aggregatorMetadataLastFetched: 0,
+            topAssetsLastFetched: 0,
+            tokensLastFetched: 0,
+          },
+          [invocations[0].chainId]: {
+            topAssets: invocations[0].fetchedTokens,
+            topAssetsLastFetched: Date.now(),
+          },
+          [invocations[1].chainId]: {
+            topAssets: invocations[1].fetchedTokens,
+            topAssetsLastFetched: Date.now(),
+          },
+        });
+      });
+
+      it('clears the last fetch time in state if the fetch from the most recent invocation fails', async () => {
+        const clientId = 'client-id';
+        const invocations = [
+          {
+            networkClientId: 'AAAA-AAAA-AAAA-AAAA',
+            chainId: POLYGON_CHAIN_ID,
+            fetchedTokens: [
+              {
+                address: '0x1111111',
+                symbol: 'TOKEN1',
+                decimals: 1,
+              },
+              {
+                address: '0x2222222',
+                symbol: 'TOKEN1',
+                decimals: 2,
+              },
+            ],
+          },
+          {
+            networkClientId: 'BBBB-BBBB-BBBB-BBBB',
+            chainId: BSC_CHAIN_ID,
+          },
+        ];
+        const controller = getSwapsController({
+          options: {
+            clientId,
+          },
+          state: {
+            topAssets: null,
+          },
+        });
+        mockNetworkControllerGetNetworkClientById({
+          [invocations[0].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[0].chainId },
+          },
+          [invocations[1].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[1].chainId },
+          },
+        });
+        swapsUtilFetchTopAssets.mockImplementation(
+          async (givenChainId, givenClientId) => {
+            if (
+              givenChainId === invocations[0].chainId &&
+              givenClientId === clientId
+            ) {
+              // Simulate the first fetchTopAssets call taking longer, to ensure
+              // that the mutex is in place
+              await new Promise((resolve) => originalSetTimeout(resolve, 0));
+              return invocations[0].fetchedTokens;
+            }
+            if (
+              givenChainId === invocations[1].chainId &&
+              givenClientId === clientId
+            ) {
+              throw new Error('some error');
+            }
+            throw new Error(
+              `Unknown chain ID '${givenChainId}' and/or client ID '${givenClientId}'`,
+            );
+          },
+        );
+
+        await Promise.all([
+          controller.fetchTopAssetsWithCache({
+            networkClientId: invocations[0].networkClientId,
+          }),
+          controller.fetchTopAssetsWithCache({
+            networkClientId: invocations[1].networkClientId,
+          }),
+        ]);
+
+        expect(controller.state.topAssets).toStrictEqual(
+          invocations[0].fetchedTokens,
+        );
+        expect(controller.state.topAssetsLastFetched).toStrictEqual(0);
+        expect(controller.state.chainCache).toStrictEqual({
+          '0x1': {
+            aggregatorMetadata: null,
+            tokens: null,
+            topAssets: null,
+            aggregatorMetadataLastFetched: 0,
+            topAssetsLastFetched: 0,
+            tokensLastFetched: 0,
+          },
+          [invocations[0].chainId]: {
+            topAssets: invocations[0].fetchedTokens,
+            topAssetsLastFetched: Date.now(),
+          },
+          [invocations[1].chainId]: {
+            topAssetsLastFetched: 0,
+          },
+        });
+      });
+    });
+
+    describe('when top assets in state is null', () => {
+      it('persists fetched top assets from simultaneous invocations to the chain cache but keeps the top assets from the most recent successful invocation only in the main part of state', async () => {
+        const clientId = 'client-id';
+        const invocations = [
+          {
+            networkClientId: 'AAAA-AAAA-AAAA-AAAA',
+            chainId: POLYGON_CHAIN_ID,
+            fetchedTokens: [
+              {
+                address: '0x1111111',
+                symbol: 'TOKEN1',
+                decimals: 1,
+              },
+              {
+                address: '0x2222222',
+                symbol: 'TOKEN1',
+                decimals: 2,
+              },
+            ],
+          },
+          {
+            networkClientId: 'CCCC-CCCC-CCCC-CCCC',
+            chainId: AVALANCHE_CHAIN_ID,
+            fetchedTokens: [
+              {
+                address: '0x2222222',
+                symbol: 'TOKEN2',
+                decimals: 3,
+              },
+              {
+                address: '0x3333333',
+                symbol: 'TOKEN3',
+                decimals: 4,
+              },
+            ],
+          },
+        ];
+        const controller = getSwapsController({
+          options: {
+            clientId,
+          },
+          state: {
+            topAssets: null,
+          },
+        });
+        mockNetworkControllerGetNetworkClientById({
+          [invocations[0].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[0].chainId },
+          },
+          [invocations[1].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[1].chainId },
+          },
+        });
+        swapsUtilFetchTopAssets.mockImplementation(
+          async (givenChainId, givenClientId) => {
+            if (
+              givenChainId === invocations[0].chainId &&
+              givenClientId === clientId
+            ) {
+              // Simulate the first fetchTopAssets call taking longer, to ensure
+              // that the mutex is in place
+              await new Promise((resolve) => originalSetTimeout(resolve, 0));
+              return invocations[0].fetchedTokens;
+            }
+            if (
+              givenChainId === invocations[1].chainId &&
+              givenClientId === clientId
+            ) {
+              return invocations[1].fetchedTokens;
+            }
+            throw new Error(
+              `Unknown chain ID '${givenChainId}' and/or client ID '${givenClientId}'`,
+            );
+          },
+        );
+
+        await Promise.all([
+          controller.fetchTopAssetsWithCache({
+            networkClientId: invocations[0].networkClientId,
+          }),
+          controller.fetchTopAssetsWithCache({
+            networkClientId: invocations[1].networkClientId,
+          }),
+        ]);
+
+        expect(controller.state.topAssets).toStrictEqual(
+          invocations[1].fetchedTokens,
+        );
+        expect(controller.state.topAssetsLastFetched).toStrictEqual(Date.now());
+        expect(controller.state.chainCache).toStrictEqual({
+          '0x1': {
+            aggregatorMetadata: null,
+            tokens: null,
+            topAssets: null,
+            aggregatorMetadataLastFetched: 0,
+            topAssetsLastFetched: 0,
+            tokensLastFetched: 0,
+          },
+          [invocations[0].chainId]: {
+            topAssets: invocations[0].fetchedTokens,
+            topAssetsLastFetched: Date.now(),
+          },
+          [invocations[1].chainId]: {
+            topAssets: invocations[1].fetchedTokens,
+            topAssetsLastFetched: Date.now(),
+          },
+        });
+      });
+
+      it('clears the last fetch time in state if the fetch from the most recent invocation fails', async () => {
+        const clientId = 'client-id';
+        const invocations = [
+          {
+            networkClientId: 'AAAA-AAAA-AAAA-AAAA',
+            chainId: POLYGON_CHAIN_ID,
+            fetchedTokens: [
+              {
+                address: '0x1111111',
+                symbol: 'TOKEN1',
+                decimals: 1,
+              },
+              {
+                address: '0x2222222',
+                symbol: 'TOKEN1',
+                decimals: 2,
+              },
+            ],
+          },
+          {
+            networkClientId: 'BBBB-BBBB-BBBB-BBBB',
+            chainId: BSC_CHAIN_ID,
+          },
+        ];
+        const controller = getSwapsController({
+          options: {
+            clientId,
+          },
+          state: {
+            topAssets: null,
+          },
+        });
+        mockNetworkControllerGetNetworkClientById({
+          [invocations[0].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[0].chainId },
+          },
+          [invocations[1].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[1].chainId },
+          },
+        });
+        swapsUtilFetchTopAssets.mockImplementation(
+          async (givenChainId, givenClientId) => {
+            if (
+              givenChainId === invocations[0].chainId &&
+              givenClientId === clientId
+            ) {
+              // Simulate the first fetchTopAssets call taking longer, to ensure
+              // that the mutex is in place
+              await new Promise((resolve) => originalSetTimeout(resolve, 0));
+              return invocations[0].fetchedTokens;
+            }
+            if (
+              givenChainId === invocations[1].chainId &&
+              givenClientId === clientId
+            ) {
+              throw new Error('some error');
+            }
+            throw new Error(
+              `Unknown chain ID '${givenChainId}' and/or client ID '${givenClientId}'`,
+            );
+          },
+        );
+
+        await Promise.all([
+          controller.fetchTopAssetsWithCache({
+            networkClientId: invocations[0].networkClientId,
+          }),
+          controller.fetchTopAssetsWithCache({
+            networkClientId: invocations[1].networkClientId,
+          }),
+        ]);
+
+        expect(controller.state.topAssets).toStrictEqual(
+          invocations[0].fetchedTokens,
+        );
+        expect(controller.state.topAssetsLastFetched).toStrictEqual(0);
+        expect(controller.state.chainCache).toStrictEqual({
+          '0x1': {
+            aggregatorMetadata: null,
+            tokens: null,
+            topAssets: null,
+            aggregatorMetadataLastFetched: 0,
+            topAssetsLastFetched: 0,
+            tokensLastFetched: 0,
+          },
+          [invocations[0].chainId]: {
+            topAssets: invocations[0].fetchedTokens,
+            topAssetsLastFetched: Date.now(),
+          },
+          [invocations[1].chainId]: {
+            topAssetsLastFetched: 0,
+          },
+        });
+      });
+    });
+
+    describe('when top assets in state is empty and the last fetch time is the default', () => {
+      it('persists fetched top assets from simultaneous invocations to the chain cache but keeps the top assets from the most recent successful invocation only in the main part of state', async () => {
+        const clientId = 'client-id';
+        const invocations = [
+          {
+            networkClientId: 'AAAA-AAAA-AAAA-AAAA',
+            chainId: POLYGON_CHAIN_ID,
+            fetchedTokens: [
+              {
+                address: '0x1111111',
+                symbol: 'TOKEN1',
+                decimals: 1,
+              },
+              {
+                address: '0x2222222',
+                symbol: 'TOKEN1',
+                decimals: 2,
+              },
+            ],
+          },
+          {
+            networkClientId: 'CCCC-CCCC-CCCC-CCCC',
+            chainId: AVALANCHE_CHAIN_ID,
+            fetchedTokens: [
+              {
+                address: '0x2222222',
+                symbol: 'TOKEN2',
+                decimals: 3,
+              },
+              {
+                address: '0x3333333',
+                symbol: 'TOKEN3',
+                decimals: 4,
+              },
+            ],
+          },
+        ];
+        const controller = getSwapsController({
+          options: {
+            clientId,
+          },
+          state: {
+            topAssets: [],
+          },
+        });
+        mockNetworkControllerGetNetworkClientById({
+          [invocations[0].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[0].chainId },
+          },
+          [invocations[1].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[1].chainId },
+          },
+        });
+        swapsUtilFetchTopAssets.mockImplementation(
+          async (givenChainId, givenClientId) => {
+            if (
+              givenChainId === invocations[0].chainId &&
+              givenClientId === clientId
+            ) {
+              // Simulate the first fetchTopAssets call taking longer, to ensure
+              // that the mutex is in place
+              await new Promise((resolve) => originalSetTimeout(resolve, 0));
+              return invocations[0].fetchedTokens;
+            }
+            if (
+              givenChainId === invocations[1].chainId &&
+              givenClientId === clientId
+            ) {
+              return invocations[1].fetchedTokens;
+            }
+            throw new Error(
+              `Unknown chain ID '${givenChainId}' and/or client ID '${givenClientId}'`,
+            );
+          },
+        );
+
+        await Promise.all([
+          controller.fetchTopAssetsWithCache({
+            networkClientId: invocations[0].networkClientId,
+          }),
+          controller.fetchTopAssetsWithCache({
+            networkClientId: invocations[1].networkClientId,
+          }),
+        ]);
+
+        expect(controller.state.topAssets).toStrictEqual(
+          invocations[1].fetchedTokens,
+        );
+        expect(controller.state.topAssetsLastFetched).toStrictEqual(Date.now());
+        expect(controller.state.chainCache).toStrictEqual({
+          '0x1': {
+            aggregatorMetadata: null,
+            tokens: null,
+            topAssets: null,
+            aggregatorMetadataLastFetched: 0,
+            topAssetsLastFetched: 0,
+            tokensLastFetched: 0,
+          },
+          [invocations[0].chainId]: {
+            topAssets: invocations[0].fetchedTokens,
+            topAssetsLastFetched: Date.now(),
+          },
+          [invocations[1].chainId]: {
+            topAssets: invocations[1].fetchedTokens,
+            topAssetsLastFetched: Date.now(),
+          },
+        });
+      });
+
+      it('clears the last fetch time in state if the fetch from the most recent invocation fails', async () => {
+        const clientId = 'client-id';
+        const invocations = [
+          {
+            networkClientId: 'AAAA-AAAA-AAAA-AAAA',
+            chainId: POLYGON_CHAIN_ID,
+            fetchedTokens: [
+              {
+                address: '0x1111111',
+                symbol: 'TOKEN1',
+                decimals: 1,
+              },
+              {
+                address: '0x2222222',
+                symbol: 'TOKEN1',
+                decimals: 2,
+              },
+            ],
+          },
+          {
+            networkClientId: 'BBBB-BBBB-BBBB-BBBB',
+            chainId: BSC_CHAIN_ID,
+          },
+        ];
+        const controller = getSwapsController({
+          options: {
+            clientId,
+          },
+          state: {
+            topAssets: [],
+          },
+        });
+        mockNetworkControllerGetNetworkClientById({
+          [invocations[0].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[0].chainId },
+          },
+          [invocations[1].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[1].chainId },
+          },
+        });
+        swapsUtilFetchTopAssets.mockImplementation(
+          async (givenChainId, givenClientId) => {
+            if (
+              givenChainId === invocations[0].chainId &&
+              givenClientId === clientId
+            ) {
+              // Simulate the first fetchTopAssets call taking longer, to ensure
+              // that the mutex is in place
+              await new Promise((resolve) => originalSetTimeout(resolve, 0));
+              return invocations[0].fetchedTokens;
+            }
+            if (
+              givenChainId === invocations[1].chainId &&
+              givenClientId === clientId
+            ) {
+              throw new Error('some error');
+            }
+            throw new Error(
+              `Unknown chain ID '${givenChainId}' and/or client ID '${givenClientId}'`,
+            );
+          },
+        );
+
+        await Promise.all([
+          controller.fetchTopAssetsWithCache({
+            networkClientId: invocations[0].networkClientId,
+          }),
+          controller.fetchTopAssetsWithCache({
+            networkClientId: invocations[1].networkClientId,
+          }),
+        ]);
+
+        expect(controller.state.topAssets).toStrictEqual(
+          invocations[0].fetchedTokens,
+        );
+        expect(controller.state.topAssetsLastFetched).toStrictEqual(0);
+        expect(controller.state.chainCache).toStrictEqual({
+          '0x1': {
+            aggregatorMetadata: null,
+            tokens: null,
+            topAssets: null,
+            aggregatorMetadataLastFetched: 0,
+            topAssetsLastFetched: 0,
+            tokensLastFetched: 0,
+          },
+          [invocations[0].chainId]: {
+            topAssets: invocations[0].fetchedTokens,
+            topAssetsLastFetched: Date.now(),
+          },
+          [invocations[1].chainId]: {
+            topAssetsLastFetched: 0,
+          },
+        });
+      });
+    });
+
+    describe('when there are top assets in state and they were last fetched beyond the configured threshold', () => {
+      it('persists fetched top assets from simultaneous invocations to the chain cache but keeps the top assets from the most recent successful invocation only in the main part of state', async () => {
+        const clientId = 'client-id';
+        const invocations = [
+          {
+            networkClientId: 'AAAA-AAAA-AAAA-AAAA',
+            chainId: POLYGON_CHAIN_ID,
+            fetchedTokens: [
+              {
+                address: '0x1111111',
+                symbol: 'TOKEN1',
+                decimals: 1,
+              },
+              {
+                address: '0x2222222',
+                symbol: 'TOKEN1',
+                decimals: 2,
+              },
+            ],
+          },
+          {
+            networkClientId: 'CCCC-CCCC-CCCC-CCCC',
+            chainId: AVALANCHE_CHAIN_ID,
+            fetchedTokens: [
+              {
+                address: '0x2222222',
+                symbol: 'TOKEN2',
+                decimals: 3,
+              },
+              {
+                address: '0x3333333',
+                symbol: 'TOKEN3',
+                decimals: 4,
+              },
+            ],
+          },
+        ];
+        const fetchTopAssetsThreshold = 5000;
+        const controller = getSwapsController({
+          options: {
+            clientId,
+            fetchTopAssetsThreshold,
+          },
+          state: {
+            topAssets: [
+              {
+                address: '0x9999999',
+                symbol: 'TOKEN9999',
+              },
+            ],
+            topAssetsLastFetched: Date.now() - fetchTopAssetsThreshold - 1,
+          },
+        });
+        mockNetworkControllerGetNetworkClientById({
+          [invocations[0].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[0].chainId },
+          },
+          [invocations[1].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[1].chainId },
+          },
+        });
+        swapsUtilFetchTopAssets.mockImplementation(
+          async (givenChainId, givenClientId) => {
+            if (
+              givenChainId === invocations[0].chainId &&
+              givenClientId === clientId
+            ) {
+              // Simulate the first fetchTopAssets call taking longer, to ensure
+              // that the mutex is in place
+              await new Promise((resolve) => originalSetTimeout(resolve, 0));
+              return invocations[0].fetchedTokens;
+            }
+            if (
+              givenChainId === invocations[1].chainId &&
+              givenClientId === clientId
+            ) {
+              return invocations[1].fetchedTokens;
+            }
+            throw new Error(
+              `Unknown chain ID '${givenChainId}' and/or client ID '${givenClientId}'`,
+            );
+          },
+        );
+
+        await Promise.all([
+          controller.fetchTopAssetsWithCache({
+            networkClientId: invocations[0].networkClientId,
+          }),
+          controller.fetchTopAssetsWithCache({
+            networkClientId: invocations[1].networkClientId,
+          }),
+        ]);
+
+        expect(controller.state.topAssets).toStrictEqual(
+          invocations[1].fetchedTokens,
+        );
+        expect(controller.state.topAssetsLastFetched).toStrictEqual(Date.now());
+        expect(controller.state.chainCache).toStrictEqual({
+          '0x1': {
+            aggregatorMetadata: null,
+            tokens: null,
+            topAssets: null,
+            aggregatorMetadataLastFetched: 0,
+            topAssetsLastFetched: 0,
+            tokensLastFetched: 0,
+          },
+          [invocations[0].chainId]: {
+            topAssets: invocations[0].fetchedTokens,
+            topAssetsLastFetched: Date.now(),
+          },
+          [invocations[1].chainId]: {
+            topAssets: invocations[1].fetchedTokens,
+            topAssetsLastFetched: Date.now(),
+          },
+        });
+      });
+
+      it('clears the last fetch time in state if the fetch from the most recent invocation fails', async () => {
+        const clientId = 'client-id';
+        const invocations = [
+          {
+            networkClientId: 'AAAA-AAAA-AAAA-AAAA',
+            chainId: POLYGON_CHAIN_ID,
+            fetchedTokens: [
+              {
+                address: '0x1111111',
+                symbol: 'TOKEN1',
+                decimals: 1,
+              },
+              {
+                address: '0x2222222',
+                symbol: 'TOKEN1',
+                decimals: 2,
+              },
+            ],
+          },
+          {
+            networkClientId: 'BBBB-BBBB-BBBB-BBBB',
+            chainId: BSC_CHAIN_ID,
+          },
+        ];
+        const fetchTopAssetsThreshold = 5000;
+        const controller = getSwapsController({
+          options: {
+            clientId,
+            fetchTopAssetsThreshold,
+          },
+          state: {
+            topAssets: [
+              {
+                address: '0x9999999',
+                symbol: 'TOKEN9999',
+              },
+            ],
+            topAssetsLastFetched: Date.now() - fetchTopAssetsThreshold - 1,
+          },
+        });
+        mockNetworkControllerGetNetworkClientById({
+          [invocations[0].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[0].chainId },
+          },
+          [invocations[1].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[1].chainId },
+          },
+        });
+        swapsUtilFetchTopAssets.mockImplementation(
+          async (givenChainId, givenClientId) => {
+            if (
+              givenChainId === invocations[0].chainId &&
+              givenClientId === clientId
+            ) {
+              // Simulate the first fetchTopAssets call taking longer, to ensure
+              // that the mutex is in place
+              await new Promise((resolve) => originalSetTimeout(resolve, 0));
+              return invocations[0].fetchedTokens;
+            }
+            if (
+              givenChainId === invocations[1].chainId &&
+              givenClientId === clientId
+            ) {
+              throw new Error('some error');
+            }
+            throw new Error(
+              `Unknown chain ID '${givenChainId}' and/or client ID '${givenClientId}'`,
+            );
+          },
+        );
+
+        await Promise.all([
+          controller.fetchTopAssetsWithCache({
+            networkClientId: invocations[0].networkClientId,
+          }),
+          controller.fetchTopAssetsWithCache({
+            networkClientId: invocations[1].networkClientId,
+          }),
+        ]);
+
+        expect(controller.state.topAssets).toStrictEqual(
+          invocations[0].fetchedTokens,
+        );
+        expect(controller.state.topAssetsLastFetched).toStrictEqual(0);
+        expect(controller.state.chainCache).toStrictEqual({
+          '0x1': {
+            aggregatorMetadata: null,
+            tokens: null,
+            topAssets: null,
+            aggregatorMetadataLastFetched: 0,
+            topAssetsLastFetched: 0,
+            tokensLastFetched: 0,
+          },
+          [invocations[0].chainId]: {
+            topAssets: invocations[0].fetchedTokens,
+            topAssetsLastFetched: Date.now(),
+          },
+          [invocations[1].chainId]: {
+            topAssetsLastFetched: 0,
+          },
+        });
+      });
+    });
+
+    describe('when there are top assets in state but top assets were last fetched below the configured threshold', () => {
+      it('does not fetch top assets', async () => {
+        const networkClientId = 'AAAA-BBBB-CCCC-DDDD';
+        const chainId = '0x89'; // Polygon
+        const controller = getSwapsController({
+          state: {
+            topAssets: [
+              {
+                address: '0x999999999999',
+                symbol: 'TEST',
+              },
+            ],
+            topAssetsLastFetched: Date.now(),
+          },
+        });
+        mockNetworkControllerGetNetworkClientById({
+          [networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId },
+          },
+        });
+
+        await controller.fetchTopAssetsWithCache({ networkClientId });
+
+        expect(swapsUtilFetchTopAssets).not.toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe('fetchAggregatorMetadataWithCache', () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    describe('if the chain ID belonging to the given network is not supported', () => {
+      it('does not attempt to fetch aggregator metadata', async () => {
+        const networkClientId = 'AAAA-BBBB-CCCC-DDDD';
+        const chainId = '0x99999999';
+        const controller = getSwapsController();
+        mockNetworkControllerGetNetworkClientById({
+          [networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId },
+          },
+        });
+
+        await controller.fetchAggregatorMetadataWithCache({ networkClientId });
+
+        expect(swapsUtilFetchAggregatorMetadata).not.toHaveBeenCalled();
+      });
+
+      it('does not update state', async () => {
+        const networkClientId = 'AAAA-BBBB-CCCC-DDDD';
+        const chainId = '0x99999999';
+        const controller = getSwapsController();
+        mockNetworkControllerGetNetworkClientById({
+          [networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId },
+          },
+        });
+        const initialState = controller.state;
+
+        await controller.fetchAggregatorMetadataWithCache({ networkClientId });
+
+        expect(controller.state).toBe(initialState);
+      });
+    });
+
+    describe('when no aggregator metadata has been fetched yet', () => {
+      it('persists fetched aggregator metadata from simultaneous invocations to the chain cache but keeps the aggregator metadata from the most recent successful invocation only in the main part of state', async () => {
+        const clientId = 'client-id';
+        const invocations = [
+          {
+            networkClientId: 'AAAA-AAAA-AAAA-AAAA',
+            chainId: POLYGON_CHAIN_ID,
+            fetchedTokens: [
+              {
+                address: '0x1111111',
+                symbol: 'TOKEN1',
+                decimals: 1,
+              },
+              {
+                address: '0x2222222',
+                symbol: 'TOKEN1',
+                decimals: 2,
+              },
+            ],
+          },
+          {
+            networkClientId: 'CCCC-CCCC-CCCC-CCCC',
+            chainId: AVALANCHE_CHAIN_ID,
+            fetchedTokens: [
+              {
+                address: '0x2222222',
+                symbol: 'TOKEN2',
+                decimals: 3,
+              },
+              {
+                address: '0x3333333',
+                symbol: 'TOKEN3',
+                decimals: 4,
+              },
+            ],
+          },
+        ];
+        const controller = getSwapsController({
+          options: {
+            clientId,
+          },
+        });
+        mockNetworkControllerGetNetworkClientById({
+          [invocations[0].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[0].chainId },
+          },
+          [invocations[1].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[1].chainId },
+          },
+        });
+        swapsUtilFetchAggregatorMetadata.mockImplementation(
+          async (givenChainId, givenClientId) => {
+            if (
+              givenChainId === invocations[0].chainId &&
+              givenClientId === clientId
+            ) {
+              // Simulate the first fetchAggregatorMetadata call taking longer, to ensure
+              // that the mutex is in place
+              await new Promise((resolve) => originalSetTimeout(resolve, 0));
+              return invocations[0].fetchedTokens;
+            }
+            if (
+              givenChainId === invocations[1].chainId &&
+              givenClientId === clientId
+            ) {
+              return invocations[1].fetchedTokens;
+            }
+            throw new Error(
+              `Unknown chain ID '${givenChainId}' and/or client ID '${givenClientId}'`,
+            );
+          },
+        );
+
+        await Promise.all([
+          controller.fetchAggregatorMetadataWithCache({
+            networkClientId: invocations[0].networkClientId,
+          }),
+          controller.fetchAggregatorMetadataWithCache({
+            networkClientId: invocations[1].networkClientId,
+          }),
+        ]);
+
+        expect(controller.state.aggregatorMetadata).toStrictEqual(
+          invocations[1].fetchedTokens,
+        );
+        expect(controller.state.aggregatorMetadataLastFetched).toStrictEqual(
+          Date.now(),
+        );
+        expect(controller.state.chainCache).toStrictEqual({
+          '0x1': {
+            aggregatorMetadata: null,
+            tokens: null,
+            topAssets: null,
+            aggregatorMetadataLastFetched: 0,
+            topAssetsLastFetched: 0,
+            tokensLastFetched: 0,
+          },
+          [invocations[0].chainId]: {
+            aggregatorMetadata: invocations[0].fetchedTokens,
+            aggregatorMetadataLastFetched: Date.now(),
+          },
+          [invocations[1].chainId]: {
+            aggregatorMetadata: invocations[1].fetchedTokens,
+            aggregatorMetadataLastFetched: Date.now(),
+          },
+        });
+      });
+
+      it('clears the last fetch time in state if the fetch from the most recent invocation fails', async () => {
+        const clientId = 'client-id';
+        const invocations = [
+          {
+            networkClientId: 'AAAA-AAAA-AAAA-AAAA',
+            chainId: POLYGON_CHAIN_ID,
+            fetchedTokens: [
+              {
+                address: '0x1111111',
+                symbol: 'TOKEN1',
+                decimals: 1,
+              },
+              {
+                address: '0x2222222',
+                symbol: 'TOKEN1',
+                decimals: 2,
+              },
+            ],
+          },
+          {
+            networkClientId: 'BBBB-BBBB-BBBB-BBBB',
+            chainId: BSC_CHAIN_ID,
+          },
+        ];
+        const controller = getSwapsController({
+          options: {
+            clientId,
+          },
+          state: {
+            aggregatorMetadata: null,
+          },
+        });
+        mockNetworkControllerGetNetworkClientById({
+          [invocations[0].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[0].chainId },
+          },
+          [invocations[1].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[1].chainId },
+          },
+        });
+        swapsUtilFetchAggregatorMetadata.mockImplementation(
+          async (givenChainId, givenClientId) => {
+            if (
+              givenChainId === invocations[0].chainId &&
+              givenClientId === clientId
+            ) {
+              // Simulate the first fetchAggregatorMetadata call taking longer, to ensure
+              // that the mutex is in place
+              await new Promise((resolve) => originalSetTimeout(resolve, 0));
+              return invocations[0].fetchedTokens;
+            }
+            if (
+              givenChainId === invocations[1].chainId &&
+              givenClientId === clientId
+            ) {
+              throw new Error('some error');
+            }
+            throw new Error(
+              `Unknown chain ID '${givenChainId}' and/or client ID '${givenClientId}'`,
+            );
+          },
+        );
+
+        await Promise.all([
+          controller.fetchAggregatorMetadataWithCache({
+            networkClientId: invocations[0].networkClientId,
+          }),
+          controller.fetchAggregatorMetadataWithCache({
+            networkClientId: invocations[1].networkClientId,
+          }),
+        ]);
+
+        expect(controller.state.aggregatorMetadata).toStrictEqual(
+          invocations[0].fetchedTokens,
+        );
+        expect(controller.state.aggregatorMetadataLastFetched).toStrictEqual(0);
+        expect(controller.state.chainCache).toStrictEqual({
+          '0x1': {
+            aggregatorMetadata: null,
+            tokens: null,
+            topAssets: null,
+            aggregatorMetadataLastFetched: 0,
+            topAssetsLastFetched: 0,
+            tokensLastFetched: 0,
+          },
+          [invocations[0].chainId]: {
+            aggregatorMetadata: invocations[0].fetchedTokens,
+            aggregatorMetadataLastFetched: Date.now(),
+          },
+          [invocations[1].chainId]: {
+            aggregatorMetadataLastFetched: 0,
+          },
+        });
+      });
+    });
+
+    describe('when aggregator metadata in state is null', () => {
+      it('persists fetched aggregator metadata from simultaneous invocations to the chain cache but keeps the aggregator metadata from the most recent successful invocation only in the main part of state', async () => {
+        const clientId = 'client-id';
+        const invocations = [
+          {
+            networkClientId: 'AAAA-AAAA-AAAA-AAAA',
+            chainId: POLYGON_CHAIN_ID,
+            fetchedTokens: [
+              {
+                address: '0x1111111',
+                symbol: 'TOKEN1',
+                decimals: 1,
+              },
+              {
+                address: '0x2222222',
+                symbol: 'TOKEN1',
+                decimals: 2,
+              },
+            ],
+          },
+          {
+            networkClientId: 'CCCC-CCCC-CCCC-CCCC',
+            chainId: AVALANCHE_CHAIN_ID,
+            fetchedTokens: [
+              {
+                address: '0x2222222',
+                symbol: 'TOKEN2',
+                decimals: 3,
+              },
+              {
+                address: '0x3333333',
+                symbol: 'TOKEN3',
+                decimals: 4,
+              },
+            ],
+          },
+        ];
+        const controller = getSwapsController({
+          options: {
+            clientId,
+          },
+          state: {
+            aggregatorMetadata: null,
+          },
+        });
+        mockNetworkControllerGetNetworkClientById({
+          [invocations[0].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[0].chainId },
+          },
+          [invocations[1].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[1].chainId },
+          },
+        });
+        swapsUtilFetchAggregatorMetadata.mockImplementation(
+          async (givenChainId, givenClientId) => {
+            if (
+              givenChainId === invocations[0].chainId &&
+              givenClientId === clientId
+            ) {
+              // Simulate the first fetchAggregatorMetadata call taking longer, to ensure
+              // that the mutex is in place
+              await new Promise((resolve) => originalSetTimeout(resolve, 0));
+              return invocations[0].fetchedTokens;
+            }
+            if (
+              givenChainId === invocations[1].chainId &&
+              givenClientId === clientId
+            ) {
+              return invocations[1].fetchedTokens;
+            }
+            throw new Error(
+              `Unknown chain ID '${givenChainId}' and/or client ID '${givenClientId}'`,
+            );
+          },
+        );
+
+        await Promise.all([
+          controller.fetchAggregatorMetadataWithCache({
+            networkClientId: invocations[0].networkClientId,
+          }),
+          controller.fetchAggregatorMetadataWithCache({
+            networkClientId: invocations[1].networkClientId,
+          }),
+        ]);
+
+        expect(controller.state.aggregatorMetadata).toStrictEqual(
+          invocations[1].fetchedTokens,
+        );
+        expect(controller.state.aggregatorMetadataLastFetched).toStrictEqual(
+          Date.now(),
+        );
+        expect(controller.state.chainCache).toStrictEqual({
+          '0x1': {
+            aggregatorMetadata: null,
+            tokens: null,
+            topAssets: null,
+            aggregatorMetadataLastFetched: 0,
+            topAssetsLastFetched: 0,
+            tokensLastFetched: 0,
+          },
+          [invocations[0].chainId]: {
+            aggregatorMetadata: invocations[0].fetchedTokens,
+            aggregatorMetadataLastFetched: Date.now(),
+          },
+          [invocations[1].chainId]: {
+            aggregatorMetadata: invocations[1].fetchedTokens,
+            aggregatorMetadataLastFetched: Date.now(),
+          },
+        });
+      });
+
+      it('clears the last fetch time in state if the fetch from the most recent invocation fails', async () => {
+        const clientId = 'client-id';
+        const invocations = [
+          {
+            networkClientId: 'AAAA-AAAA-AAAA-AAAA',
+            chainId: POLYGON_CHAIN_ID,
+            fetchedTokens: [
+              {
+                address: '0x1111111',
+                symbol: 'TOKEN1',
+                decimals: 1,
+              },
+              {
+                address: '0x2222222',
+                symbol: 'TOKEN1',
+                decimals: 2,
+              },
+            ],
+          },
+          {
+            networkClientId: 'BBBB-BBBB-BBBB-BBBB',
+            chainId: BSC_CHAIN_ID,
+          },
+        ];
+        const controller = getSwapsController({
+          options: {
+            clientId,
+          },
+          state: {
+            aggregatorMetadata: null,
+          },
+        });
+        mockNetworkControllerGetNetworkClientById({
+          [invocations[0].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[0].chainId },
+          },
+          [invocations[1].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[1].chainId },
+          },
+        });
+        swapsUtilFetchAggregatorMetadata.mockImplementation(
+          async (givenChainId, givenClientId) => {
+            if (
+              givenChainId === invocations[0].chainId &&
+              givenClientId === clientId
+            ) {
+              // Simulate the first fetchAggregatorMetadata call taking longer, to ensure
+              // that the mutex is in place
+              await new Promise((resolve) => originalSetTimeout(resolve, 0));
+              return invocations[0].fetchedTokens;
+            }
+            if (
+              givenChainId === invocations[1].chainId &&
+              givenClientId === clientId
+            ) {
+              throw new Error('some error');
+            }
+            throw new Error(
+              `Unknown chain ID '${givenChainId}' and/or client ID '${givenClientId}'`,
+            );
+          },
+        );
+
+        await Promise.all([
+          controller.fetchAggregatorMetadataWithCache({
+            networkClientId: invocations[0].networkClientId,
+          }),
+          controller.fetchAggregatorMetadataWithCache({
+            networkClientId: invocations[1].networkClientId,
+          }),
+        ]);
+
+        expect(controller.state.aggregatorMetadata).toStrictEqual(
+          invocations[0].fetchedTokens,
+        );
+        expect(controller.state.aggregatorMetadataLastFetched).toStrictEqual(0);
+        expect(controller.state.chainCache).toStrictEqual({
+          '0x1': {
+            aggregatorMetadata: null,
+            tokens: null,
+            topAssets: null,
+            aggregatorMetadataLastFetched: 0,
+            topAssetsLastFetched: 0,
+            tokensLastFetched: 0,
+          },
+          [invocations[0].chainId]: {
+            aggregatorMetadata: invocations[0].fetchedTokens,
+            aggregatorMetadataLastFetched: Date.now(),
+          },
+          [invocations[1].chainId]: {
+            aggregatorMetadataLastFetched: 0,
+          },
+        });
+      });
+    });
+
+    describe('when aggregator metadata in state is empty and the last fetch time is the default', () => {
+      it('persists fetched aggregator metadata from simultaneous invocations to the chain cache but keeps the aggregator metadata from the most recent successful invocation only in the main part of state', async () => {
+        const clientId = 'client-id';
+        const invocations = [
+          {
+            networkClientId: 'AAAA-AAAA-AAAA-AAAA',
+            chainId: POLYGON_CHAIN_ID,
+            fetchedTokens: [
+              {
+                address: '0x1111111',
+                symbol: 'TOKEN1',
+                decimals: 1,
+              },
+              {
+                address: '0x2222222',
+                symbol: 'TOKEN1',
+                decimals: 2,
+              },
+            ],
+          },
+          {
+            networkClientId: 'CCCC-CCCC-CCCC-CCCC',
+            chainId: AVALANCHE_CHAIN_ID,
+            fetchedTokens: [
+              {
+                address: '0x2222222',
+                symbol: 'TOKEN2',
+                decimals: 3,
+              },
+              {
+                address: '0x3333333',
+                symbol: 'TOKEN3',
+                decimals: 4,
+              },
+            ],
+          },
+        ];
+        const controller = getSwapsController({
+          options: {
+            clientId,
+          },
+          state: {
+            aggregatorMetadata: {},
+          },
+        });
+        mockNetworkControllerGetNetworkClientById({
+          [invocations[0].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[0].chainId },
+          },
+          [invocations[1].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[1].chainId },
+          },
+        });
+        swapsUtilFetchAggregatorMetadata.mockImplementation(
+          async (givenChainId, givenClientId) => {
+            if (
+              givenChainId === invocations[0].chainId &&
+              givenClientId === clientId
+            ) {
+              // Simulate the first fetchAggregatorMetadata call taking longer, to ensure
+              // that the mutex is in place
+              await new Promise((resolve) => originalSetTimeout(resolve, 0));
+              return invocations[0].fetchedTokens;
+            }
+            if (
+              givenChainId === invocations[1].chainId &&
+              givenClientId === clientId
+            ) {
+              return invocations[1].fetchedTokens;
+            }
+            throw new Error(
+              `Unknown chain ID '${givenChainId}' and/or client ID '${givenClientId}'`,
+            );
+          },
+        );
+
+        await Promise.all([
+          controller.fetchAggregatorMetadataWithCache({
+            networkClientId: invocations[0].networkClientId,
+          }),
+          controller.fetchAggregatorMetadataWithCache({
+            networkClientId: invocations[1].networkClientId,
+          }),
+        ]);
+
+        expect(controller.state.aggregatorMetadata).toStrictEqual(
+          invocations[1].fetchedTokens,
+        );
+        expect(controller.state.aggregatorMetadataLastFetched).toStrictEqual(
+          Date.now(),
+        );
+        expect(controller.state.chainCache).toStrictEqual({
+          '0x1': {
+            aggregatorMetadata: null,
+            tokens: null,
+            topAssets: null,
+            aggregatorMetadataLastFetched: 0,
+            topAssetsLastFetched: 0,
+            tokensLastFetched: 0,
+          },
+          [invocations[0].chainId]: {
+            aggregatorMetadata: invocations[0].fetchedTokens,
+            aggregatorMetadataLastFetched: Date.now(),
+          },
+          [invocations[1].chainId]: {
+            aggregatorMetadata: invocations[1].fetchedTokens,
+            aggregatorMetadataLastFetched: Date.now(),
+          },
+        });
+      });
+
+      it('clears the last fetch time in state if the fetch from the most recent invocation fails', async () => {
+        const clientId = 'client-id';
+        const invocations = [
+          {
+            networkClientId: 'AAAA-AAAA-AAAA-AAAA',
+            chainId: POLYGON_CHAIN_ID,
+            fetchedTokens: [
+              {
+                address: '0x1111111',
+                symbol: 'TOKEN1',
+                decimals: 1,
+              },
+              {
+                address: '0x2222222',
+                symbol: 'TOKEN1',
+                decimals: 2,
+              },
+            ],
+          },
+          {
+            networkClientId: 'BBBB-BBBB-BBBB-BBBB',
+            chainId: BSC_CHAIN_ID,
+          },
+        ];
+        const controller = getSwapsController({
+          options: {
+            clientId,
+          },
+          state: {
+            aggregatorMetadata: {},
+          },
+        });
+        mockNetworkControllerGetNetworkClientById({
+          [invocations[0].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[0].chainId },
+          },
+          [invocations[1].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[1].chainId },
+          },
+        });
+        swapsUtilFetchAggregatorMetadata.mockImplementation(
+          async (givenChainId, givenClientId) => {
+            if (
+              givenChainId === invocations[0].chainId &&
+              givenClientId === clientId
+            ) {
+              // Simulate the first fetchAggregatorMetadata call taking longer, to ensure
+              // that the mutex is in place
+              await new Promise((resolve) => originalSetTimeout(resolve, 0));
+              return invocations[0].fetchedTokens;
+            }
+            if (
+              givenChainId === invocations[1].chainId &&
+              givenClientId === clientId
+            ) {
+              throw new Error('some error');
+            }
+            throw new Error(
+              `Unknown chain ID '${givenChainId}' and/or client ID '${givenClientId}'`,
+            );
+          },
+        );
+
+        await Promise.all([
+          controller.fetchAggregatorMetadataWithCache({
+            networkClientId: invocations[0].networkClientId,
+          }),
+          controller.fetchAggregatorMetadataWithCache({
+            networkClientId: invocations[1].networkClientId,
+          }),
+        ]);
+
+        expect(controller.state.aggregatorMetadata).toStrictEqual(
+          invocations[0].fetchedTokens,
+        );
+        expect(controller.state.aggregatorMetadataLastFetched).toStrictEqual(0);
+        expect(controller.state.chainCache).toStrictEqual({
+          '0x1': {
+            aggregatorMetadata: null,
+            tokens: null,
+            topAssets: null,
+            aggregatorMetadataLastFetched: 0,
+            topAssetsLastFetched: 0,
+            tokensLastFetched: 0,
+          },
+          [invocations[0].chainId]: {
+            aggregatorMetadata: invocations[0].fetchedTokens,
+            aggregatorMetadataLastFetched: Date.now(),
+          },
+          [invocations[1].chainId]: {
+            aggregatorMetadataLastFetched: 0,
+          },
+        });
+      });
+    });
+
+    describe('when there is aggregator metadata in state and it was last fetched beyond the configured threshold', () => {
+      it('persists fetched aggregator metadata from simultaneous invocations to the chain cache but keeps the aggregator metadata from the most recent successful invocation only in the main part of state', async () => {
+        const clientId = 'client-id';
+        const invocations = [
+          {
+            networkClientId: 'AAAA-AAAA-AAAA-AAAA',
+            chainId: POLYGON_CHAIN_ID,
+            fetchedTokens: [
+              {
+                address: '0x1111111',
+                symbol: 'TOKEN1',
+                decimals: 1,
+              },
+              {
+                address: '0x2222222',
+                symbol: 'TOKEN1',
+                decimals: 2,
+              },
+            ],
+          },
+          {
+            networkClientId: 'CCCC-CCCC-CCCC-CCCC',
+            chainId: AVALANCHE_CHAIN_ID,
+            fetchedTokens: [
+              {
+                address: '0x2222222',
+                symbol: 'TOKEN2',
+                decimals: 3,
+              },
+              {
+                address: '0x3333333',
+                symbol: 'TOKEN3',
+                decimals: 4,
+              },
+            ],
+          },
+        ];
+        const fetchAggregatorMetadataThreshold = 5000;
+        const controller = getSwapsController({
+          options: {
+            clientId,
+            fetchAggregatorMetadataThreshold,
+          },
+          state: {
+            aggregatorMetadata: {
+              test: {
+                color: 'red',
+                title: 'Title',
+                icon: 'icon',
+                iconPng: 'icon.png',
+              },
+            },
+            aggregatorMetadataLastFetched:
+              Date.now() - fetchAggregatorMetadataThreshold - 1,
+          },
+        });
+        mockNetworkControllerGetNetworkClientById({
+          [invocations[0].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[0].chainId },
+          },
+          [invocations[1].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[1].chainId },
+          },
+        });
+        swapsUtilFetchAggregatorMetadata.mockImplementation(
+          async (givenChainId, givenClientId) => {
+            if (
+              givenChainId === invocations[0].chainId &&
+              givenClientId === clientId
+            ) {
+              // Simulate the first fetchAggregatorMetadata call taking longer, to ensure
+              // that the mutex is in place
+              await new Promise((resolve) => originalSetTimeout(resolve, 0));
+              return invocations[0].fetchedTokens;
+            }
+            if (
+              givenChainId === invocations[1].chainId &&
+              givenClientId === clientId
+            ) {
+              return invocations[1].fetchedTokens;
+            }
+            throw new Error(
+              `Unknown chain ID '${givenChainId}' and/or client ID '${givenClientId}'`,
+            );
+          },
+        );
+
+        await Promise.all([
+          controller.fetchAggregatorMetadataWithCache({
+            networkClientId: invocations[0].networkClientId,
+          }),
+          controller.fetchAggregatorMetadataWithCache({
+            networkClientId: invocations[1].networkClientId,
+          }),
+        ]);
+
+        expect(controller.state.aggregatorMetadata).toStrictEqual(
+          invocations[1].fetchedTokens,
+        );
+        expect(controller.state.aggregatorMetadataLastFetched).toStrictEqual(
+          Date.now(),
+        );
+        expect(controller.state.chainCache).toStrictEqual({
+          '0x1': {
+            aggregatorMetadata: null,
+            tokens: null,
+            topAssets: null,
+            aggregatorMetadataLastFetched: 0,
+            topAssetsLastFetched: 0,
+            tokensLastFetched: 0,
+          },
+          [invocations[0].chainId]: {
+            aggregatorMetadata: invocations[0].fetchedTokens,
+            aggregatorMetadataLastFetched: Date.now(),
+          },
+          [invocations[1].chainId]: {
+            aggregatorMetadata: invocations[1].fetchedTokens,
+            aggregatorMetadataLastFetched: Date.now(),
+          },
+        });
+      });
+
+      it('clears the last fetch time in state if the fetch from the most recent invocation fails', async () => {
+        const clientId = 'client-id';
+        const invocations = [
+          {
+            networkClientId: 'AAAA-AAAA-AAAA-AAAA',
+            chainId: POLYGON_CHAIN_ID,
+            fetchedTokens: [
+              {
+                address: '0x1111111',
+                symbol: 'TOKEN1',
+                decimals: 1,
+              },
+              {
+                address: '0x2222222',
+                symbol: 'TOKEN1',
+                decimals: 2,
+              },
+            ],
+          },
+          {
+            networkClientId: 'BBBB-BBBB-BBBB-BBBB',
+            chainId: BSC_CHAIN_ID,
+          },
+        ];
+        const fetchAggregatorMetadataThreshold = 5000;
+        const controller = getSwapsController({
+          options: {
+            clientId,
+            fetchAggregatorMetadataThreshold,
+          },
+          state: {
+            aggregatorMetadata: {
+              test: {
+                color: 'red',
+                title: 'Title',
+                icon: 'icon',
+                iconPng: 'icon.png',
+              },
+            },
+            aggregatorMetadataLastFetched:
+              Date.now() - fetchAggregatorMetadataThreshold - 1,
+          },
+        });
+        mockNetworkControllerGetNetworkClientById({
+          [invocations[0].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[0].chainId },
+          },
+          [invocations[1].networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId: invocations[1].chainId },
+          },
+        });
+        swapsUtilFetchAggregatorMetadata.mockImplementation(
+          async (givenChainId, givenClientId) => {
+            if (
+              givenChainId === invocations[0].chainId &&
+              givenClientId === clientId
+            ) {
+              // Simulate the first fetchAggregatorMetadata call taking longer, to ensure
+              // that the mutex is in place
+              await new Promise((resolve) => originalSetTimeout(resolve, 0));
+              return invocations[0].fetchedTokens;
+            }
+            if (
+              givenChainId === invocations[1].chainId &&
+              givenClientId === clientId
+            ) {
+              throw new Error('some error');
+            }
+            throw new Error(
+              `Unknown chain ID '${givenChainId}' and/or client ID '${givenClientId}'`,
+            );
+          },
+        );
+
+        await Promise.all([
+          controller.fetchAggregatorMetadataWithCache({
+            networkClientId: invocations[0].networkClientId,
+          }),
+          controller.fetchAggregatorMetadataWithCache({
+            networkClientId: invocations[1].networkClientId,
+          }),
+        ]);
+
+        expect(controller.state.aggregatorMetadata).toStrictEqual(
+          invocations[0].fetchedTokens,
+        );
+        expect(controller.state.aggregatorMetadataLastFetched).toStrictEqual(0);
+        expect(controller.state.chainCache).toStrictEqual({
+          '0x1': {
+            aggregatorMetadata: null,
+            tokens: null,
+            topAssets: null,
+            aggregatorMetadataLastFetched: 0,
+            topAssetsLastFetched: 0,
+            tokensLastFetched: 0,
+          },
+          [invocations[0].chainId]: {
+            aggregatorMetadata: invocations[0].fetchedTokens,
+            aggregatorMetadataLastFetched: Date.now(),
+          },
+          [invocations[1].chainId]: {
+            aggregatorMetadataLastFetched: 0,
+          },
+        });
+      });
+    });
+
+    describe('when there is aggregator metadata in state but aggregator metadata was last fetched below the configured threshold', () => {
+      it('does not fetch aggregator metadata', async () => {
+        const networkClientId = 'AAAA-BBBB-CCCC-DDDD';
+        const chainId = '0x89'; // Polygon
+        const controller = getSwapsController({
+          state: {
+            aggregatorMetadata: {
+              test: {
+                color: 'red',
+                title: 'Title',
+                icon: 'icon',
+                iconPng: 'icon.png',
+              },
+            },
+            aggregatorMetadataLastFetched: Date.now(),
+          },
+        });
+        mockNetworkControllerGetNetworkClientById({
+          [networkClientId]: {
+            provider: new FakeProvider(),
+            configuration: { chainId },
+          },
+        });
+
+        await controller.fetchAggregatorMetadataWithCache({ networkClientId });
+
+        expect(swapsUtilFetchAggregatorMetadata).not.toHaveBeenCalled();
+      });
     });
   });
   describe('updateQuotesWithGasPrice', () => {
@@ -814,44 +3537,1265 @@ describe('SwapsController', () => {
       expect(updatedQuoteValues).toStrictEqual({});
     });
   });
+
   describe('startFetchAndSetQuotes', () => {
-    it('should set fetch parameters and initiate polling', () => {
-      const fetchParams = {
-        slippage: 1,
-        sourceToken: '0x1',
-        sourceAmount: 1000,
-        destinationToken: '0x2',
-        walletAddress: '0x3',
-      };
-      const fetchParamsMetaData = {
-        sourceTokenInfo: {
-          decimals: 18,
-          address: '0x1',
-          symbol: 'TOKEN1',
-        },
-        destinationTokenInfo: {
-          decimals: 18,
-          address: '0x2',
-          symbol: 'TOKEN2',
-        },
-      };
-
-      swapsController.startFetchAndSetQuotes(fetchParams, fetchParamsMetaData);
-
-      expect(swapsController.state.fetchParams).toEqual(fetchParams);
-      expect(swapsController.state.fetchParamsMetaData).toEqual(
-        fetchParamsMetaData,
-      );
-      expect(swapsController.state.isInPolling).toBe(true);
+    beforeEach(() => {
+      jest.useFakeTimers();
     });
-    // should return null if no fetch parameters are provided
-    it('should return null if no fetch parameters are provided', () => {
-      swapsController.startFetchAndSetQuotes();
 
-      expect(swapsController.state.isInPolling).toBe(false);
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    describe('if fetch params are given', () => {
+      for (const chainId of [
+        ETH_CHAIN_ID,
+        BSC_CHAIN_ID,
+        POLYGON_CHAIN_ID,
+        AVALANCHE_CHAIN_ID,
+        ARBITRUM_CHAIN_ID,
+        OPTIMISM_CHAIN_ID,
+        ZKSYNC_ERA_CHAIN_ID,
+        LINEA_CHAIN_ID,
+        SWAPS_TESTNET_CHAIN_ID,
+        BASE_CHAIN_ID,
+      ]) {
+        const chainName = CHAIN_ID_TO_NAME_MAP[chainId];
+        describe(`given the ID of a network client for ${chainName}`, () => {
+          describe('if fetch params metadata is given', () => {
+            it('persists to state the given fetch params and fetch params metadata', () => {
+              const networkClientId = 'AAAA-BBBB-CCCC-DDDD';
+              mockNetworkControllerGetNetworkClientById({
+                [networkClientId]: {
+                  provider: new FakeProvider(),
+                  configuration: { chainId },
+                },
+              });
+              const fetchParams = buildAPIFetchQuotesParams();
+              const fetchParamsMetaData = buildAPIFetchQuotesMetadata({
+                networkClientId,
+              });
+
+              swapsController.startFetchAndSetQuotes(
+                fetchParams,
+                fetchParamsMetaData,
+              );
+
+              expect(swapsController.state.fetchParams).toEqual(fetchParams);
+              expect(swapsController.state.fetchParamsMetaData).toEqual(
+                fetchParamsMetaData,
+              );
+            });
+
+            it('immediately persists to state the fact that polling has started', () => {
+              const networkClientId = 'AAAA-BBBB-CCCC-DDDD';
+              mockNetworkControllerGetNetworkClientById({
+                [networkClientId]: {
+                  provider: new FakeProvider(),
+                  configuration: { chainId },
+                },
+              });
+              const fetchParams = buildAPIFetchQuotesParams();
+              const fetchParamsMetaData = buildAPIFetchQuotesMetadata({
+                networkClientId,
+              });
+
+              swapsController.startFetchAndSetQuotes(
+                fetchParams,
+                fetchParamsMetaData,
+              );
+
+              expect(swapsController.state.isInPolling).toBe(true);
+            });
+
+            it('calls fetchTradesInfo with the given fetch params and the chain ID of the referenced network', async () => {
+              const clientId = 'client-id';
+              const networkClientId = 'AAAA-BBBB-CCCC-DDDD';
+              const fetchParams = buildAPIFetchQuotesParams();
+              const fetchParamsMetaData = buildAPIFetchQuotesMetadata({
+                networkClientId,
+              });
+              mockNetworkControllerGetNetworkClientById({
+                [networkClientId]: {
+                  provider: new FakeProvider({
+                    stubs: [
+                      buildNetVersionRequestStub(chainId),
+                      buildErc20AllowanceCallStub(chainId, fetchParams),
+                    ],
+                  }),
+                  configuration: { chainId },
+                },
+              });
+              const fetchGasFeeEstimatesSpy = jest
+                .fn()
+                .mockResolvedValue(buildGasFeeEstimates());
+              const controller = getSwapsController({
+                options: {
+                  clientId,
+                  fetchGasFeeEstimates: fetchGasFeeEstimatesSpy,
+                },
+              });
+
+              controller.startFetchAndSetQuotes(
+                fetchParams,
+                fetchParamsMetaData,
+              );
+              // Ethers uses `setTimeout` to verify the network and to make
+              // requests, so this will not only aid Ethers in initializing the
+              // network but also cause the contract interaction request to
+              // resolve.
+              await jest.runOnlyPendingTimersAsync();
+
+              expect(swapsUtilFetchTradesInfo).toHaveBeenCalledWith(
+                fetchParams,
+                expect.any(AbortSignal),
+                chainId,
+                clientId,
+              );
+            });
+
+            if (chainId === OPTIMISM_CHAIN_ID) {
+              it('calls fetchEstimatedMultiLayerL1Fee with the EthQuery instance created for the referenced network', async () => {
+                const clientId = 'client-id';
+                const networkClientId = 'AAAA-BBBB-CCCC-DDDD';
+                const fetchParams = buildAPIFetchQuotesParams();
+                const fetchParamsMetaData = buildAPIFetchQuotesMetadata({
+                  networkClientId,
+                });
+                const provider = new FakeProvider({
+                  stubs: [
+                    buildNetVersionRequestStub(chainId),
+                    buildErc20AllowanceCallStub(chainId, fetchParams),
+                  ],
+                });
+                const quote = API_TRADES.paraswap;
+                mockNetworkControllerGetNetworkClientById({
+                  [networkClientId]: {
+                    provider,
+                    configuration: { chainId },
+                  },
+                });
+                const ethQuery = new OriginalEthQuery(provider);
+                jest
+                  .spyOn(ethQueryModule, 'default')
+                  .mockImplementation((givenProvider) => {
+                    if (givenProvider === provider) {
+                      return ethQuery;
+                    }
+                    throw new Error(
+                      'Cannot instantiate EthQuery: Unknown provider',
+                    );
+                  });
+                const fetchEstimatedMultiLayerL1FeeSpy = jest.fn();
+                const fetchGasFeeEstimatesSpy = jest
+                  .fn()
+                  .mockResolvedValue(buildGasFeeEstimates());
+                swapsUtilFetchTradesInfo.mockResolvedValue({
+                  paraswap: quote,
+                });
+                const controller = getSwapsController({
+                  options: {
+                    clientId,
+                    fetchEstimatedMultiLayerL1Fee:
+                      fetchEstimatedMultiLayerL1FeeSpy,
+                    fetchGasFeeEstimates: fetchGasFeeEstimatesSpy,
+                  },
+                });
+
+                controller.startFetchAndSetQuotes(
+                  fetchParams,
+                  fetchParamsMetaData,
+                );
+                // Ethers uses `setTimeout` to verify the network and to make
+                // requests, so this will not only aid Ethers in initializing the
+                // network but also cause the contract interaction request to
+                // resolve.
+                await jest.runOnlyPendingTimersAsync();
+
+                expect(fetchEstimatedMultiLayerL1FeeSpy).toHaveBeenCalledWith(
+                  ethQuery,
+                  {
+                    txParams: quote.trade,
+                    networkClientId,
+                  },
+                );
+              });
+
+              it('calls estimateGas with the instance of EthQuery created for the given network and data from the approval transaction', async () => {
+                const clientId = 'client-id';
+                const networkClientId = 'AAAA-BBBB-CCCC-DDDD';
+                const fetchParams = buildAPIFetchQuotesParams({
+                  sourceAmount: 1000,
+                });
+                const fetchParamsMetaData = buildAPIFetchQuotesMetadata({
+                  networkClientId,
+                });
+                const provider = new FakeProvider({
+                  stubs: [
+                    buildNetVersionRequestStub(chainId),
+                    buildErc20AllowanceCallStub(chainId, fetchParams, {
+                      allowance: 500,
+                    }),
+                  ],
+                });
+                const quote = { ...API_TRADES.paraswap };
+                mockNetworkControllerGetNetworkClientById({
+                  [networkClientId]: {
+                    provider,
+                    configuration: { chainId },
+                  },
+                });
+                const ethQuery = new OriginalEthQuery(provider);
+                jest
+                  .spyOn(ethQueryModule, 'default')
+                  .mockImplementation((givenProvider) => {
+                    if (givenProvider === provider) {
+                      return ethQuery;
+                    }
+                    throw new Error(
+                      'Cannot instantiate EthQuery: Unknown provider',
+                    );
+                  });
+                const fetchGasFeeEstimatesSpy = jest
+                  .fn()
+                  .mockResolvedValue(buildGasFeeEstimates());
+                swapsUtilFetchTradesInfo.mockResolvedValue({
+                  paraswap: quote,
+                });
+                swapsUtilEstimateGas.mockResolvedValue({
+                  gas: '0x1000',
+                });
+                const controller = getSwapsController({
+                  options: {
+                    clientId,
+                    fetchGasFeeEstimates: fetchGasFeeEstimatesSpy,
+                  },
+                });
+
+                controller.startFetchAndSetQuotes(
+                  fetchParams,
+                  fetchParamsMetaData,
+                );
+                // Ethers uses `setTimeout` to verify the network and to make
+                // requests, so this will not only aid Ethers in initializing the
+                // network but also cause the contract interaction request to
+                // resolve.
+                await jest.runOnlyPendingTimersAsync();
+
+                expect(swapsUtilEstimateGas).toHaveBeenCalledWith(
+                  {
+                    data: quote.approvalNeeded!.data,
+                    from: quote.approvalNeeded!.from,
+                    to: quote.approvalNeeded!.to,
+                  },
+                  ethQuery,
+                );
+              });
+            }
+
+            it('calls shouldEnableDirectWrapping with the chain ID of the referenced network', async () => {
+              const shouldEnableDirectWrapping = jest.spyOn(
+                swapsUtil,
+                'shouldEnableDirectWrapping',
+              );
+              const clientId = 'client-id';
+              const networkClientId = 'AAAA-BBBB-CCCC-DDDD';
+              const fetchParams = buildAPIFetchQuotesParams();
+              const fetchParamsMetaData = buildAPIFetchQuotesMetadata({
+                networkClientId,
+              });
+              mockNetworkControllerGetNetworkClientById({
+                [networkClientId]: {
+                  provider: new FakeProvider({
+                    stubs: [
+                      buildNetVersionRequestStub(chainId),
+                      buildErc20AllowanceCallStub(chainId, fetchParams),
+                    ],
+                  }),
+                  configuration: { chainId },
+                },
+              });
+              const fetchGasFeeEstimatesSpy = jest
+                .fn()
+                .mockResolvedValue(buildGasFeeEstimates());
+              const controller = getSwapsController({
+                options: {
+                  clientId,
+                  fetchGasFeeEstimates: fetchGasFeeEstimatesSpy,
+                },
+              });
+
+              controller.startFetchAndSetQuotes(
+                fetchParams,
+                fetchParamsMetaData,
+              );
+              // Ethers uses `setTimeout` to verify the network and to make
+              // requests, so this will not only aid Ethers in initializing the
+              // network but also cause the contract interaction request to
+              // resolve.
+              await jest.runOnlyPendingTimersAsync();
+
+              expect(shouldEnableDirectWrapping).toHaveBeenCalledWith(
+                chainId,
+                fetchParams.sourceToken,
+                fetchParams.destinationToken,
+              );
+            });
+
+            it('uses the Ethers provider created for the given network to look up the allowance', async () => {
+              const clientId = 'client-id';
+              const networkClientId = 'AAAA-BBBB-CCCC-DDDD';
+              const fetchParams = buildAPIFetchQuotesParams();
+              const fetchParamsMetaData = buildAPIFetchQuotesMetadata({
+                networkClientId,
+              });
+              const provider = new FakeProvider({
+                stubs: [
+                  buildNetVersionRequestStub(chainId),
+                  buildErc20AllowanceCallStub(chainId, fetchParams),
+                ],
+              });
+              mockNetworkControllerGetNetworkClientById({
+                [networkClientId]: {
+                  provider,
+                  configuration: { chainId },
+                },
+              });
+              const ethersProvider = new OriginalWeb3Provider(provider);
+              jest
+                .spyOn(ethersProviders, 'Web3Provider')
+                .mockReturnValue(ethersProvider);
+              const contract = new ethersContracts.Contract(
+                fetchParams.sourceToken,
+                abiERC20,
+                ethersProvider,
+              );
+              const ContractSpy = jest
+                .spyOn(ethersContracts, 'Contract')
+                .mockReturnValue(contract);
+              const fetchEstimatedMultiLayerL1FeeSpy = jest.fn();
+              const fetchGasFeeEstimatesSpy = jest
+                .fn()
+                .mockResolvedValue(buildGasFeeEstimates());
+              const controller = getSwapsController({
+                options: {
+                  clientId,
+                  fetchEstimatedMultiLayerL1Fee:
+                    fetchEstimatedMultiLayerL1FeeSpy,
+                  fetchGasFeeEstimates: fetchGasFeeEstimatesSpy,
+                },
+              });
+
+              controller.startFetchAndSetQuotes(
+                fetchParams,
+                fetchParamsMetaData,
+              );
+              // Ethers uses `setTimeout` to verify the network and to make
+              // requests, so this will not only aid Ethers in initializing the
+              // network but also cause the contract interaction request to
+              // resolve.
+              await jest.runOnlyPendingTimersAsync();
+
+              expect(ContractSpy).toHaveBeenCalledWith(
+                fetchParams.sourceToken,
+                abiERC20,
+                ethersProvider,
+              );
+            });
+
+            it('only creates a single Ethers provider instance if called more than once a row with the same network client ID', async () => {
+              const clientId = 'client-id';
+              const networkClientId = 'AAAA-BBBB-CCCC-DDDD';
+              const fetchParams = buildAPIFetchQuotesParams();
+              const fetchParamsMetaData = buildAPIFetchQuotesMetadata({
+                networkClientId,
+              });
+              const provider = new FakeProvider({
+                stubs: [
+                  buildNetVersionRequestStub(chainId),
+                  buildErc20AllowanceCallStub(chainId, fetchParams),
+                ],
+              });
+              mockNetworkControllerGetNetworkClientById({
+                [networkClientId]: {
+                  provider,
+                  configuration: { chainId },
+                },
+              });
+              const ethersProvider = new OriginalWeb3Provider(provider);
+              const Web3ProviderSpy = jest
+                .spyOn(ethersProviders, 'Web3Provider')
+                .mockReturnValue(ethersProvider);
+              const fetchGasFeeEstimatesSpy = jest
+                .fn()
+                .mockResolvedValue(buildGasFeeEstimates());
+              const controller = getSwapsController({
+                options: {
+                  clientId,
+                  fetchGasFeeEstimates: fetchGasFeeEstimatesSpy,
+                },
+              });
+
+              controller.startFetchAndSetQuotes(
+                fetchParams,
+                fetchParamsMetaData,
+              );
+              // Ethers uses `setTimeout` to verify the network and to make
+              // requests, so this will not only aid Ethers in initializing the
+              // network but also cause the contract interaction request to
+              // resolve.
+              await jest.runOnlyPendingTimersAsync();
+              controller.startFetchAndSetQuotes(
+                fetchParams,
+                fetchParamsMetaData,
+              );
+              // Wait for a fresh iteration
+              await jest.runOnlyPendingTimersAsync();
+
+              expect(Web3ProviderSpy).toHaveBeenCalledTimes(1);
+            });
+
+            it('calls estimateGas with the instance of EthQuery created for the given network and data from each quote', async () => {
+              const clientId = 'client-id';
+              const networkClientId = 'AAAA-BBBB-CCCC-DDDD';
+              const fetchParams = buildAPIFetchQuotesParams();
+              const fetchParamsMetaData = buildAPIFetchQuotesMetadata({
+                networkClientId,
+              });
+              const provider = new FakeProvider({
+                stubs: [
+                  buildNetVersionRequestStub(chainId),
+                  buildErc20AllowanceCallStub(chainId, fetchParams),
+                ],
+              });
+              const quote = { ...API_TRADES.paraswap };
+              mockNetworkControllerGetNetworkClientById({
+                [networkClientId]: {
+                  provider,
+                  configuration: { chainId },
+                },
+              });
+              const ethQuery = new OriginalEthQuery(provider);
+              jest
+                .spyOn(ethQueryModule, 'default')
+                .mockImplementation((givenProvider) => {
+                  if (givenProvider === provider) {
+                    return ethQuery;
+                  }
+                  throw new Error(
+                    'Cannot instantiate EthQuery: Unknown provider',
+                  );
+                });
+              const fetchGasFeeEstimatesSpy = jest
+                .fn()
+                .mockResolvedValue(buildGasFeeEstimates());
+              swapsUtilFetchTradesInfo.mockResolvedValue({
+                paraswap: quote,
+              });
+              swapsUtilEstimateGas.mockResolvedValue({
+                gas: '0x1000',
+              });
+              const controller = getSwapsController({
+                options: {
+                  clientId,
+                  fetchGasFeeEstimates: fetchGasFeeEstimatesSpy,
+                },
+              });
+
+              controller.startFetchAndSetQuotes(
+                fetchParams,
+                fetchParamsMetaData,
+              );
+              // Ethers uses `setTimeout` to verify the network and to make
+              // requests, so this will not only aid Ethers in initializing the
+              // network but also cause the contract interaction request to
+              // resolve.
+              await jest.runOnlyPendingTimersAsync();
+
+              expect(swapsUtilEstimateGas).toHaveBeenCalledWith(
+                {
+                  data: quote.trade.data,
+                  from: quote.trade.from,
+                  to: quote.trade.to,
+                  value: quote.trade.value,
+                },
+                ethQuery,
+              );
+            });
+
+            it('passes the given network client ID to fetchGasFeeEstimates along with shouldUpdateState: true on first iteration and shouldUpdateState: false thereafter', async () => {
+              const clientId = 'client-id';
+              const networkClientId = 'AAAA-BBBB-CCCC-DDDD';
+              const fetchParams = buildAPIFetchQuotesParams();
+              const fetchParamsMetaData = buildAPIFetchQuotesMetadata({
+                networkClientId,
+              });
+              mockNetworkControllerGetNetworkClientById({
+                [networkClientId]: {
+                  provider: new FakeProvider({
+                    stubs: [
+                      buildNetVersionRequestStub(chainId),
+                      buildErc20AllowanceCallStub(chainId, fetchParams),
+                      buildNetVersionRequestStub(chainId),
+                      buildErc20AllowanceCallStub(chainId, fetchParams),
+                      buildNetVersionRequestStub(chainId),
+                      buildErc20AllowanceCallStub(chainId, fetchParams),
+                    ],
+                  }),
+                  configuration: { chainId },
+                },
+              });
+              const fetchGasFeeEstimatesSpy = jest
+                .fn()
+                .mockResolvedValue(buildGasFeeEstimates());
+              const controller = getSwapsController({
+                options: {
+                  clientId,
+                  fetchGasFeeEstimates: fetchGasFeeEstimatesSpy,
+                },
+              });
+
+              controller.startFetchAndSetQuotes(
+                fetchParams,
+                fetchParamsMetaData,
+              );
+              // Ethers uses `setTimeout` to verify the network and to make
+              // requests, so this will not only aid Ethers in initializing the
+              // network but also cause the contract interaction request to
+              // resolve.
+              await jest.runOnlyPendingTimersAsync();
+              // Wait for the next polling iteration.
+              await jest.runOnlyPendingTimersAsync();
+              // Making a contract interaction spawns more timers, so allow the
+              // request to complete.
+              await jest.runOnlyPendingTimersAsync();
+              // Wait for the next polling iteration.
+              await jest.runOnlyPendingTimersAsync();
+              // Making a contract interaction spawns more timers, so allow the
+              // request to complete.
+              await jest.runOnlyPendingTimersAsync();
+              // Wait for the next polling iteration.
+              await jest.runOnlyPendingTimersAsync();
+              // Try waiting for more timers to confirm no more are present.
+              await jest.runOnlyPendingTimersAsync();
+
+              expect(fetchGasFeeEstimatesSpy).toHaveBeenCalledTimes(3);
+              expect(fetchGasFeeEstimatesSpy).toHaveBeenNthCalledWith(1, {
+                networkClientId,
+                shouldUpdateState: true,
+              });
+              expect(fetchGasFeeEstimatesSpy).toHaveBeenNthCalledWith(2, {
+                networkClientId,
+                shouldUpdateState: false,
+              });
+              expect(fetchGasFeeEstimatesSpy).toHaveBeenNthCalledWith(3, {
+                networkClientId,
+                shouldUpdateState: false,
+              });
+            });
+
+            it('passes the chain ID of the given network client ID to fetchGasPrices when fetchGasFeeEstimates is unavailable', async () => {
+              const clientId = 'client-id';
+              const networkClientId = 'AAAA-BBBB-CCCC-DDDD';
+              const fetchParams = buildAPIFetchQuotesParams();
+              const fetchParamsMetaData = buildAPIFetchQuotesMetadata({
+                networkClientId,
+              });
+              mockNetworkControllerGetNetworkClientById({
+                [networkClientId]: {
+                  provider: new FakeProvider({
+                    stubs: [
+                      buildNetVersionRequestStub(chainId),
+                      buildErc20AllowanceCallStub(chainId, fetchParams),
+                    ],
+                  }),
+                  configuration: { chainId },
+                },
+              });
+              const fetchGasPricesSpy = jest
+                .spyOn(swapsUtil, 'fetchGasPrices')
+                .mockResolvedValue({
+                  proposedGasPrice: '100',
+                  safeGasPrice: '50',
+                  fastGasPrice: '150',
+                });
+              const controller = getSwapsController({
+                options: {
+                  clientId,
+                  fetchGasFeeEstimates: undefined,
+                },
+              });
+
+              controller.startFetchAndSetQuotes(
+                fetchParams,
+                fetchParamsMetaData,
+              );
+              // Ethers uses `setTimeout` to verify the network and to make
+              // requests, so this will not only aid Ethers in initializing the
+              // network but also cause the contract interaction request to
+              // resolve.
+              await jest.runOnlyPendingTimersAsync();
+
+              expect(fetchGasPricesSpy).toHaveBeenCalledWith(chainId, clientId);
+            });
+
+            it('hits the referenced network when fetchGasFeeEstimates is unavailable and fetchGasPrices fails', async () => {
+              const clientId = 'client-id';
+              const networkClientId = 'AAAA-BBBB-CCCC-DDDD';
+              const fetchParams = buildAPIFetchQuotesParams();
+              const fetchParamsMetaData = buildAPIFetchQuotesMetadata({
+                networkClientId,
+              });
+              mockNetworkControllerGetNetworkClientById({
+                [networkClientId]: {
+                  provider: new FakeProvider({
+                    stubs: [
+                      buildNetVersionRequestStub(chainId),
+                      buildErc20AllowanceCallStub(chainId, fetchParams),
+                      {
+                        request: {
+                          method: 'eth_gasPrice',
+                          params: [],
+                        },
+                        response: {
+                          result: '0x11f71ed6fc0',
+                        },
+                      },
+                    ],
+                  }),
+                  configuration: { chainId },
+                },
+              });
+              jest
+                .spyOn(swapsUtil, 'fetchGasPrices')
+                .mockRejectedValue(new Error('oops'));
+              const controller = getSwapsController({
+                options: {
+                  clientId,
+                  fetchGasFeeEstimates: undefined,
+                },
+              });
+
+              controller.startFetchAndSetQuotes(
+                fetchParams,
+                fetchParamsMetaData,
+              );
+              // Ethers uses `setTimeout` to verify the network and to make
+              // requests, so this will not only aid Ethers in initializing the
+              // network but also cause the contract interaction request to
+              // resolve.
+              await jest.runOnlyPendingTimersAsync();
+
+              expect(controller.state).toMatchObject({
+                usedGasEstimate: {
+                  gasPrice: '1234.567',
+                },
+              });
+            });
+          });
+
+          describe('if fetch params metadata is not given', () => {
+            it('persists to state the given fetch params, and does not change the fetch params metadata', () => {
+              const networkClientId = 'AAAA-BBBB-CCCC-DDDD';
+              mockNetworkControllerGetNetworkClientById({
+                [networkClientId]: {
+                  provider: new FakeProvider(),
+                  configuration: { chainId },
+                },
+              });
+              const fetchParams = buildAPIFetchQuotesParams();
+              const initialFetchParamsMetaData = {
+                sourceTokenInfo: {
+                  decimals: 0,
+                  address: '',
+                  symbol: '',
+                },
+                destinationTokenInfo: {
+                  decimals: 0,
+                  address: '',
+                  symbol: '',
+                },
+                networkClientId,
+              };
+              const controller = getSwapsController({
+                state: {
+                  fetchParamsMetaData: initialFetchParamsMetaData,
+                },
+              });
+
+              controller.startFetchAndSetQuotes(fetchParams);
+
+              expect(controller.state.fetchParams).toEqual(fetchParams);
+              expect(controller.state.fetchParamsMetaData).toBe(
+                initialFetchParamsMetaData,
+              );
+            });
+
+            it('immediately persists to state the fact that polling has started', () => {
+              const networkClientId = 'AAAA-BBBB-CCCC-DDDD';
+              mockNetworkControllerGetNetworkClientById({
+                [networkClientId]: {
+                  provider: new FakeProvider(),
+                  configuration: { chainId },
+                },
+              });
+              const fetchParams = buildAPIFetchQuotesParams();
+              const fetchParamsMetaData = buildAPIFetchQuotesMetadata({
+                networkClientId,
+              });
+              const controller = getSwapsController({
+                state: {
+                  fetchParamsMetaData,
+                },
+              });
+
+              controller.startFetchAndSetQuotes(fetchParams);
+
+              expect(controller.state.isInPolling).toBe(true);
+            });
+
+            it('calls fetchTradesInfo with the given fetch params and the chain ID of the referenced network', async () => {
+              const clientId = 'client-id';
+              const networkClientId = 'AAAA-BBBB-CCCC-DDDD';
+              const fetchParams = buildAPIFetchQuotesParams();
+              const fetchParamsMetaData = buildAPIFetchQuotesMetadata({
+                networkClientId,
+              });
+              mockNetworkControllerGetNetworkClientById({
+                [networkClientId]: {
+                  provider: new FakeProvider({
+                    stubs: [
+                      buildNetVersionRequestStub(chainId),
+                      buildErc20AllowanceCallStub(chainId, fetchParams),
+                    ],
+                  }),
+                  configuration: { chainId },
+                },
+              });
+              const fetchGasFeeEstimatesSpy = jest
+                .fn()
+                .mockResolvedValue(buildGasFeeEstimates());
+              const controller = getSwapsController({
+                options: {
+                  clientId,
+                  fetchGasFeeEstimates: fetchGasFeeEstimatesSpy,
+                },
+                state: {
+                  fetchParamsMetaData,
+                },
+              });
+
+              controller.startFetchAndSetQuotes(fetchParams);
+              // Ethers uses `setTimeout` to verify the network and to make
+              // requests, so this will not only aid Ethers in initializing the
+              // network but also cause the contract interaction request to
+              // resolve.
+              await jest.runOnlyPendingTimersAsync();
+
+              expect(swapsUtilFetchTradesInfo).toHaveBeenCalledWith(
+                fetchParams,
+                expect.any(AbortSignal),
+                chainId,
+                clientId,
+              );
+            });
+
+            if (chainId === OPTIMISM_CHAIN_ID) {
+              it('calls fetchEstimatedMultiLayerL1Fee with the EthQuery instance created for the referenced network', async () => {
+                const clientId = 'client-id';
+                const networkClientId = 'AAAA-BBBB-CCCC-DDDD';
+                const fetchParams = buildAPIFetchQuotesParams();
+                const fetchParamsMetaData = buildAPIFetchQuotesMetadata({
+                  networkClientId,
+                });
+                const provider = new FakeProvider({
+                  stubs: [
+                    buildNetVersionRequestStub(chainId),
+                    buildErc20AllowanceCallStub(chainId, fetchParams),
+                  ],
+                });
+                const quote = API_TRADES.paraswap;
+                mockNetworkControllerGetNetworkClientById({
+                  [networkClientId]: {
+                    provider,
+                    configuration: { chainId },
+                  },
+                });
+                const ethQuery = new OriginalEthQuery(provider);
+                jest
+                  .spyOn(ethQueryModule, 'default')
+                  .mockImplementation((givenProvider) => {
+                    if (givenProvider === provider) {
+                      return ethQuery;
+                    }
+                    throw new Error(
+                      'Cannot instantiate EthQuery: Unknown provider',
+                    );
+                  });
+                const fetchEstimatedMultiLayerL1FeeSpy = jest.fn();
+                const fetchGasFeeEstimatesSpy = jest
+                  .fn()
+                  .mockResolvedValue(buildGasFeeEstimates());
+                swapsUtilFetchTradesInfo.mockResolvedValue({
+                  paraswap: quote,
+                });
+                const controller = getSwapsController({
+                  options: {
+                    clientId,
+                    fetchEstimatedMultiLayerL1Fee:
+                      fetchEstimatedMultiLayerL1FeeSpy,
+                    fetchGasFeeEstimates: fetchGasFeeEstimatesSpy,
+                  },
+                  state: {
+                    fetchParamsMetaData,
+                  },
+                });
+
+                controller.startFetchAndSetQuotes(fetchParams);
+                // Ethers uses `setTimeout` to verify the network and to make
+                // requests, so this will not only aid Ethers in initializing the
+                // network but also cause the contract interaction request to
+                // resolve.
+                await jest.runOnlyPendingTimersAsync();
+
+                expect(fetchEstimatedMultiLayerL1FeeSpy).toHaveBeenCalledWith(
+                  ethQuery,
+                  {
+                    txParams: quote.trade,
+                    networkClientId,
+                  },
+                );
+              });
+            }
+
+            it('calls shouldEnableDirectWrapping with the chain ID of the referenced network', async () => {
+              const shouldEnableDirectWrapping = jest.spyOn(
+                swapsUtil,
+                'shouldEnableDirectWrapping',
+              );
+              const clientId = 'client-id';
+              const networkClientId = 'AAAA-BBBB-CCCC-DDDD';
+              const fetchParams = buildAPIFetchQuotesParams();
+              const fetchParamsMetaData = buildAPIFetchQuotesMetadata({
+                networkClientId,
+              });
+              mockNetworkControllerGetNetworkClientById({
+                [networkClientId]: {
+                  provider: new FakeProvider({
+                    stubs: [
+                      buildNetVersionRequestStub(chainId),
+                      buildErc20AllowanceCallStub(chainId, fetchParams),
+                    ],
+                  }),
+                  configuration: { chainId },
+                },
+              });
+              const fetchGasFeeEstimatesSpy = jest
+                .fn()
+                .mockResolvedValue(buildGasFeeEstimates());
+              const controller = getSwapsController({
+                options: {
+                  clientId,
+                  fetchGasFeeEstimates: fetchGasFeeEstimatesSpy,
+                },
+                state: {
+                  fetchParamsMetaData,
+                },
+              });
+
+              controller.startFetchAndSetQuotes(fetchParams);
+              // Ethers uses `setTimeout` to verify the network and to make
+              // requests, so this will not only aid Ethers in initializing the
+              // network but also cause the contract interaction request to
+              // resolve.
+              await jest.runOnlyPendingTimersAsync();
+
+              expect(shouldEnableDirectWrapping).toHaveBeenCalledWith(
+                chainId,
+                fetchParams.sourceToken,
+                fetchParams.destinationToken,
+              );
+            });
+
+            it('uses the Ethers provider created for the given network to look up the allowance', async () => {
+              const clientId = 'client-id';
+              const networkClientId = 'AAAA-BBBB-CCCC-DDDD';
+              const fetchParams = buildAPIFetchQuotesParams();
+              const fetchParamsMetaData = buildAPIFetchQuotesMetadata({
+                networkClientId,
+              });
+              const provider = new FakeProvider({
+                stubs: [
+                  buildNetVersionRequestStub(chainId),
+                  buildErc20AllowanceCallStub(chainId, fetchParams),
+                ],
+              });
+              mockNetworkControllerGetNetworkClientById({
+                [networkClientId]: {
+                  provider,
+                  configuration: { chainId },
+                },
+              });
+              const ethersProvider = new OriginalWeb3Provider(provider);
+              jest
+                .spyOn(ethersProviders, 'Web3Provider')
+                .mockReturnValue(ethersProvider);
+              const contract = new ethersContracts.Contract(
+                fetchParams.sourceToken,
+                abiERC20,
+                ethersProvider,
+              );
+              const ContractSpy = jest
+                .spyOn(ethersContracts, 'Contract')
+                .mockReturnValue(contract);
+              const fetchEstimatedMultiLayerL1FeeSpy = jest.fn();
+              const fetchGasFeeEstimatesSpy = jest
+                .fn()
+                .mockResolvedValue(buildGasFeeEstimates());
+              const controller = getSwapsController({
+                options: {
+                  clientId,
+                  fetchEstimatedMultiLayerL1Fee:
+                    fetchEstimatedMultiLayerL1FeeSpy,
+                  fetchGasFeeEstimates: fetchGasFeeEstimatesSpy,
+                },
+                state: {
+                  fetchParamsMetaData,
+                },
+              });
+
+              controller.startFetchAndSetQuotes(fetchParams);
+              // Ethers uses `setTimeout` to verify the network and to make
+              // requests, so this will not only aid Ethers in initializing the
+              // network but also cause the contract interaction request to
+              // resolve.
+              await jest.runOnlyPendingTimersAsync();
+
+              expect(ContractSpy).toHaveBeenCalledWith(
+                fetchParams.sourceToken,
+                abiERC20,
+                ethersProvider,
+              );
+            });
+
+            it('only creates a single Ethers provider instance if called more than once a row with the same network client ID', async () => {
+              const clientId = 'client-id';
+              const networkClientId = 'AAAA-BBBB-CCCC-DDDD';
+              const fetchParams = buildAPIFetchQuotesParams();
+              const fetchParamsMetaData = buildAPIFetchQuotesMetadata({
+                networkClientId,
+              });
+              const provider = new FakeProvider({
+                stubs: [
+                  buildNetVersionRequestStub(chainId),
+                  buildErc20AllowanceCallStub(chainId, fetchParams),
+                ],
+              });
+              mockNetworkControllerGetNetworkClientById({
+                [networkClientId]: {
+                  provider,
+                  configuration: { chainId },
+                },
+              });
+              const ethersProvider = new OriginalWeb3Provider(provider);
+              const Web3ProviderSpy = jest
+                .spyOn(ethersProviders, 'Web3Provider')
+                .mockReturnValue(ethersProvider);
+              const fetchGasFeeEstimatesSpy = jest
+                .fn()
+                .mockResolvedValue(buildGasFeeEstimates());
+              const controller = getSwapsController({
+                options: {
+                  clientId,
+                  fetchGasFeeEstimates: fetchGasFeeEstimatesSpy,
+                },
+                state: {
+                  fetchParamsMetaData,
+                },
+              });
+
+              controller.startFetchAndSetQuotes(fetchParams);
+              // Ethers uses `setTimeout` to verify the network and to make
+              // requests, so this will not only aid Ethers in initializing the
+              // network but also cause the contract interaction request to
+              // resolve.
+              await jest.runOnlyPendingTimersAsync();
+              controller.startFetchAndSetQuotes(
+                fetchParams,
+                fetchParamsMetaData,
+              );
+              // Wait for a fresh iteration
+              await jest.runOnlyPendingTimersAsync();
+
+              expect(Web3ProviderSpy).toHaveBeenCalledTimes(1);
+            });
+
+            it('calls estimateGas with the instance of EthQuery created for the given network and data from each quote', async () => {
+              const clientId = 'client-id';
+              const networkClientId = 'AAAA-BBBB-CCCC-DDDD';
+              const fetchParams = buildAPIFetchQuotesParams();
+              const fetchParamsMetaData = buildAPIFetchQuotesMetadata({
+                networkClientId,
+              });
+              const provider = new FakeProvider({
+                stubs: [
+                  buildNetVersionRequestStub(chainId),
+                  buildErc20AllowanceCallStub(chainId, fetchParams),
+                ],
+              });
+              const quote = { ...API_TRADES.paraswap };
+              mockNetworkControllerGetNetworkClientById({
+                [networkClientId]: {
+                  provider,
+                  configuration: { chainId },
+                },
+              });
+              const ethQuery = new OriginalEthQuery(provider);
+              jest
+                .spyOn(ethQueryModule, 'default')
+                .mockImplementation((givenProvider) => {
+                  if (givenProvider === provider) {
+                    return ethQuery;
+                  }
+                  throw new Error(
+                    'Cannot instantiate EthQuery: Unknown provider',
+                  );
+                });
+              const fetchGasFeeEstimatesSpy = jest
+                .fn()
+                .mockResolvedValue(buildGasFeeEstimates());
+              swapsUtilFetchTradesInfo.mockResolvedValue({
+                paraswap: quote,
+              });
+              swapsUtilEstimateGas.mockResolvedValue({
+                gas: '0x1000',
+              });
+              const controller = getSwapsController({
+                options: {
+                  clientId,
+                  fetchGasFeeEstimates: fetchGasFeeEstimatesSpy,
+                },
+                state: {
+                  fetchParamsMetaData,
+                },
+              });
+
+              controller.startFetchAndSetQuotes(fetchParams);
+              // Ethers uses `setTimeout` to verify the network and to make
+              // requests, so this will not only aid Ethers in initializing the
+              // network but also cause the contract interaction request to
+              // resolve.
+              await jest.runOnlyPendingTimersAsync();
+
+              expect(swapsUtilEstimateGas).toHaveBeenCalledWith(
+                {
+                  data: quote.trade.data,
+                  from: quote.trade.from,
+                  to: quote.trade.to,
+                  value: quote.trade.value,
+                },
+                ethQuery,
+              );
+            });
+
+            it('passes the given network client ID to fetchGasFeeEstimates along with shouldUpdateState: true on first iteration and shouldUpdateState: false thereafter', async () => {
+              const clientId = 'client-id';
+              const networkClientId = 'AAAA-BBBB-CCCC-DDDD';
+              const fetchParams = buildAPIFetchQuotesParams();
+              const fetchParamsMetaData = buildAPIFetchQuotesMetadata({
+                networkClientId,
+              });
+              mockNetworkControllerGetNetworkClientById({
+                [networkClientId]: {
+                  provider: new FakeProvider({
+                    stubs: [
+                      buildNetVersionRequestStub(chainId),
+                      buildErc20AllowanceCallStub(chainId, fetchParams),
+                      buildNetVersionRequestStub(chainId),
+                      buildErc20AllowanceCallStub(chainId, fetchParams),
+                      buildNetVersionRequestStub(chainId),
+                      buildErc20AllowanceCallStub(chainId, fetchParams),
+                    ],
+                  }),
+                  configuration: { chainId },
+                },
+              });
+              const fetchGasFeeEstimatesSpy = jest
+                .fn()
+                .mockResolvedValue(buildGasFeeEstimates());
+              const controller = getSwapsController({
+                options: {
+                  clientId,
+                  fetchGasFeeEstimates: fetchGasFeeEstimatesSpy,
+                },
+                state: {
+                  fetchParamsMetaData,
+                },
+              });
+
+              controller.startFetchAndSetQuotes(fetchParams);
+              // Ethers uses `setTimeout` to verify the network and to make
+              // requests, so this will not only aid Ethers in initializing the
+              // network but also cause the contract interaction request to
+              // resolve.
+              await jest.runOnlyPendingTimersAsync();
+              // Wait for the next polling iteration.
+              await jest.runOnlyPendingTimersAsync();
+              // Making a contract interaction spawns more timers, so allow the
+              // request to complete.
+              await jest.runOnlyPendingTimersAsync();
+              // Wait for the next polling iteration.
+              await jest.runOnlyPendingTimersAsync();
+              // Making a contract interaction spawns more timers, so allow the
+              // request to complete.
+              await jest.runOnlyPendingTimersAsync();
+              // Wait for the next polling iteration.
+              await jest.runOnlyPendingTimersAsync();
+              // Try waiting for more timers to confirm no more are present.
+              await jest.runOnlyPendingTimersAsync();
+
+              expect(fetchGasFeeEstimatesSpy).toHaveBeenCalledTimes(3);
+              expect(fetchGasFeeEstimatesSpy).toHaveBeenNthCalledWith(1, {
+                networkClientId,
+                shouldUpdateState: true,
+              });
+              expect(fetchGasFeeEstimatesSpy).toHaveBeenNthCalledWith(2, {
+                networkClientId,
+                shouldUpdateState: false,
+              });
+              expect(fetchGasFeeEstimatesSpy).toHaveBeenNthCalledWith(3, {
+                networkClientId,
+                shouldUpdateState: false,
+              });
+            });
+
+            it('passes the chain ID of the given network client ID to fetchGasPrices when fetchGasFeeEstimates is unavailable', async () => {
+              const clientId = 'client-id';
+              const networkClientId = 'AAAA-BBBB-CCCC-DDDD';
+              const fetchParams = buildAPIFetchQuotesParams();
+              const fetchParamsMetaData = buildAPIFetchQuotesMetadata({
+                networkClientId,
+              });
+              mockNetworkControllerGetNetworkClientById({
+                [networkClientId]: {
+                  provider: new FakeProvider({
+                    stubs: [
+                      buildNetVersionRequestStub(chainId),
+                      buildErc20AllowanceCallStub(chainId, fetchParams),
+                    ],
+                  }),
+                  configuration: { chainId },
+                },
+              });
+              const fetchGasPricesSpy = jest
+                .spyOn(swapsUtil, 'fetchGasPrices')
+                .mockResolvedValue({
+                  proposedGasPrice: '100',
+                  safeGasPrice: '50',
+                  fastGasPrice: '150',
+                });
+              const controller = getSwapsController({
+                options: {
+                  clientId,
+                  fetchGasFeeEstimates: undefined,
+                },
+                state: {
+                  fetchParamsMetaData,
+                },
+              });
+
+              controller.startFetchAndSetQuotes(fetchParams);
+              // Ethers uses `setTimeout` to verify the network and to make
+              // requests, so this will not only aid Ethers in initializing the
+              // network but also cause the contract interaction request to
+              // resolve.
+              await jest.runOnlyPendingTimersAsync();
+
+              expect(fetchGasPricesSpy).toHaveBeenCalledWith(chainId, clientId);
+            });
+
+            it('hits the referenced network when fetchGasFeeEstimates is unavailable and fetchGasPrices fails', async () => {
+              const clientId = 'client-id';
+              const networkClientId = 'AAAA-BBBB-CCCC-DDDD';
+              const fetchParams = buildAPIFetchQuotesParams();
+              const fetchParamsMetaData = buildAPIFetchQuotesMetadata({
+                networkClientId,
+              });
+              mockNetworkControllerGetNetworkClientById({
+                [networkClientId]: {
+                  provider: new FakeProvider({
+                    stubs: [
+                      buildNetVersionRequestStub(chainId),
+                      buildErc20AllowanceCallStub(chainId, fetchParams),
+                      {
+                        request: {
+                          method: 'eth_gasPrice',
+                          params: [],
+                        },
+                        response: {
+                          result: '0x11f71ed6fc0',
+                        },
+                      },
+                    ],
+                  }),
+                  configuration: { chainId },
+                },
+              });
+              jest
+                .spyOn(swapsUtil, 'fetchGasPrices')
+                .mockRejectedValue(new Error('oops'));
+              const controller = getSwapsController({
+                options: {
+                  clientId,
+                  fetchGasFeeEstimates: undefined,
+                },
+                state: {
+                  fetchParamsMetaData,
+                },
+              });
+
+              controller.startFetchAndSetQuotes(fetchParams);
+              // Ethers uses `setTimeout` to verify the network and to make
+              // requests, so this will not only aid Ethers in initializing the
+              // network but also cause the contract interaction request to
+              // resolve.
+              await jest.runOnlyPendingTimersAsync();
+
+              expect(controller.state).toMatchObject({
+                usedGasEstimate: {
+                  gasPrice: '1234.567',
+                },
+              });
+            });
+          });
+        });
+      }
+    });
+
+    describe('if no fetch parameters are provided', () => {
+      it('returns null', () => {
+        // @ts-expect-error Intentionally passing invalid input
+        expect(swapsController.startFetchAndSetQuotes()).toBeNull();
+      });
+
+      it('does not store in state the fact that polling has started', () => {
+        // @ts-expect-error Intentionally passing invalid input
+        swapsController.startFetchAndSetQuotes();
+
+        expect(swapsController.state.isInPolling).toBe(false);
+      });
     });
   });
+
   describe('stopPollingAndResetState', () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
     it('should stop polling and reset state with error', () => {
       const error = {
         key: swapsUtil.SwapsError.QUOTES_NOT_AVAILABLE_ERROR,
@@ -924,7 +4868,9 @@ describe('SwapsController', () => {
 
     it('should fetch gas price using fetchGasFeeEstimates', async () => {
       // @ts-expect-error - testing private method
-      const gasPriceEstimate = await swapsController.getGasPrice();
+      const gasPriceEstimate = await swapsController.getGasPrice({
+        chainId: '0x1',
+      });
       expect(gasPriceEstimate).toEqual({
         high: {
           suggestedMaxFeePerGas: '100',
@@ -952,10 +4898,10 @@ describe('SwapsController', () => {
         swapsUtil.getDefaultSwapsControllerState(),
       );
 
-      // @ts-expect-error - testing private method
-      await expect(swapsController.getGasPrice()).rejects.toThrow(
-        swapsUtil.SwapsError.SWAPS_GAS_PRICE_ESTIMATION,
-      );
+      await expect(
+        // @ts-expect-error - testing private method
+        swapsController.getGasPrice({ chainId: '0x1' }),
+      ).rejects.toThrow(swapsUtil.SwapsError.SWAPS_GAS_PRICE_ESTIMATION);
     });
 
     it('should fetch gas price from fetchGasPrices if fetchGasFeeEstimates is not defined', async () => {
@@ -977,7 +4923,9 @@ describe('SwapsController', () => {
         });
 
       // @ts-expect-error - testing private method
-      const gasPrice = await swapsController.getGasPrice();
+      const gasPrice = await swapsController.getGasPrice({
+        chainId: '0x1',
+      });
       expect(gasPrice).toEqual({ gasPrice: '100' });
       fetchGasPricesSpy.mockRestore();
     });

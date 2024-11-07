@@ -8,14 +8,13 @@ import {
   weiHexToGweiDec,
 } from '@metamask/controller-utils';
 import EthQuery from '@metamask/eth-query';
-import type {
-  EthGasPriceEstimate,
-  FetchGasFeeEstimateOptions,
-  GasFeeEstimates,
-  GasFeeState,
+import {
+  GAS_ESTIMATE_TYPES,
+  type EthGasPriceEstimate,
+  type GasFeeController,
+  type GasFeeEstimates,
 } from '@metamask/gas-fee-controller';
-import { GAS_ESTIMATE_TYPES } from '@metamask/gas-fee-controller';
-import type { Provider } from '@metamask/network-controller';
+import type { NetworkClientId } from '@metamask/network-controller';
 import {
   getKnownPropertyNames,
   isErrorWithMessage,
@@ -62,6 +61,7 @@ import type {
   APIFetchQuotesParams,
   CustomEthGasPriceEstimate,
   CustomGasFee,
+  Network,
   Quote,
   QuoteValues,
   SwapsControllerMessenger,
@@ -103,8 +103,6 @@ export default class SwapsController extends BaseController<
 
   #clientId?: string;
 
-  #ethQuery: EthQuery;
-
   #fetchAggregatorMetadataThreshold: number;
 
   #fetchTokensThreshold: number;
@@ -121,22 +119,20 @@ export default class SwapsController extends BaseController<
 
   #supportedChainIds: Hex[];
 
-  #chainId: Hex;
+  #network: Network | undefined;
 
   // TODO: Remove once GasFeeController exports this action type
-  readonly #fetchGasFeeEstimates?: (
-    options?: FetchGasFeeEstimateOptions,
-  ) => Promise<GasFeeState | undefined>;
+  readonly #fetchGasFeeEstimates?: GasFeeController['fetchGasFeeEstimates'];
 
   readonly #fetchEstimatedMultiLayerL1Fee?: (
     eth: EthQuery,
     options: {
       txParams: TxParams;
-      chainId: Hex;
+      networkClientId: NetworkClientId;
     },
   ) => Promise<string | undefined>;
 
-  #buildChainCache = (chainId: Hex) => {
+  #restoreFromChainCacheOrClear = (chainId: Hex) => {
     if (!this.#supportedChainIds.includes(chainId)) {
       return;
     }
@@ -222,18 +218,13 @@ export default class SwapsController extends BaseController<
   async #getERC20Allowance(
     contractAddress: string,
     walletAddress: string,
+    network: Network,
   ): Promise<BigNumber> {
-    const networkClientId = this.messagingSystem.call(
-      'NetworkController:findNetworkClientIdByChainId',
-      this.#chainId,
+    const contract = new Contract(
+      contractAddress,
+      abiERC20,
+      network.ethersProvider,
     );
-    const { provider } = this.messagingSystem.call(
-      'NetworkController:getNetworkClientById',
-      networkClientId,
-    );
-    const web3provider = new Web3Provider(provider as any);
-
-    const contract = new Contract(contractAddress, abiERC20, web3provider);
 
     const allowanceTimeout = new Promise<BigNumber>((_, reject) => {
       setTimeout(() => {
@@ -244,7 +235,7 @@ export default class SwapsController extends BaseController<
     const allowancePromise = async () => {
       const result = await contract.allowance(
         walletAddress,
-        getSwapsContractAddress(this.#chainId),
+        getSwapsContractAddress(network.chainId),
       );
 
       return new BigNumber(result.toString());
@@ -258,6 +249,7 @@ export default class SwapsController extends BaseController<
     tradeTxParams:
       | (Omit<TxParams, 'gas'> & Partial<Pick<TxParams, 'gas'>>)
       | null,
+    network: Network,
   ): Promise<{ gas: string | null }> {
     if (!tradeTxParams) {
       return { gas: null };
@@ -276,7 +268,7 @@ export default class SwapsController extends BaseController<
             to: tradeTxParams.to,
             value: tradeTxParams.value,
           },
-          this.#ethQuery,
+          network.ethQuery,
         ),
         gasTimeout,
       ]);
@@ -286,7 +278,13 @@ export default class SwapsController extends BaseController<
   }
 
   /* istanbul ignore next */
-  async #pollForNewQuotesWithThreshold(fetchThreshold = 0): Promise<void> {
+  async #pollForNewQuotesWithThreshold({
+    network,
+    fetchThreshold = 0,
+  }: {
+    network: Network;
+    fetchThreshold?: number;
+  }): Promise<void> {
     this.#pollCount += 1;
     if (this.#handle) {
       clearTimeout(this.#handle);
@@ -300,7 +298,7 @@ export default class SwapsController extends BaseController<
         });
       }
       const { nextQuotesState, threshold, usedGasEstimate } =
-        await this.#fetchQuotes();
+        await this.#fetchQuotes(network);
 
       this.update((_state) => {
         _state.pollingCyclesLeft = this.#pollCountLimit - this.#pollCount;
@@ -320,7 +318,10 @@ export default class SwapsController extends BaseController<
           _state.usedGasEstimate = usedGasEstimate;
         });
         this.#handle = setTimeout(() => {
-          this.#pollForNewQuotesWithThreshold(threshold).catch(() => {
+          this.#pollForNewQuotesWithThreshold({
+            network,
+            fetchThreshold: threshold,
+          }).catch(() => {
             this.update((_state) => {
               _state.isInPolling = false;
             });
@@ -338,13 +339,16 @@ export default class SwapsController extends BaseController<
   }
 
   /* istanbul ignore next */
-  async #getAllQuotesWithGasEstimates(trades: {
-    [key: string]: Quote;
-  }): Promise<{ [key: string]: Quote }> {
+  async #getAllQuotesWithGasEstimates(
+    trades: {
+      [key: string]: Quote;
+    },
+    network: Network,
+  ): Promise<{ [key: string]: Quote }> {
     const quoteGasData = await Promise.all(
       Object.values(trades).map(async (trade) => {
         try {
-          const { gas } = await this.#timedoutGasReturn(trade.trade);
+          const { gas } = await this.#timedoutGasReturn(trade.trade, network);
           return {
             gas,
             aggId: trade.aggregator,
@@ -371,7 +375,7 @@ export default class SwapsController extends BaseController<
   }
 
   /* istanbul ignore next */
-  async #fetchQuotes(): Promise<{
+  async #fetchQuotes(network: Network): Promise<{
     nextQuotesState: Partial<SwapsControllerState> | null;
     threshold: number | null;
     usedGasEstimate: EthGasPriceEstimate | GasFeeEstimates | null;
@@ -385,7 +389,7 @@ export default class SwapsController extends BaseController<
       let quotes: { [key: string]: Quote } = await fetchTradesInfo(
         fetchParams,
         signal,
-        this.#chainId,
+        network.chainId,
         this.#clientId,
       );
 
@@ -394,7 +398,7 @@ export default class SwapsController extends BaseController<
       }
 
       if (
-        this.#chainId === OPTIMISM_CHAIN_ID &&
+        network.chainId === OPTIMISM_CHAIN_ID &&
         Object.values(quotes).length > 0
       ) {
         // Fetch an L1 fee for each quote on Optimism.
@@ -402,9 +406,9 @@ export default class SwapsController extends BaseController<
           Object.values(quotes).map(async (quote) => {
             if (quote.trade && this.#fetchEstimatedMultiLayerL1Fee) {
               const multiLayerL1TradeFeeTotal =
-                await this.#fetchEstimatedMultiLayerL1Fee(this.#ethQuery, {
+                await this.#fetchEstimatedMultiLayerL1Fee(network.ethQuery, {
                   txParams: quote.trade,
-                  chainId: this.#chainId,
+                  networkClientId: network.clientId,
                 });
               // eslint-disable-next-line require-atomic-updates
               quote.multiLayerL1TradeFeeTotal =
@@ -418,7 +422,7 @@ export default class SwapsController extends BaseController<
       let approvalTransaction: TxParams | null = null;
 
       const enableDirectWrappingParam = shouldEnableDirectWrapping(
-        this.#chainId,
+        network.chainId,
         fetchParams.sourceToken,
         fetchParams.destinationToken,
       );
@@ -438,6 +442,7 @@ export default class SwapsController extends BaseController<
         const allowance = await this.#getERC20Allowance(
           fetchParams.sourceToken,
           fetchParams.walletAddress,
+          network,
         );
 
         // On Android, trying to cast a massive BigInt to a number will result in null
@@ -451,11 +456,14 @@ export default class SwapsController extends BaseController<
             throw new Error(SwapsError.SWAPS_ALLOWANCE_ERROR);
           }
 
-          const { gas: approvalGas } = await this.#timedoutGasReturn({
-            data: approvalTransaction.data,
-            from: approvalTransaction.from,
-            to: approvalTransaction.to,
-          });
+          const { gas: approvalGas } = await this.#timedoutGasReturn(
+            {
+              data: approvalTransaction.data,
+              from: approvalTransaction.from,
+              to: approvalTransaction.to,
+            },
+            network,
+          );
 
           approvalTransaction = {
             ...approvalTransaction,
@@ -464,10 +472,10 @@ export default class SwapsController extends BaseController<
         }
       }
 
-      quotes = await this.#getAllQuotesWithGasEstimates(quotes);
+      quotes = await this.#getAllQuotesWithGasEstimates(quotes, network);
 
       const gasFeeEstimates: EthGasPriceEstimate | GasFeeEstimates =
-        await this.getGasPrice();
+        await this.getGasPrice(network);
 
       const { topAggId, quoteValues } = this.#getBestQuoteAndQuotesValues(
         quotes,
@@ -518,7 +526,6 @@ export default class SwapsController extends BaseController<
    * @param opts.fetchAggregatorMetadataThreshold - The threshold for fetching aggregator metadata.
    * @param opts.fetchTokensThreshold - The threshold for fetching tokens.
    * @param opts.fetchTopAssetsThreshold - The threshold for fetching top assets.
-   * @param opts.chainId - The chain id used by the controller.
    * @param opts.supportedChainIds - The supported chain ids used by the controller.
    * @param opts.fetchGasFeeEstimates - Fetches gas fee estimates from GasFeeController.
    * @param opts.fetchEstimatedMultiLayerL1Fee - Fetches an L1 fee for a given transaction.
@@ -531,7 +538,6 @@ export default class SwapsController extends BaseController<
       fetchAggregatorMetadataThreshold = 1000 * 60 * 60 * 24 * 15,
       fetchTokensThreshold = 1000 * 60 * 60 * 24,
       fetchTopAssetsThreshold = 1000 * 60 * 30,
-      chainId = ETH_CHAIN_ID,
       supportedChainIds = [
         ETH_CHAIN_ID,
         BSC_CHAIN_ID,
@@ -564,8 +570,6 @@ export default class SwapsController extends BaseController<
     this.#fetchTopAssetsThreshold = fetchTopAssetsThreshold;
     this.#pollCountLimit = pollCountLimit;
     this.#supportedChainIds = supportedChainIds;
-
-    this.setChainId(chainId);
 
     this.messagingSystem.registerActionHandler(
       `SwapsController:updateQuotesWithGasPrice`,
@@ -601,6 +605,16 @@ export default class SwapsController extends BaseController<
       `SwapsController:stopPollingAndResetState`,
       this.stopPollingAndResetState.bind(this),
     );
+
+    this.messagingSystem.subscribe(
+      'NetworkController:networkDidChange',
+      (networkControllerState) => {
+        const chainId = this.#getChainId(
+          networkControllerState.selectedNetworkClientId,
+        );
+        this.#restoreFromChainCacheOrClear(chainId);
+      },
+    );
   }
 
   /**
@@ -608,9 +622,12 @@ export default class SwapsController extends BaseController<
    * @returns Promise resolving to the current gas price or throw an error
    */
   /* istanbul ignore next */
-  private async getGasPrice(): Promise<EthGasPriceEstimate | GasFeeEstimates> {
+  private async getGasPrice(
+    network: Network,
+  ): Promise<EthGasPriceEstimate | GasFeeEstimates> {
     if (this.#fetchGasFeeEstimates) {
       const gasFeeState = await this.#fetchGasFeeEstimates({
+        networkClientId: network.clientId,
         shouldUpdateState: this.#pollCount === 1,
       });
       if (
@@ -631,7 +648,7 @@ export default class SwapsController extends BaseController<
 
     try {
       const { proposedGasPrice } = await fetchGasPrices(
-        this.#chainId,
+        network.chainId,
         this.#clientId,
       );
       return { gasPrice: proposedGasPrice };
@@ -640,7 +657,7 @@ export default class SwapsController extends BaseController<
     }
 
     try {
-      const gasPrice = await query(this.#ethQuery, 'gasPrice');
+      const gasPrice = await query(network.ethQuery, 'gasPrice');
       return {
         gasPrice: weiHexToGweiDec(gasPrice).toString(),
       };
@@ -915,11 +932,19 @@ export default class SwapsController extends BaseController<
    * @returns Promise resolving when this operation completes.
    */
   startFetchAndSetQuotes(
-    fetchParams?: APIFetchQuotesParams,
-    fetchParamsMetaData?: APIFetchQuotesMetadata,
+    fetchParams: APIFetchQuotesParams,
+    fetchParamsMetaData: APIFetchQuotesMetadata = this.state
+      .fetchParamsMetaData,
   ) {
     if (!fetchParams) {
       return null;
+    }
+
+    let network;
+    if (this.#network?.clientId === fetchParamsMetaData.networkClientId) {
+      network = this.#network;
+    } else {
+      network = this.#setNetwork(fetchParamsMetaData.networkClientId);
     }
 
     // Every time we get a new request that is not from the polling,
@@ -929,24 +954,32 @@ export default class SwapsController extends BaseController<
 
     this.update((_state) => {
       _state.fetchParams = fetchParams;
-      _state.fetchParamsMetaData =
-        fetchParamsMetaData ?? _state.fetchParamsMetaData;
+      _state.fetchParamsMetaData = fetchParamsMetaData;
     });
 
     // ignoring rule since otherwise we need to change the behavior of the function
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    this.#pollForNewQuotesWithThreshold();
+    this.#pollForNewQuotesWithThreshold({ network });
   }
 
   /**
    * Fetches the tokens and updates the state with them.
+   * @param args - The arguments to this method.
+   * @param args.networkClientId - The ID of a network client from
+   * NetworkController.
    */
-  async fetchTokenWithCache() {
-    const { tokens, tokensLastFetched } = this.state;
+  async fetchTokenWithCache({
+    networkClientId,
+  }: {
+    networkClientId: NetworkClientId;
+  }) {
+    const chainId = this.#getChainId(networkClientId);
 
-    if (!this.#supportedChainIds.includes(this.#chainId)) {
+    if (!this.#supportedChainIds.includes(chainId)) {
       return;
     }
+
+    const { tokens, tokensLastFetched } = this.state;
 
     if (
       !tokens ||
@@ -954,29 +987,21 @@ export default class SwapsController extends BaseController<
     ) {
       const releaseLock = await this.#mutex.acquire();
       try {
-        const newTokens = await fetchTokens(this.#chainId, this.#clientId);
+        const newTokens = await fetchTokens(chainId, this.#clientId);
         this.update((_state) => {
           _state.tokens = newTokens;
           _state.tokensLastFetched = Date.now();
-          _state.chainCache = getNewChainCache(
-            _state.chainCache,
-            this.#chainId,
-            {
-              tokens: newTokens,
-              tokensLastFetched: Date.now(),
-            },
-          );
+          _state.chainCache = getNewChainCache(_state.chainCache, chainId, {
+            tokens: newTokens,
+            tokensLastFetched: Date.now(),
+          });
         });
       } catch {
         this.update((_state) => {
           _state.tokensLastFetched = 0;
-          _state.chainCache = getNewChainCache(
-            _state.chainCache,
-            this.#chainId,
-            {
-              tokensLastFetched: 0,
-            },
-          );
+          _state.chainCache = getNewChainCache(_state.chainCache, chainId, {
+            tokensLastFetched: 0,
+          });
         });
       } finally {
         releaseLock();
@@ -986,13 +1011,22 @@ export default class SwapsController extends BaseController<
 
   /**
    * Fetches the top assets and updates the state with them.
+   * @param args - The arguments to this method.
+   * @param args.networkClientId - The ID of a network client from
+   * NetworkController.
    */
-  async fetchTopAssetsWithCache() {
-    const { topAssets, topAssetsLastFetched } = this.state;
+  async fetchTopAssetsWithCache({
+    networkClientId,
+  }: {
+    networkClientId: NetworkClientId;
+  }) {
+    const chainId = this.#getChainId(networkClientId);
 
-    if (!this.#supportedChainIds.includes(this.#chainId)) {
+    if (!this.#supportedChainIds.includes(chainId)) {
       return;
     }
+
+    const { topAssets, topAssetsLastFetched } = this.state;
 
     if (
       !topAssets ||
@@ -1000,10 +1034,7 @@ export default class SwapsController extends BaseController<
     ) {
       const releaseLock = await this.#mutex.acquire();
       try {
-        const newTopAssets = await fetchTopAssets(
-          this.#chainId,
-          this.#clientId,
-        );
+        const newTopAssets = await fetchTopAssets(chainId, this.#clientId);
         const data = {
           topAssets: newTopAssets,
           topAssetsLastFetched: Date.now(),
@@ -1013,7 +1044,7 @@ export default class SwapsController extends BaseController<
           _state.topAssetsLastFetched = data.topAssetsLastFetched;
           _state.chainCache = getNewChainCache(
             _state.chainCache,
-            this.#chainId,
+            chainId,
             data,
           );
         });
@@ -1023,7 +1054,7 @@ export default class SwapsController extends BaseController<
           _state.topAssetsLastFetched = data.topAssetsLastFetched;
           _state.chainCache = getNewChainCache(
             _state.chainCache,
-            this.#chainId,
+            chainId,
             data,
           );
         });
@@ -1035,13 +1066,22 @@ export default class SwapsController extends BaseController<
 
   /**
    * Fetches the aggregator metadata and updates the state with it.
+   * @param args - The arguments to this method.
+   * @param args.networkClientId - The ID of a network client from
+   * NetworkController.
    */
-  async fetchAggregatorMetadataWithCache() {
-    const { aggregatorMetadata, aggregatorMetadataLastFetched } = this.state;
+  async fetchAggregatorMetadataWithCache({
+    networkClientId,
+  }: {
+    networkClientId: NetworkClientId;
+  }) {
+    const chainId = this.#getChainId(networkClientId);
 
-    if (!this.#supportedChainIds.includes(this.#chainId)) {
+    if (!this.#supportedChainIds.includes(chainId)) {
       return;
     }
+
+    const { aggregatorMetadata, aggregatorMetadataLastFetched } = this.state;
 
     if (
       !aggregatorMetadata ||
@@ -1051,7 +1091,7 @@ export default class SwapsController extends BaseController<
       const releaseLock = await this.#mutex.acquire();
       try {
         const newAggregatorMetada = await fetchAggregatorMetadata(
-          this.#chainId,
+          chainId,
           this.#clientId,
         );
         const data = {
@@ -1064,7 +1104,7 @@ export default class SwapsController extends BaseController<
             data.aggregatorMetadataLastFetched;
           _state.chainCache = getNewChainCache(
             _state.chainCache,
-            this.#chainId,
+            chainId,
             data,
           );
         });
@@ -1075,7 +1115,7 @@ export default class SwapsController extends BaseController<
             data.aggregatorMetadataLastFetched;
           _state.chainCache = getNewChainCache(
             _state.chainCache,
-            this.#chainId,
+            chainId,
             data,
           );
         });
@@ -1124,25 +1164,6 @@ export default class SwapsController extends BaseController<
     });
   }
 
-  setChainId = (chainId: Hex): void => {
-    this.#chainId = chainId;
-    this.#buildChainCache(chainId);
-  };
-
-  setProvider(
-    provider: Provider,
-    opts?: { chainId: Hex; pollCountLimit: number },
-  ): void {
-    this.#ethQuery = new EthQuery(provider);
-
-    if (opts?.chainId) {
-      this.setChainId(opts.chainId);
-    }
-    if (opts?.pollCountLimit) {
-      this.#pollCountLimit = opts.pollCountLimit;
-    }
-  }
-
   /**
    * Updates the state of the controller for testing purposes.
    * This method should not be used outside of testing.
@@ -1165,22 +1186,12 @@ export default class SwapsController extends BaseController<
   // eslint-disable-next-line @typescript-eslint/naming-convention
   __test__updatePrivate = (key: string, value: any) => {
     switch (key) {
-      case '#fetchAggregatorMetadataThreshold':
-        this.#fetchAggregatorMetadataThreshold = value;
-        return this.#fetchAggregatorMetadataThreshold;
-      case '#fetchTokensThreshold':
-        this.#fetchTokensThreshold = value;
-        return this.#fetchTokensThreshold;
-      case '#fetchTopAssetsThreshold':
-        this.#fetchTopAssetsThreshold = value;
-        return this.#fetchTopAssetsThreshold;
-      case '#supportedChainIds':
-        this.#supportedChainIds = value;
-        return this.#supportedChainIds;
       case '#handle':
         this.#handle = value;
         return this.#handle;
+      /* istanbul ignore next */
       default:
+        // Unreachable code, but left here for now
         return undefined;
     }
   };
@@ -1194,30 +1205,43 @@ export default class SwapsController extends BaseController<
   // eslint-disable-next-line @typescript-eslint/naming-convention
   __test__getInternal = (key: string) => {
     switch (key) {
-      case '#fetchAggregatorMetadataThreshold':
-        return this.#fetchAggregatorMetadataThreshold;
-      case '#fetchTokensThreshold':
-        return this.#fetchTokensThreshold;
-      case '#fetchTopAssetsThreshold':
-        return this.#fetchTopAssetsThreshold;
-      case '#pollCountLimit':
-        return this.#pollCountLimit;
-      case '#chainId':
-        return this.#chainId;
-      case '#supportedChainIds':
-        return this.#supportedChainIds;
-      case '#clientId':
-        return this.#clientId;
-      case '#ethQuery':
-        return this.#ethQuery;
       case '#handle':
         return this.#handle;
-      case '#fetchGasFeeEstimates':
-        return this.#fetchGasFeeEstimates;
-      case '#fetchEstimatedMultiLayerL1Fee':
-        return this.#fetchEstimatedMultiLayerL1Fee;
+      /* istanbul ignore next */
       default:
+        // Unreachable code, but left here for now
         return undefined;
     }
   };
+
+  #setNetwork(networkClientId: NetworkClientId) {
+    const networkClient = this.messagingSystem.call(
+      'NetworkController:getNetworkClientById',
+      networkClientId,
+    );
+    const { chainId } = networkClient.configuration;
+    // Web3Provider (via JsonRpcProvider) creates two extra network requests, so
+    // we cache the object so that we can reuse it for subsequent contract
+    // interactions for the same network
+    const ethersProvider = new Web3Provider(networkClient.provider);
+    const ethQuery = new EthQuery(networkClient.provider);
+
+    const network = {
+      client: networkClient,
+      clientId: networkClientId,
+      chainId,
+      ethersProvider,
+      ethQuery,
+    };
+    this.#network = network;
+    return network;
+  }
+
+  #getChainId(networkClientId: NetworkClientId) {
+    const networkClient = this.messagingSystem.call(
+      'NetworkController:getNetworkClientById',
+      networkClientId,
+    );
+    return networkClient.configuration.chainId;
+  }
 }
