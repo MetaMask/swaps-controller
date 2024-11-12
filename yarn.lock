@@ -1765,9 +1765,9 @@
     "@metamask/utils" "^10.0.0"
 
 "@metamask/snaps-utils@^8.1.1", "@metamask/snaps-utils@^8.3.0", "@metamask/snaps-utils@^8.5.0":
-  version "8.5.1"
-  resolved "https://registry.yarnpkg.com/@metamask/snaps-utils/-/snaps-utils-8.5.1.tgz#12a62e0f6f670843f953a13a5581c0ea60145548"
-  integrity sha512-tk4wRwwequfkhc7zNWR04/iaQWjSMUILiIWkP6KTUGOqbDAMrfNzml2rRP34dKJRiwzFwJdq71ZvxjGWKIweTg==
+  version "8.5.2"
+  resolved "https://registry.yarnpkg.com/@metamask/snaps-utils/-/snaps-utils-8.5.2.tgz#4ca088087c41fed58db3d83a69c05adaadb23c76"
+  integrity sha512-27E91C12ULEWfooMacQCZkL3zP/O6RUAhN4t26AsxmgY0Tp3rXLVMrvW1SERJTSBXrrtVwxXwv8Sqv8lkadp3A==
   dependencies:
     "@babel/core" "^7.23.2"
     "@babel/types" "^7.23.0"
