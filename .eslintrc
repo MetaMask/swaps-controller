@@ -32,7 +32,7 @@
         "no-async-promise-executor": "off",
         "@typescript-eslint/prefer-optional-chain": "off",
         "no-restricted-syntax": "off",
-        "import/no-named-as-default": "off",
+        "import/no-named-as-default": "off"
       }
     },
     {
@@ -69,5 +69,6 @@
     "plugin:@typescript-eslint/recommended",
     "plugin:jest/recommended",
     "@metamask/eslint-config"
-  ]
+  ],
+  "ignorePatterns": ["tests/fake-provider.ts"]
 }
