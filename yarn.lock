@@ -1699,9 +1699,9 @@
   integrity sha512-RQ2MJO0X3QLnJo0rFlb83h2tNAkqqx/VNOPLc3/S2CvY3/cXy3UAEw/xRM/475BeAAkWI93yiIn/FoGUy3E0Ig==
 
 "@metamask/snaps-controllers@^9.10.0":
-  version "9.12.0"
-  resolved "https://registry.yarnpkg.com/@metamask/snaps-controllers/-/snaps-controllers-9.12.0.tgz#95e3778283c240e8a613f92865384ada3b8ac29f"
-  integrity sha512-UCcqIbeX5II4Uc+WV3C+gaeu5JMPyaALICWd+lNhZgLjNmEtAyZR4CI/+PQ3WTD/rnPL/Q44KNNrkl3OCJjmTw==
+  version "9.13.0"
+  resolved "https://registry.yarnpkg.com/@metamask/snaps-controllers/-/snaps-controllers-9.13.0.tgz#111181c5e0a0c7826e39f00e257a6569da655ac8"
+  integrity sha512-UmxvVgVEueUPtLvvxm1NQwy/TAT6ALCqn2PmxP6nrec1skh6adKClSNvWxlVwzmmSfADbtnjrZsZpCtQ44TtPg==
   dependencies:
     "@metamask/approval-controller" "^7.1.1"
     "@metamask/base-controller" "^7.0.2"
@@ -1714,8 +1714,8 @@
     "@metamask/rpc-errors" "^7.0.1"
     "@metamask/snaps-registry" "^3.2.2"
     "@metamask/snaps-rpc-methods" "^11.5.1"
-    "@metamask/snaps-sdk" "^6.10.0"
-    "@metamask/snaps-utils" "^8.5.0"
+    "@metamask/snaps-sdk" "^6.11.0"
+    "@metamask/snaps-utils" "^8.6.0"
     "@metamask/utils" "^10.0.0"
     "@xstate/fsm" "^2.0.0"
     browserify-zlib "^0.2.0"
@@ -1764,6 +1764,17 @@
     "@metamask/superstruct" "^3.1.0"
     "@metamask/utils" "^10.0.0"
 
+"@metamask/snaps-sdk@^6.11.0":
+  version "6.11.0"
+  resolved "https://registry.yarnpkg.com/@metamask/snaps-sdk/-/snaps-sdk-6.11.0.tgz#302a8f9c04567d913c5f50b9d065edaec7ffcf52"
+  integrity sha512-NvU5cskgaQvd10i2cNEajmmWENvEYOq7yJ4NbHOZ+iPI+nuM7HF3Zi6ls5vL4JshVsF4/+2lNLwF0TAwtPEl3g==
+  dependencies:
+    "@metamask/key-tree" "^9.1.2"
+    "@metamask/providers" "^18.1.1"
+    "@metamask/rpc-errors" "^7.0.1"
+    "@metamask/superstruct" "^3.1.0"
+    "@metamask/utils" "^10.0.0"
+
 "@metamask/snaps-utils@^8.1.1", "@metamask/snaps-utils@^8.3.0", "@metamask/snaps-utils@^8.5.0":
   version "8.5.1"
   resolved "https://registry.yarnpkg.com/@metamask/snaps-utils/-/snaps-utils-8.5.1.tgz#12a62e0f6f670843f953a13a5581c0ea60145548"
@@ -1778,6 +1789,35 @@
     "@metamask/slip44" "^4.0.0"
     "@metamask/snaps-registry" "^3.2.2"
     "@metamask/snaps-sdk" "^6.10.0"
+    "@metamask/superstruct" "^3.1.0"
+    "@metamask/utils" "^10.0.0"
+    "@noble/hashes" "^1.3.1"
+    "@scure/base" "^1.1.1"
+    chalk "^4.1.2"
+    cron-parser "^4.5.0"
+    fast-deep-equal "^3.1.3"
+    fast-json-stable-stringify "^2.1.0"
+    fast-xml-parser "^4.4.1"
+    marked "^12.0.1"
+    rfdc "^1.3.0"
+    semver "^7.5.4"
+    ses "^1.1.0"
+    validate-npm-package-name "^5.0.0"
+
+"@metamask/snaps-utils@^8.6.0":
+  version "8.6.0"
+  resolved "https://registry.yarnpkg.com/@metamask/snaps-utils/-/snaps-utils-8.6.0.tgz#96e4b3fbca8109d5335502ad1d71e8b6ec06765a"
+  integrity sha512-Q+CmJ5pbSj3USeDTsPnJBJ27qSWAYGlYAC6M2NTe/0OmGUFPx4V54kT2HCc/97AOG6fChSeLqfF3KpTtFuaiAQ==
+  dependencies:
+    "@babel/core" "^7.23.2"
+    "@babel/types" "^7.23.0"
+    "@metamask/base-controller" "^7.0.2"
+    "@metamask/key-tree" "^9.1.2"
+    "@metamask/permission-controller" "^11.0.3"
+    "@metamask/rpc-errors" "^7.0.1"
+    "@metamask/slip44" "^4.0.0"
+    "@metamask/snaps-registry" "^3.2.2"
+    "@metamask/snaps-sdk" "^6.11.0"
     "@metamask/superstruct" "^3.1.0"
     "@metamask/utils" "^10.0.0"
     "@noble/hashes" "^1.3.1"
