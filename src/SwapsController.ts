@@ -941,7 +941,10 @@ export default class SwapsController extends BaseController<
     }
 
     let network;
-    if (this.#network?.clientId === fetchParamsMetaData.networkClientId) {
+    if (
+      this.#network !== undefined &&
+      this.#network.clientId === fetchParamsMetaData.networkClientId
+    ) {
       network = this.#network;
     } else {
       network = this.#setNetwork(fetchParamsMetaData.networkClientId);
