@@ -114,6 +114,7 @@ export type APIFetchQuotesMetadata = {
  * @property timeout - Timeout
  * @property clientId - Client id
  * @property enableDirectWrapping - Enable direct wrapping
+ * @property enableGasIncludedQuotes - Enable quotes with gas included
  */
 export type APIFetchQuotesParams = {
   slippage: number;
@@ -124,6 +125,7 @@ export type APIFetchQuotesParams = {
   timeout?: number;
   clientId?: string;
   enableDirectWrapping?: boolean;
+  enableGasIncludedQuotes?: boolean;
 };
 
 /**

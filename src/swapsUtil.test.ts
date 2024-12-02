@@ -379,7 +379,7 @@ describe('SwapsUtil', () => {
 
     it('should work for direct wrapping', async () => {
       mockFetch({
-        'https://swap.api.cx.metamask.io/networks/1/trades?destinationToken=0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2&sourceToken=0x0000000000000000000000000000000000000000&sourceAmount=1000000000000000000&slippage=3&timeout=10000&walletAddress=0xB0dA5965D43369968574D399dBe6374683773a65&enableDirectWrapping=true':
+        'https://swap.api.cx.metamask.io/networks/1/trades?destinationToken=0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2&sourceToken=0x0000000000000000000000000000000000000000&sourceAmount=1000000000000000000&slippage=3&timeout=10000&walletAddress=0xB0dA5965D43369968574D399dBe6374683773a65&enableGasIncludedQuotes=false&enableDirectWrapping=true':
           { body: API_TRADES },
       });
 
@@ -390,6 +390,7 @@ describe('SwapsUtil', () => {
           destinationToken: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
           sourceAmount: 1000000000000000000,
           walletAddress: '0xB0dA5965D43369968574D399dBe6374683773a65',
+          enableGasIncludedQuotes: false,
         },
         null,
         '0x1',
