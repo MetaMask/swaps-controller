@@ -14,7 +14,7 @@ import {
   NetworkControllerGetNetworkClientByIdAction,
   NetworkControllerNetworkDidChangeEvent,
 } from '@metamask/network-controller';
-import { FakeProvider } from '../tests/fake-provider';
+import { FakeProvider } from './fake-provider.test';
 import { Hex } from '@metamask/utils';
 import { ControllerMessenger } from '@metamask/base-controller';
 import * as ethQueryModule from '@metamask/eth-query';

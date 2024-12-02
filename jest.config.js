@@ -24,5 +24,6 @@ module.exports = {
   restoreMocks: true,
   testEnvironment: 'node',
   testRegex: ['\\.test\\.(ts|js)$'],
+  testPathIgnorePatterns: ['src/fake-provider.test.ts'],
   testTimeout: 2500,
 };
