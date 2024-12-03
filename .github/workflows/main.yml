@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-lint-test:
-    name: Test
+    name: Build, lint, and test
     uses: ./.github/workflows/build-lint-test.yml
 
   all-jobs-completed:
