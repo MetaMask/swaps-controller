@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **BREAKING:** Upgrade peer dependency `@metamask/gas-fee-controller` to `^22.0.0` ([#358](https://github.com/MetaMask/swaps-controller/pull/358))
+- **BREAKING:** Upgrade peer dependency `@metamask/network-controller` to `^22.0.0` ([#358](https://github.com/MetaMask/swaps-controller/pull/358))
 - Forward peer dependencies of controller packages to consumers ([#357](https://github.com/MetaMask/swaps-controller/pull/357))
   - The following packages are peer dependency requirements from other dependencies. To satisfy these requirements it is best that clients have them:
     - `@metamask/accounts-controller` `^18.0.0`
