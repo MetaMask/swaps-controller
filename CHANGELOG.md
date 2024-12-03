@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Forward peer dependencies of controller packages to consumers ([#357](https://github.com/MetaMask/swaps-controller/pull/357))
+  - The following packages are peer dependency requirements from other dependencies. To satisfy these requirements it is best that clients have them:
+    - `@metamask/accounts-controller` `^18.0.0`
+    - `@metamask/approval-controller` `^7.0.0`
+    - `@metamask/eth-block-tracker` `>=9`
+    - `@metamask/snaps-controllers` `^9.7.0`
+    - `@metamask/providers` `^17.2.0`
+    - `webextension-polyfill` `^0.10.0 || ^0.11.0 || ^0.12.0`
+  - It is likely that clients will have already needed to add these dependencies to produce a functional build, so this should not be a breaking change.
+
 ## [11.0.0]
 
 ### Changed
