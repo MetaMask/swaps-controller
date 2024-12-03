@@ -32,7 +32,7 @@
         "no-async-promise-executor": "off",
         "@typescript-eslint/prefer-optional-chain": "off",
         "no-restricted-syntax": "off",
-        "import/no-named-as-default": "off"
+        "import/no-named-as-default": "off",
       }
     },
     {
