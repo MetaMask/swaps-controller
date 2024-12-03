@@ -39,8 +39,6 @@
   "devDependencies": {
     "@babel/runtime": "^7.0.0",
     "@lavamoat/allow-scripts": "^3.0.0",
-    "@metamask/accounts-controller": "^18.0.0",
-    "@metamask/approval-controller": "^7.1.0",
     "@metamask/auto-changelog": "^3.4.4",
     "@metamask/composable-controller": "^9.0.1",
     "@metamask/eslint-config": "^12.2.0",
@@ -48,9 +46,7 @@
     "@metamask/eslint-config-nodejs": "^12.1.0",
     "@metamask/eslint-config-typescript": "^12.1.0",
     "@metamask/gas-fee-controller": "^21.0.0",
-    "@metamask/keyring-controller": "^17.0.0",
     "@metamask/network-controller": "^21.1.0",
-    "@metamask/transaction-controller": "^37.3.0",
     "@types/jest": "^26.0.22",
     "@types/node": "^20.10.4",
     "@types/readable-stream": "^4.0.18",
@@ -94,12 +90,9 @@
       "@lavamoat/preinstall-always-fail": false,
       "@metamask/gas-fee-controller>ethereumjs-util>ethereum-cryptography>keccak": false,
       "@metamask/gas-fee-controller>ethereumjs-util>ethereum-cryptography>secp256k1": false,
-      "@metamask/transaction-controller>babel-runtime>core-js": false,
       "babel-runtime>core-js": false,
       "@metamask/controller-utils>ethereumjs-util>ethereum-cryptography>keccak": false,
-      "@metamask/controller-utils>ethereumjs-util>ethereum-cryptography>secp256k1": false,
-      "@metamask/transaction-controller>ethereumjs-util>ethereum-cryptography>keccak": false,
-      "@metamask/transaction-controller>ethereumjs-util>ethereum-cryptography>secp256k1": false
+      "@metamask/controller-utils>ethereumjs-util>ethereum-cryptography>secp256k1": false
     }
   },
   "packageManager": "yarn@1.22.22+sha256.c17d3797fb9a9115bf375e31bfd30058cac6bc9c3b8807a3d8cb2094794b51ca"
