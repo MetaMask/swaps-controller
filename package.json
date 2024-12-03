@@ -52,6 +52,7 @@
     "@types/readable-stream": "^4.0.18",
     "@typescript-eslint/eslint-plugin": "^5.42.1",
     "@typescript-eslint/parser": "^5.42.1",
+    "@yarnpkg/types": "^4.0.0",
     "babel-runtime": "^6.26.0",
     "eslint": "^8.55.0",
     "eslint-config-prettier": "^8.5.0",
@@ -82,9 +83,6 @@
     "bn.js": "^5.2.1",
     "human-standard-token-abi": "^2.0.0"
   },
-  "resolutions": {
-    "@ethersproject/providers/**/ws": "^7.5.10"
-  },
   "lavamoat": {
     "allowScripts": {
       "@lavamoat/preinstall-always-fail": false,
@@ -95,5 +93,5 @@
       "@metamask/controller-utils>ethereumjs-util>ethereum-cryptography>secp256k1": false
     }
   },
-  "packageManager": "yarn@1.22.22+sha256.c17d3797fb9a9115bf375e31bfd30058cac6bc9c3b8807a3d8cb2094794b51ca"
+  "packageManager": "yarn@4.5.3"
 }
