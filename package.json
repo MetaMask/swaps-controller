@@ -33,8 +33,8 @@
   },
   "peerDependencies": {
     "@metamask/composable-controller": "^9.0.1",
-    "@metamask/gas-fee-controller": "^21.0.0",
-    "@metamask/network-controller": "^21.1.0"
+    "@metamask/gas-fee-controller": "^22.0.0",
+    "@metamask/network-controller": "^22.0.0"
   },
   "devDependencies": {
     "@babel/runtime": "^7.0.0",
@@ -47,9 +47,9 @@
     "@metamask/eslint-config-nodejs": "^12.1.0",
     "@metamask/eslint-config-typescript": "^12.1.0",
     "@metamask/eth-json-rpc-provider": "^4.1.6",
-    "@metamask/gas-fee-controller": "^21.0.0",
+    "@metamask/gas-fee-controller": "^22.0.2",
     "@metamask/json-rpc-engine": "^10.0.1",
-    "@metamask/network-controller": "^21.1.0",
+    "@metamask/network-controller": "^22.1.0",
     "@types/jest": "^29.5.14",
     "@types/node": "^20.10.4",
     "@types/readable-stream": "^4.0.18",
