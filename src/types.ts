@@ -1,3 +1,4 @@
+import type { AccessList } from '@ethereumjs/tx';
 import type {
   RestrictedControllerMessenger,
   ControllerStateChangeEvent,
@@ -14,7 +15,6 @@ import type {
   NetworkControllerGetNetworkClientByIdAction,
 } from '@metamask/network-controller';
 import type { Hex, JsonRpcError } from '@metamask/utils';
-import type { AccessList } from '@ethereumjs/tx';
 
 import type SwapsController from './SwapsController';
 import type { controllerName, SwapsError } from './swapsUtil';
