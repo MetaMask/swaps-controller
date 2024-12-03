@@ -4774,12 +4774,10 @@ describe('SwapsController', () => {
 
     describe('if no fetch parameters are provided', () => {
       it('returns null', () => {
-        // @ts-expect-error Intentionally passing invalid input
         expect(swapsController.startFetchAndSetQuotes()).toBeNull();
       });
 
       it('does not store in state the fact that polling has started', () => {
-        // @ts-expect-error Intentionally passing invalid input
         swapsController.startFetchAndSetQuotes();
 
         expect(swapsController.state.isInPolling).toBe(false);

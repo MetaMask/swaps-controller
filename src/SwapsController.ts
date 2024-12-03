@@ -932,7 +932,7 @@ export default class SwapsController extends BaseController<
    * @returns Promise resolving when this operation completes.
    */
   startFetchAndSetQuotes(
-    fetchParams: APIFetchQuotesParams,
+    fetchParams?: APIFetchQuotesParams,
     fetchParamsMetaData: APIFetchQuotesMetadata = this.state
       .fetchParamsMetaData,
   ) {
