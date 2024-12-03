@@ -2241,15 +2241,15 @@ __metadata:
   linkType: hard
 
 "@metamask/snaps-sdk@npm:^6.10.0, @metamask/snaps-sdk@npm:^6.5.0, @metamask/snaps-sdk@npm:^6.5.1, @metamask/snaps-sdk@npm:^6.7.0":
-  version: 6.10.0
-  resolution: "@metamask/snaps-sdk@npm:6.10.0"
+  version: 6.12.0
+  resolution: "@metamask/snaps-sdk@npm:6.12.0"
   dependencies:
     "@metamask/key-tree": "npm:^9.1.2"
     "@metamask/providers": "npm:^18.1.1"
     "@metamask/rpc-errors": "npm:^7.0.1"
     "@metamask/superstruct": "npm:^3.1.0"
     "@metamask/utils": "npm:^10.0.0"
-  checksum: 10/02f04536328a64ff1e9e48fb6b109698d6d83f42af5666a9758ccb1e7a1e67c0c2e296ef2fef419dd3d1c8f26bbf30b9f31911a1baa66f044f21cd0ecb7a11a7
+  checksum: 10/b0e24fee2c90ac2f456aeb5babc180c74f56b8cf94f38abdd9b022c65a9cac4a10015e3d4053784292c184238f97704cb2b6a41f6e7a04f23ffaa8d519d2a39e
   languageName: node
   linkType: hard
 
