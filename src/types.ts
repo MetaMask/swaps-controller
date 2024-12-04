@@ -1,5 +1,5 @@
-import type { Web3Provider } from '@ethersproject/providers';
 import type { AccessList } from '@ethereumjs/tx';
+import type { Web3Provider } from '@ethersproject/providers';
 import type {
   RestrictedControllerMessenger,
   ControllerStateChangeEvent,
