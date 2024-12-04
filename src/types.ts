@@ -1,3 +1,4 @@
+import type { AccessList } from '@ethereumjs/tx';
 import type {
   RestrictedControllerMessenger,
   ControllerStateChangeEvent,
@@ -436,4 +437,90 @@ export type SwapsControllerFetchAggregatorMetadataWithCache = {
 export type SwapsControllerStopPollingAndResetState = {
   type: `SwapsController:stopPollingAndResetState`;
   handler: SwapsController['stopPollingAndResetState'];
+};
+
+/**
+ * Standard data concerning a transaction to be processed by the blockchain.
+ *
+ * Note that this is copied from `@metamask/transaction-controller@37.3.0` in order to
+ * avoid needing to satisfy peer dependencies on `@metamask/accounts-controller`
+ * and `@metamask/snaps-controllers,` which brings potentially conflicting
+ * versions of `@metamask/providers` and `@metamask/snaps-sdk` into the
+ * dependency tree.
+ */
+export type TransactionParams = {
+  /**
+   * A list of addresses and storage keys that the transaction plans to access.
+   */
+  accessList?: AccessList;
+  /**
+   * Network ID as per EIP-155.
+   */
+  chainId?: Hex;
+  /**
+   * Data to pass with this transaction.
+   */
+  data?: string;
+  /**
+   * Error message for gas estimation failure.
+   */
+  estimateGasError?: string;
+  /**
+   * Estimated base fee for this transaction.
+   */
+  estimatedBaseFee?: string;
+  /**
+   * Which estimate level that the API suggested.
+   */
+  estimateSuggested?: string;
+  /**
+   * Which estimate level was used
+   */
+  estimateUsed?: string;
+  /**
+   * Address to send this transaction from.
+   */
+  from: string;
+  /**
+   * same as gasLimit?
+   */
+  gas?: string;
+  /**
+   * Maxmimum number of units of gas to use for this transaction.
+   */
+  gasLimit?: string;
+  /**
+   * Price per gas for legacy txs
+   */
+  gasPrice?: string;
+  /**
+   * Gas used in the transaction.
+   */
+  gasUsed?: string;
+  /**
+   * Maximum amount per gas to pay for the transaction, including the priority
+   * fee.
+   */
+  maxFeePerGas?: string;
+  /**
+   * Maximum amount per gas to give to validator as incentive.
+   */
+  maxPriorityFeePerGas?: string;
+  /**
+   * Unique number to prevent replay attacks.
+   */
+  nonce?: string;
+  /**
+   * Address to send this transaction to.
+   */
+  to?: string;
+  /**
+   * Value associated with this transaction.
+   */
+  value?: string;
+  /**
+   * Type of transaction.
+   * 0x0 indicates a legacy transaction.
+   */
+  type?: string;
 };

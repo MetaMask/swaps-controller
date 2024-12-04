@@ -14,7 +14,6 @@ import type {
   GasFeeStateLegacy,
 } from '@metamask/gas-fee-controller';
 import { GAS_ESTIMATE_TYPES } from '@metamask/gas-fee-controller';
-import type { TransactionParams } from '@metamask/transaction-controller';
 import type { Hex } from '@metamask/utils';
 import { add0x, getKnownPropertyNames } from '@metamask/utils';
 import { BigNumber } from 'bignumber.js';
@@ -51,6 +50,7 @@ import type {
   QuoteValues,
   SwapsAsset,
   SwapsToken,
+  TransactionParams,
   TransactionReceipt,
   TxParams,
 } from './types';
