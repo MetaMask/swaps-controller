@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **BREAKING:** Update type of `fetchEstimatedMultiLayerL1Fee` in `SwapsControllerOptions` by replacing `chainId` in `options` with `networkClientId` ([#347](https://github.com/MetaMask/swaps-controller/pull/347))
 - The chain cache in state will now automatically be updated whenever the network has changed ([#347](https://github.com/MetaMask/swaps-controller/pull/347))
   - This aims to replace behavior provided by `setProvider` and `setChainId`.
+- Move `@metamask/gas-fee-controller` from `peerDependencies` to `dependencies` and upgrade to `^22.0.2` ([#369](https://github.com/MetaMask/swaps-controller/pull/369))
+- Move `@metamask/network-controller` from `peerDependencies` to `dependencies` and upgrade to `^22.1.0` ([#369](https://github.com/MetaMask/swaps-controller/pull/369))
 
 ### Removed
 
