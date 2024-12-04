@@ -442,7 +442,7 @@ export type SwapsControllerStopPollingAndResetState = {
 /**
  * Standard data concerning a transaction to be processed by the blockchain.
  *
- * Note that this is copied from `@metamask/transaction-controller` in order to
+ * Note that this is copied from `@metamask/transaction-controller@37.3.0` in order to
  * avoid needing to satisfy peer dependencies on `@metamask/accounts-controller`
  * and `@metamask/snaps-controllers,` which brings potentially conflicting
  * versions of `@metamask/providers` and `@metamask/snaps-sdk` into the
