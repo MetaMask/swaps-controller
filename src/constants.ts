@@ -1,4 +1,4 @@
-import { toHex } from '@metamask/controller-utils';
+import { InfuraNetworkType, toHex } from '@metamask/controller-utils';
 
 import type { SwapsToken, SwapsControllerState, ChainData } from './types';
 
@@ -251,6 +251,7 @@ export const getDefaultSwapsControllerState = (): SwapsControllerState => ({
       address: '',
       symbol: '',
     },
+    networkClientId: InfuraNetworkType.mainnet,
   },
   topAggSavings: null,
   aggregatorMetadata: null,

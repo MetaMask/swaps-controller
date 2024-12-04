@@ -1,4 +1,5 @@
 import type { AccessList } from '@ethereumjs/tx';
+import type { Web3Provider } from '@ethersproject/providers';
 import type {
   RestrictedControllerMessenger,
   ControllerStateChangeEvent,
@@ -7,12 +8,14 @@ import type {
 import type EthQuery from '@metamask/eth-query';
 import type {
   EthGasPriceEstimate,
+  GasFeeController,
   GasFeeEstimates,
-  GasFeeState,
 } from '@metamask/gas-fee-controller';
 import type {
-  NetworkControllerFindNetworkClientIdByChainIdAction,
+  NetworkClient,
+  NetworkClientId,
   NetworkControllerGetNetworkClientByIdAction,
+  NetworkControllerNetworkDidChangeEvent,
 } from '@metamask/network-controller';
 import type { Hex, JsonRpcError } from '@metamask/utils';
 
@@ -91,10 +94,13 @@ export type FeatureFlags = NetworksFeatureStatusAll & GlobalFeatureFlags;
  * @interface APIFetchQuotesMetadata
  * @property sourceTokenInfo - Source token information
  * @property destinationTokenInfo - Destination token information
+ * @property networkClientId - The network on which to fetch quotes in the form
+ * of a NetworkController network client ID.
  */
 export type APIFetchQuotesMetadata = {
   sourceTokenInfo: SwapsToken;
   destinationTokenInfo: SwapsToken;
+  networkClientId: NetworkClientId;
 };
 
 /**
@@ -330,9 +336,7 @@ export type SwapsControllerStateChangeEvent = ControllerStateChangeEvent<
  * The external actions available to the {@link SwapsController}.
  * TODO: Add GasFeeControllerFetchGasFeeEstimates once GasFeeController exports this action type
  */
-export type AllowedActions =
-  | NetworkControllerFindNetworkClientIdByChainIdAction
-  | NetworkControllerGetNetworkClientByIdAction;
+export type AllowedActions = NetworkControllerGetNetworkClientByIdAction;
 
 /**
  * The internal actions available to the SwapsController.
@@ -353,14 +357,19 @@ export type SwapsControllerActions =
 export type SwapsControllerEvents = SwapsControllerStateChangeEvent;
 
 /**
+ * The internal actions available to the SwapsController.
+ */
+export type AllowedEvents = NetworkControllerNetworkDidChangeEvent;
+
+/**
  * The messenger for the SwapsController.
  */
 export type SwapsControllerMessenger = RestrictedControllerMessenger<
   typeof controllerName,
   SwapsControllerActions | AllowedActions,
-  SwapsControllerEvents,
+  SwapsControllerEvents | AllowedEvents,
   AllowedActions['type'],
-  never
+  AllowedEvents['type']
 >;
 
 export type SwapsControllerOptions = {
@@ -369,15 +378,14 @@ export type SwapsControllerOptions = {
   fetchAggregatorMetadataThreshold?: number;
   fetchTokensThreshold?: number;
   fetchTopAssetsThreshold?: number;
-  chainId?: Hex;
   supportedChainIds?: Hex[];
   // TODO: Remove once GasFeeController exports this action type
-  fetchGasFeeEstimates?: () => Promise<GasFeeState | undefined>;
+  fetchGasFeeEstimates?: GasFeeController['fetchGasFeeEstimates'];
   fetchEstimatedMultiLayerL1Fee?: (
     eth: EthQuery,
     options: {
       txParams: TxParams;
-      chainId: Hex;
+      networkClientId: NetworkClientId;
     },
   ) => Promise<string | undefined>;
   messenger: SwapsControllerMessenger;
@@ -523,4 +531,15 @@ export type TransactionParams = {
    * 0x0 indicates a legacy transaction.
    */
   type?: string;
+};
+
+/**
+ * Information about a network as well as a way to access it.
+ */
+export type Network = {
+  client: NetworkClient;
+  clientId: NetworkClientId;
+  chainId: Hex;
+  ethersProvider: Web3Provider;
+  ethQuery: EthQuery;
 };

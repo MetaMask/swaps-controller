@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **BREAKING:** Consumers must now allow `NetworkController:getNetworkClientById` as a messenger action ([#347](https://github.com/MetaMask/swaps-controller/pull/347))
+- **BREAKING:** Consumers must no longer allow `NetworkController:findNetworkClientIdByChainId` as a messenger action ([#347](https://github.com/MetaMask/swaps-controller/pull/347))
+- **BREAKING:** Consumers must now allow `NetworkController:networkDidChange` as a messenger event ([#347](https://github.com/MetaMask/swaps-controller/pull/347))
+- **BREAKING:** Update `startFetchAndSetQuotes` so that a `networkClientId` must be specified within the fetch metadata ([#347](https://github.com/MetaMask/swaps-controller/pull/347))
+- **BREAKING:** Update `fetchTokenWithCache`, `fetchTopAssetsWithCache`, and `fetchAggregatorMetadataWithCache` so that a `networkClientId` must be specified as an option ([#347](https://github.com/MetaMask/swaps-controller/pull/347))
+- **BREAKING:** Update signature of `fetchGasFeeEstimates` option so that the function expects a `networkClientId` option ([#347](https://github.com/MetaMask/swaps-controller/pull/347))
+- **BREAKING:** Update signature of `fetchEstimatedMultiLayerL1Fee` option so that the function expects a `networkClientId` rather than `chainId` ([#347](https://github.com/MetaMask/swaps-controller/pull/347))
+- **BREAKING:** Update type of `fetchParamsMetaData` in `SwapsControllerState` to add required property `networkClientId` ([#347](https://github.com/MetaMask/swaps-controller/pull/347))
+- **BREAKING:** Update type of `fetchGasFeeEstimates` in `SwapsControllerOptions` to match signature of same method in `GasFeeController` ([#347](https://github.com/MetaMask/swaps-controller/pull/347))
+- **BREAKING:** Update type of `fetchEstimatedMultiLayerL1Fee` in `SwapsControllerOptions` by replacing `chainId` in `options` with `networkClientId` ([#347](https://github.com/MetaMask/swaps-controller/pull/347))
+- The chain cache in state will now automatically be updated whenever the network has changed ([#347](https://github.com/MetaMask/swaps-controller/pull/347))
+  - This aims to replace behavior provided by `setProvider` and `setChainId`.
+
+### Removed
+
+- **BREAKING:** Remove `chainId` from constructor options ([#347](https://github.com/MetaMask/swaps-controller/pull/347))
+  - The global chain ID no longer needs to be tracked. Methods that rely on a network now take a `networkClientId` option.
+- **BREAKING:** Remove `setChainId` method ([#347](https://github.com/MetaMask/swaps-controller/pull/347))
+  - Instead of calling this method when the network changes to capture the current chain ID, pass `networkClientId` to the appropriate method.
+- **BREAKING:** Remove `setProvider` method ([#347](https://github.com/MetaMask/swaps-controller/pull/347))
+  - Instead of calling this method when the network changes to capture the current provider, pass `networkClientId` to the appropriate method.
+  - Note that `setProvider` was also allowing the `pollCountLimit` to be reset. However, upon reviewing clients, it was discovered that the `pollCountLimit` never changes. Instead of using method to set this option, pass it to the constructor when initializing the controller.
+- **BREAKING:** Remove `chainId` from `SwapsControllerOptions` type ([#347](https://github.com/MetaMask/swaps-controller/pull/347))
+
 ## [11.0.0]
 
 ### Changed
