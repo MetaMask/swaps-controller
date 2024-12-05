@@ -76,6 +76,9 @@
     "bn.js": "^5.2.1",
     "human-standard-token-abi": "^2.0.0"
   },
+  "resolutions": {
+    "elliptic": "^6.6.0"
+  },
   "lavamoat": {
     "allowScripts": {
       "@lavamoat/preinstall-always-fail": false,
