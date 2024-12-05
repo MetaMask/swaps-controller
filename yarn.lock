@@ -1517,6 +1517,9 @@ __metadata:
     prettier: "npm:^2.2.1"
     ts-jest: "npm:^29.1.1"
     typescript: "npm:^5.1.0"
+  peerDependencies:
+    "@metamask/gas-fee-controller": ^22.0.0
+    "@metamask/network-controller": ^22.0.0
   languageName: unknown
   linkType: soft
 
