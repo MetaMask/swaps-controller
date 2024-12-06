@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [12.0.0]
+
 ### Changed
 
 - **BREAKING:** Consumers must now allow `NetworkController:getNetworkClientById` as a messenger action ([#347](https://github.com/MetaMask/swaps-controller/pull/347))
@@ -330,7 +332,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use standalone gas API endpoint ([#70](https://github.com/MetaMask/swaps-controller/pull/70))
 - Bump @metamask/controllers from 14.1.0 to 14.2.0 ([#69](https://github.com/MetaMask/swaps-controller/pull/69))
 
-[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v11.0.0...HEAD
+[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v12.0.0...HEAD
+[12.0.0]: https://github.com/MetaMask/swaps-controller/compare/v11.0.0...v12.0.0
 [11.0.0]: https://github.com/MetaMask/swaps-controller/compare/v10.0.0...v11.0.0
 [10.0.0]: https://github.com/MetaMask/swaps-controller/compare/v9.0.12...v10.0.0
 [9.0.12]: https://github.com/MetaMask/swaps-controller/compare/v9.0.9...v9.0.12
