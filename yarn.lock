@@ -1515,6 +1515,7 @@ __metadata:
     human-standard-token-abi: "npm:^2.0.0"
     jest: "npm:^29.7.0"
     prettier: "npm:^2.2.1"
+    rimraf: "npm:^3.0.2"
     ts-jest: "npm:^29.1.1"
     typescript: "npm:^5.1.0"
   peerDependencies:
