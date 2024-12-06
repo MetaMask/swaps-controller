@@ -1518,6 +1518,9 @@ __metadata:
     rimraf: "npm:^3.0.2"
     ts-jest: "npm:^29.1.1"
     typescript: "npm:^5.1.0"
+  peerDependencies:
+    "@metamask/gas-fee-controller": ^22.0.0
+    "@metamask/network-controller": ^22.0.0
   languageName: unknown
   linkType: soft
 
