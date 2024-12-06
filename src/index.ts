@@ -16,6 +16,7 @@ export type {
   SwapsControllerFetchTopAssetsWithCache,
   SwapsControllerFetchAggregatorMetadataWithCache,
   SwapsControllerStopPollingAndResetState,
+  FeatureFlags,
 } from './types';
 
 export default SwapsController;

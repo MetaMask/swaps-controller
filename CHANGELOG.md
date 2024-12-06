@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Export `FeatureFlags` type ([#380](https://github.com/MetaMask/swaps-controller/pull/380))
+
 ## [12.0.0]
 
 ### Changed
