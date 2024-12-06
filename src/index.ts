@@ -1,6 +1,11 @@
 import SwapsController from './SwapsController';
 
+export default SwapsController;
+
+export { CHAIN_ID_TO_NAME_MAP } from './constants';
+
 export * as swapsUtils from './swapsUtil';
+
 export type {
   SwapsControllerState,
   SwapsControllerGetStateAction,
@@ -18,5 +23,3 @@ export type {
   SwapsControllerStopPollingAndResetState,
   FeatureFlags,
 } from './types';
-
-export default SwapsController;
