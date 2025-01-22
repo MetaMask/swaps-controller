@@ -9,14 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [12.1.0]
 
-### Uncategorized
-
-- feat: Add the "enableGasIncludedQuotes" param for fetching quotes ([#390](https://github.com/MetaMask/swaps-controller/pull/390))
-- Export CHAIN_ID_TO_NAME_MAP ([#383](https://github.com/MetaMask/swaps-controller/pull/383))
+### Changed
+- Add the "enableGasIncludedQuotes" param for fetching quotes ([#390](https://github.com/MetaMask/swaps-controller/pull/390))
 - Add back `rimraf` for the `build:clean` script ([#376](https://github.com/MetaMask/swaps-controller/pull/376))
-
-### Added
-
+- Export CHAIN_ID_TO_NAME_MAP ([#383](https://github.com/MetaMask/swaps-controller/pull/383))
 - Export `FeatureFlags` type ([#380](https://github.com/MetaMask/swaps-controller/pull/380))
 
 ## [12.0.0]
