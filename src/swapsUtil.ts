@@ -252,6 +252,7 @@ export function getTokenMetadataURL(chainId: Hex): string {
  * @param quoteParams.sourceAmount - Source token amount.
  * @param quoteParams.destinationToken - Destination token address.
  * @param quoteParams.walletAddress - Address to do the swap from.
+ * @param quoteParams.enableGasIncludedQuotes - Whether to include gas params in quotes.
  * @param abortSignal - Abort signal.
  * @param chainId - Current chainId.
  * @param clientId - Client id.
@@ -264,6 +265,7 @@ export async function fetchTradesInfo(
     sourceAmount,
     destinationToken,
     walletAddress,
+    enableGasIncludedQuotes,
   }: APIFetchQuotesParams,
   abortSignal: AbortSignal | null,
   chainId: Hex,
@@ -276,6 +278,7 @@ export async function fetchTradesInfo(
     slippage,
     timeout: 10000,
     walletAddress,
+    enableGasIncludedQuotes,
   };
 
   if (clientId) {
