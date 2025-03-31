@@ -9,9 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [13.0.0]
 
-### Uncategorized
+### Changed
 
-- feat: allow immediate fetching of topAssets without changing the network ([#401](https://github.com/MetaMask/swaps-controller/pull/401))
+- Allow immediate fetching of `topAssets` without changing the network by relying on `state.chainCache[chainId].topAssetsLastFetched` instead of `state.topAssetsLastFetched` ([#401](https://github.com/MetaMask/swaps-controller/pull/401))
+- **BREAKING:** Remove `state.topAssetsLastFetched` ([#401](https://github.com/MetaMask/swaps-controller/pull/401))
 
 ## [12.1.0]
 
