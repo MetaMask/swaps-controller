@@ -260,7 +260,6 @@ export const getDefaultSwapsControllerState = (): SwapsControllerState => ({
   approvalTransaction: null,
   aggregatorMetadataLastFetched: 0,
   quotesLastFetched: 0,
-  topAssetsLastFetched: 0,
   error: { key: null, description: null },
   topAggId: null,
   tokensLastFetched: 0,

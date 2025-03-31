@@ -314,7 +314,6 @@ export type SwapsControllerState = {
   tokens: null | SwapsToken[];
   tokensLastFetched: number;
   topAssets: null | SwapsAsset[];
-  topAssetsLastFetched: number;
   chainCache: ChainCache;
 };
 

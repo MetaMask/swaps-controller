@@ -3,6 +3,7 @@ import SwapsController from './SwapsController';
 import {
   APIFetchQuotesMetadata,
   APIFetchQuotesParams,
+  ChainData,
   Quote,
   SwapsControllerMessenger,
   SwapsControllerOptions,
@@ -404,7 +405,6 @@ describe('SwapsController', () => {
         approvalTransaction: null,
         aggregatorMetadataLastFetched: 0,
         quotesLastFetched: 0,
-        topAssetsLastFetched: 0,
         error: { key: null, description: null },
         topAggId: null,
         tokensLastFetched: 0,
@@ -470,7 +470,6 @@ describe('SwapsController', () => {
         approvalTransaction: null,
         aggregatorMetadataLastFetched: 0,
         quotesLastFetched: 0,
-        topAssetsLastFetched: 0,
         error: { key: null, description: null },
         topAggId: null,
         tokensLastFetched: 0,
@@ -565,7 +564,10 @@ describe('SwapsController', () => {
         selectedNetworkClientId: networkClientId,
       });
 
-      expect(controller.state).toMatchObject(cachedData);
+      // topAssetsLastFetched is not part of the state
+      const { topAssetsLastFetched, ...rest } = cachedData;
+
+      expect(controller.state).toMatchObject(rest);
     });
 
     it('clears the main part of state and initializes the cached data for the new chain ID if none previously existed', async () => {
@@ -616,7 +618,6 @@ describe('SwapsController', () => {
         tokens: null,
         topAssets: null,
         aggregatorMetadataLastFetched: 0,
-        topAssetsLastFetched: 0,
         tokensLastFetched: 0,
         chainCache: {
           [chainId]: {
@@ -1736,7 +1737,6 @@ describe('SwapsController', () => {
         expect(controller.state.topAssets).toStrictEqual(
           invocations[1].fetchedTokens,
         );
-        expect(controller.state.topAssetsLastFetched).toStrictEqual(Date.now());
         expect(controller.state.chainCache).toStrictEqual({
           '0x1': {
             aggregatorMetadata: null,
@@ -1834,7 +1834,6 @@ describe('SwapsController', () => {
         expect(controller.state.topAssets).toStrictEqual(
           invocations[0].fetchedTokens,
         );
-        expect(controller.state.topAssetsLastFetched).toStrictEqual(0);
         expect(controller.state.chainCache).toStrictEqual({
           '0x1': {
             aggregatorMetadata: null,
@@ -1945,7 +1944,6 @@ describe('SwapsController', () => {
         expect(controller.state.topAssets).toStrictEqual(
           invocations[1].fetchedTokens,
         );
-        expect(controller.state.topAssetsLastFetched).toStrictEqual(Date.now());
         expect(controller.state.chainCache).toStrictEqual({
           '0x1': {
             aggregatorMetadata: null,
@@ -2043,7 +2041,6 @@ describe('SwapsController', () => {
         expect(controller.state.topAssets).toStrictEqual(
           invocations[0].fetchedTokens,
         );
-        expect(controller.state.topAssetsLastFetched).toStrictEqual(0);
         expect(controller.state.chainCache).toStrictEqual({
           '0x1': {
             aggregatorMetadata: null,
@@ -2154,7 +2151,6 @@ describe('SwapsController', () => {
         expect(controller.state.topAssets).toStrictEqual(
           invocations[1].fetchedTokens,
         );
-        expect(controller.state.topAssetsLastFetched).toStrictEqual(Date.now());
         expect(controller.state.chainCache).toStrictEqual({
           '0x1': {
             aggregatorMetadata: null,
@@ -2252,7 +2248,6 @@ describe('SwapsController', () => {
         expect(controller.state.topAssets).toStrictEqual(
           invocations[0].fetchedTokens,
         );
-        expect(controller.state.topAssetsLastFetched).toStrictEqual(0);
         expect(controller.state.chainCache).toStrictEqual({
           '0x1': {
             aggregatorMetadata: null,
@@ -2323,7 +2318,6 @@ describe('SwapsController', () => {
                 symbol: 'TOKEN9999',
               },
             ],
-            topAssetsLastFetched: Date.now() - fetchTopAssetsThreshold - 1,
           },
         });
         mockNetworkControllerGetNetworkClientById({
@@ -2371,7 +2365,6 @@ describe('SwapsController', () => {
         expect(controller.state.topAssets).toStrictEqual(
           invocations[1].fetchedTokens,
         );
-        expect(controller.state.topAssetsLastFetched).toStrictEqual(Date.now());
         expect(controller.state.chainCache).toStrictEqual({
           '0x1': {
             aggregatorMetadata: null,
@@ -2429,7 +2422,6 @@ describe('SwapsController', () => {
                 symbol: 'TOKEN9999',
               },
             ],
-            topAssetsLastFetched: Date.now() - fetchTopAssetsThreshold - 1,
           },
         });
         mockNetworkControllerGetNetworkClientById({
@@ -2477,7 +2469,6 @@ describe('SwapsController', () => {
         expect(controller.state.topAssets).toStrictEqual(
           invocations[0].fetchedTokens,
         );
-        expect(controller.state.topAssetsLastFetched).toStrictEqual(0);
         expect(controller.state.chainCache).toStrictEqual({
           '0x1': {
             aggregatorMetadata: null,
@@ -2510,7 +2501,11 @@ describe('SwapsController', () => {
                 symbol: 'TEST',
               },
             ],
-            topAssetsLastFetched: Date.now(),
+            chainCache: {
+              '0x89': {
+                topAssetsLastFetched: Date.now(),
+              } as ChainData,
+            },
           },
         });
         mockNetworkControllerGetNetworkClientById({

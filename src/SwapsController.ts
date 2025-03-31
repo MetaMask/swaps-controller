@@ -82,7 +82,6 @@ const metadata: StateMetadata<SwapsControllerState> = {
   approvalTransaction: { persist: false, anonymous: false },
   aggregatorMetadataLastFetched: { persist: false, anonymous: true },
   quotesLastFetched: { persist: false, anonymous: true },
-  topAssetsLastFetched: { persist: false, anonymous: true },
   error: { persist: false, anonymous: false },
   topAggId: { persist: false, anonymous: false },
   tokensLastFetched: { persist: false, anonymous: true },
@@ -145,7 +144,6 @@ export default class SwapsController extends BaseController<
         _state.tokens = null;
         _state.topAssets = null;
         _state.aggregatorMetadataLastFetched = 0;
-        _state.topAssetsLastFetched = 0;
         _state.tokensLastFetched = 0;
         _state.chainCache = getNewChainCache(chainCache, chainId, {
           ...INITIAL_CHAIN_DATA,
@@ -162,7 +160,6 @@ export default class SwapsController extends BaseController<
       _state.topAssets = cachedData.topAssets;
       _state.aggregatorMetadataLastFetched =
         cachedData.aggregatorMetadataLastFetched;
-      _state.topAssetsLastFetched = cachedData.topAssetsLastFetched;
       _state.tokensLastFetched = cachedData.tokensLastFetched;
     });
   };
@@ -1029,12 +1026,15 @@ export default class SwapsController extends BaseController<
       return;
     }
 
-    const { topAssets, topAssetsLastFetched } = this.state;
+    const { topAssets } = this.state;
 
-    if (
-      !topAssets ||
-      this.#fetchTopAssetsThreshold < Date.now() - topAssetsLastFetched
-    ) {
+    const topAssetsLastFetchedForChain =
+      this.state.chainCache[chainId]?.topAssetsLastFetched ?? 0;
+
+    const isPastThresholdForChain =
+      this.#fetchTopAssetsThreshold < Date.now() - topAssetsLastFetchedForChain;
+
+    if (!topAssets || isPastThresholdForChain) {
       const releaseLock = await this.#mutex.acquire();
       try {
         const newTopAssets = await fetchTopAssets(chainId, this.#clientId);
@@ -1044,7 +1044,6 @@ export default class SwapsController extends BaseController<
         };
         this.update((_state) => {
           _state.topAssets = data.topAssets;
-          _state.topAssetsLastFetched = data.topAssetsLastFetched;
           _state.chainCache = getNewChainCache(
             _state.chainCache,
             chainId,
@@ -1054,7 +1053,6 @@ export default class SwapsController extends BaseController<
       } catch {
         const data = { topAssetsLastFetched: 0 };
         this.update((_state) => {
-          _state.topAssetsLastFetched = data.topAssetsLastFetched;
           _state.chainCache = getNewChainCache(
             _state.chainCache,
             chainId,
@@ -1155,7 +1153,6 @@ export default class SwapsController extends BaseController<
       });
       _state.isInPolling = false;
       _state.tokensLastFetched = currentState.tokensLastFetched;
-      _state.topAssetsLastFetched = currentState.topAssetsLastFetched;
       _state.aggregatorMetadataLastFetched =
         currentState.aggregatorMetadataLastFetched;
       _state.tokens = currentState.tokens;
