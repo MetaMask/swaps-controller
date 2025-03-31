@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [13.0.0]
+
+### Changed
+
+- Allow immediate fetching of `topAssets` without changing the network by relying on `state.chainCache[chainId].topAssetsLastFetched` instead of `state.topAssetsLastFetched` ([#401](https://github.com/MetaMask/swaps-controller/pull/401))
+- **BREAKING:** Remove `state.topAssetsLastFetched` ([#401](https://github.com/MetaMask/swaps-controller/pull/401))
+
 ## [12.1.0]
 
 ### Changed
@@ -341,7 +348,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use standalone gas API endpoint ([#70](https://github.com/MetaMask/swaps-controller/pull/70))
 - Bump @metamask/controllers from 14.1.0 to 14.2.0 ([#69](https://github.com/MetaMask/swaps-controller/pull/69))
 
-[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v12.1.0...HEAD
+[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v13.0.0...HEAD
+[13.0.0]: https://github.com/MetaMask/swaps-controller/compare/v12.1.0...v13.0.0
 [12.1.0]: https://github.com/MetaMask/swaps-controller/compare/v12.0.0...v12.1.0
 [12.0.0]: https://github.com/MetaMask/swaps-controller/compare/v11.0.0...v12.0.0
 [11.0.0]: https://github.com/MetaMask/swaps-controller/compare/v10.0.0...v11.0.0
