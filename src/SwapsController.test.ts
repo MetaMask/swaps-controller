@@ -2520,6 +2520,67 @@ describe('SwapsController', () => {
         expect(swapsUtilFetchTopAssets).not.toHaveBeenCalled();
       });
     });
+
+    describe('when the chain ID is provided', () => {
+      it('persists fetched top assets to the chain cache and the main part of state', async () => {
+        const clientId = 'client-id';
+        const chainId = POLYGON_CHAIN_ID;
+        const fetchedTokens = [
+          {
+            address: '0x1111111',
+            symbol: 'TOKEN1',
+            decimals: 1,
+          },
+          {
+            address: '0x2222222',
+            symbol: 'TOKEN2',
+            decimals: 2,
+          },
+        ];
+        const controller = getSwapsController({
+          options: {
+            clientId,
+          },
+        });
+        swapsUtilFetchTopAssets.mockImplementation(
+          async (givenChainId, givenClientId) => {
+            if (givenChainId === chainId && givenClientId === clientId) {
+              return fetchedTokens;
+            }
+            throw new Error(
+              `Unknown chain ID '${givenChainId}' and/or client ID '${givenClientId}'`,
+            );
+          },
+        );
+
+        await controller.fetchTopAssetsWithCache({ chainId });
+
+        expect(controller.state.topAssets).toStrictEqual(fetchedTokens);
+        expect(controller.state.chainCache).toStrictEqual({
+          '0x1': {
+            aggregatorMetadata: null,
+            tokens: null,
+            topAssets: null,
+            aggregatorMetadataLastFetched: 0,
+            topAssetsLastFetched: 0,
+            tokensLastFetched: 0,
+          },
+          [chainId]: {
+            topAssets: fetchedTokens,
+            topAssetsLastFetched: Date.now(),
+          },
+        });
+      });
+    });
+
+    describe('when the chain ID is not provided and the network client ID is not provided', () => {
+      it('throws an error', async () => {
+        const controller = getSwapsController();
+        await expect(controller.fetchTopAssetsWithCache({})).rejects.toThrow(
+          'One of networkClientId or chainId is required',
+        );
+      });
+    });
   });
 
   describe('fetchAggregatorMetadataWithCache', () => {
