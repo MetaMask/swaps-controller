@@ -1013,23 +1013,34 @@ export default class SwapsController extends BaseController<
    * Fetches the top assets and updates the state with them.
    * @param args - The arguments to this method.
    * @param args.networkClientId - The ID of a network client from
-   * NetworkController.
+   * NetworkController. This or chainId is required.
+   * @param args.chainId - The chain ID to fetch the top assets for. This or
+   * networkClientId is required. chainId will be preferred over networkClientId.
    */
   async fetchTopAssetsWithCache({
     networkClientId,
+    chainId,
   }: {
-    networkClientId: NetworkClientId;
+    networkClientId?: NetworkClientId;
+    chainId?: Hex;
   }) {
-    const chainId = this.#getChainId(networkClientId);
+    let chainIdToUse;
+    if (chainId) {
+      chainIdToUse = chainId;
+    } else if (networkClientId) {
+      chainIdToUse = this.#getChainId(networkClientId);
+    } else {
+      throw new Error('One of networkClientId or chainId is required');
+    }
 
-    if (!this.#supportedChainIds.includes(chainId)) {
+    if (!this.#supportedChainIds.includes(chainIdToUse)) {
       return;
     }
 
     const { topAssets } = this.state;
 
     const topAssetsLastFetchedForChain =
-      this.state.chainCache[chainId]?.topAssetsLastFetched ?? 0;
+      this.state.chainCache[chainIdToUse]?.topAssetsLastFetched ?? 0;
 
     const isPastThresholdForChain =
       this.#fetchTopAssetsThreshold < Date.now() - topAssetsLastFetchedForChain;
@@ -1037,7 +1048,7 @@ export default class SwapsController extends BaseController<
     if (!topAssets || isPastThresholdForChain) {
       const releaseLock = await this.#mutex.acquire();
       try {
-        const newTopAssets = await fetchTopAssets(chainId, this.#clientId);
+        const newTopAssets = await fetchTopAssets(chainIdToUse, this.#clientId);
         const data = {
           topAssets: newTopAssets,
           topAssetsLastFetched: Date.now(),
@@ -1046,7 +1057,7 @@ export default class SwapsController extends BaseController<
           _state.topAssets = data.topAssets;
           _state.chainCache = getNewChainCache(
             _state.chainCache,
-            chainId,
+            chainIdToUse,
             data,
           );
         });
@@ -1055,7 +1066,7 @@ export default class SwapsController extends BaseController<
         this.update((_state) => {
           _state.chainCache = getNewChainCache(
             _state.chainCache,
-            chainId,
+            chainIdToUse,
             data,
           );
         });
