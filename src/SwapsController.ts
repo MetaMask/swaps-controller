@@ -1013,8 +1013,9 @@ export default class SwapsController extends BaseController<
    * Fetches the top assets and updates the state with them.
    * @param args - The arguments to this method.
    * @param args.networkClientId - The ID of a network client from
-   * NetworkController.
-   * @param args.chainId - The chain ID to fetch the top assets for. chainId will be preferred over networkClientId.
+   * NetworkController. This or chainId is required.
+   * @param args.chainId - The chain ID to fetch the top assets for. This or
+   * networkClientId is required. chainId will be preferred over networkClientId.
    */
   async fetchTopAssetsWithCache({
     networkClientId,
