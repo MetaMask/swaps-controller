@@ -9,9 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [13.1.0]
 
-### Uncategorized
+### Changed
 
-- feat: allow using a chainId or networkClientId to fetch top assets ([#403](https://github.com/MetaMask/swaps-controller/pull/403))
+- Allow using a `chainId` or `networkClientId` to call `fetchTopAssets` ([#403](https://github.com/MetaMask/swaps-controller/pull/403))
 
 ## [13.0.0]
 
