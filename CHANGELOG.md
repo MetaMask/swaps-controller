@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [13.2.0]
+
+### Changed
+
+- Add `SEI` network support ([#406](https://github.com/MetaMask/swaps-controller/pull/406))
+
 ## [13.1.0]
 
 ### Changed
@@ -354,7 +360,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use standalone gas API endpoint ([#70](https://github.com/MetaMask/swaps-controller/pull/70))
 - Bump @metamask/controllers from 14.1.0 to 14.2.0 ([#69](https://github.com/MetaMask/swaps-controller/pull/69))
 
-[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v13.1.0...HEAD
+[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v13.2.0...HEAD
+[13.2.0]: https://github.com/MetaMask/swaps-controller/compare/v13.1.0...v13.2.0
 [13.1.0]: https://github.com/MetaMask/swaps-controller/compare/v13.0.0...v13.1.0
 [13.0.0]: https://github.com/MetaMask/swaps-controller/compare/v12.1.0...v13.0.0
 [12.1.0]: https://github.com/MetaMask/swaps-controller/compare/v12.0.0...v12.1.0
