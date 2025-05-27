@@ -54,6 +54,7 @@ const {
   LINEA_CHAIN_ID,
   OPTIMISM_CHAIN_ID,
   POLYGON_CHAIN_ID,
+  SEI_CHAIN_ID,
   SWAPS_CONTRACT_ADDRESSES,
   SWAPS_TESTNET_CHAIN_ID,
   ZKSYNC_ERA_CHAIN_ID,
@@ -71,6 +72,7 @@ const INITIAL_CONTROLLER_OPTIONS = {
     swapsUtil.SWAPS_TESTNET_CHAIN_ID,
     swapsUtil.POLYGON_CHAIN_ID,
     swapsUtil.AVALANCHE_CHAIN_ID,
+    swapsUtil.SEI_CHAIN_ID,
   ],
   clientId: undefined,
 };
@@ -3615,6 +3617,7 @@ describe('SwapsController', () => {
         LINEA_CHAIN_ID,
         SWAPS_TESTNET_CHAIN_ID,
         BASE_CHAIN_ID,
+        SEI_CHAIN_ID,
       ]) {
         const chainName = CHAIN_ID_TO_NAME_MAP[chainId];
         describe(`given the ID of a network client for ${chainName}`, () => {
