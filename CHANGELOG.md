@@ -9,9 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [13.2.0]
 
-### Uncategorized
+### Changed
 
-- feat: Add `SEI` network support ([#406](https://github.com/MetaMask/swaps-controller/pull/406))
+- Add `SEI` network support ([#406](https://github.com/MetaMask/swaps-controller/pull/406))
 
 ## [13.1.0]
 
