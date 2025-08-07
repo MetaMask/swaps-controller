@@ -40,10 +40,14 @@ export const CHAIN_ID_TO_NAME_MAP: { [key: string]: string } = {
 };
 
 //* APIs base urls
-
+// LEGACY
 export const API_BASE_URL = 'https://swap.api.cx.metamask.io';
 export const DEV_BASE_URL = 'https://swap.dev-api.cx.metamask.io';
 export const GAS_API_BASE_URL = 'https://gas.api.cx.metamask.io';
+
+// BRIDGE
+export const BRIDGE_API_BASE_URL = 'https://bridge.api.cx.metamask.io';
+export const BRIDGE_DEV_BASE_URL = 'https://bridge.dev-api.cx.metamask.io';
 
 //* Contract addresses
 
