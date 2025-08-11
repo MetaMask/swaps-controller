@@ -9,10 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [13.3.0]
 
-### Uncategorized
-
-- chore: changelog ([#409](https://github.com/MetaMask/swaps-controller/pull/409))
-
 ### Changed
 
 - Migrate `fetchTopAssets` to use the Bridge API instead of the Swaps API ([#408](https://github.com/MetaMask/swaps-controller/pull/408))
