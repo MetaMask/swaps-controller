@@ -23,6 +23,8 @@ import { BN } from 'bn.js';
 import {
   ALLOWED_CONTRACT_ADDRESSES,
   API_BASE_URL,
+  BRIDGE_API_BASE_URL,
+  BRIDGE_DEV_BASE_URL,
   CHAIN_ID_TO_NAME_MAP,
   DEV_BASE_URL,
   ETH_CHAIN_ID,
@@ -214,6 +216,12 @@ export const getBaseApiURL = function (type: APIType, chainId: Hex): string {
     chainId === SWAPS_TESTNET_CHAIN_ID
       ? [ETH_CHAIN_ID, DEV_BASE_URL]
       : [chainId, API_BASE_URL];
+
+  const bridgeApiBaseUrl =
+    chainId === SWAPS_TESTNET_CHAIN_ID
+      ? BRIDGE_DEV_BASE_URL
+      : BRIDGE_API_BASE_URL;
+
   const apiDecimalChainId: number = convertHexToDecimal(apiChainId);
   switch (type) {
     case APIType.TRADES:
@@ -223,7 +231,7 @@ export const getBaseApiURL = function (type: APIType, chainId: Hex): string {
     case APIType.TOKEN:
       return `${apiBaseUrl}/networks/${apiDecimalChainId}/token`;
     case APIType.TOP_ASSETS:
-      return `${apiBaseUrl}/networks/${apiDecimalChainId}/topAssets`;
+      return `${bridgeApiBaseUrl}/networks/${apiDecimalChainId}/topAssets`;
     case APIType.FEATURE_FLAG:
       return `${apiBaseUrl}/featureFlags`;
     case APIType.AGGREGATOR_METADATA:

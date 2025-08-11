@@ -521,7 +521,7 @@ describe('SwapsUtil', () => {
   describe('fetchTopAssets', () => {
     it('should work', async () => {
       mockFetch({
-        'https://swap.api.cx.metamask.io/networks/1/topAssets': {
+        'https://bridge.api.cx.metamask.io/networks/1/topAssets': {
           body: API_TRADES,
         },
       });
