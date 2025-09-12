@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add two new controller state metadata properties: `includeInStateLogs` and `usedInUi` ([#1234](https://github.com/MetaMask/swaps-controller/pull/408))
+
+### Changed
+
+- Bump `@metamask/base-controller` from `^7.0.1` to `^8.0.3` ([#1234](https://github.com/MetaMask/swaps-controller/pull/408))
+
 ## [13.3.0]
 
 ### Changed
