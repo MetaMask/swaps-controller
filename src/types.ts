@@ -1,7 +1,7 @@
 import type { AccessList } from '@ethereumjs/tx';
 import type { Web3Provider } from '@ethersproject/providers';
 import type {
-  RestrictedControllerMessenger,
+  RestrictedMessenger,
   ControllerStateChangeEvent,
   ControllerGetStateAction,
 } from '@metamask/base-controller';
@@ -365,7 +365,7 @@ export type AllowedEvents = NetworkControllerNetworkDidChangeEvent;
 /**
  * The messenger for the SwapsController.
  */
-export type SwapsControllerMessenger = RestrictedControllerMessenger<
+export type SwapsControllerMessenger = RestrictedMessenger<
   typeof controllerName,
   SwapsControllerActions | AllowedActions,
   SwapsControllerEvents | AllowedEvents,

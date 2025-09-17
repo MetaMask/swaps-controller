@@ -17,7 +17,7 @@ import {
 } from '@metamask/network-controller';
 import { FakeProvider } from './fake-provider.test';
 import { Hex } from '@metamask/utils';
-import { ControllerMessenger } from '@metamask/base-controller';
+import { deriveStateFromMetadata, Messenger } from '@metamask/base-controller';
 import * as ethQueryModule from '@metamask/eth-query';
 import * as ethersContracts from '@ethersproject/contracts';
 import * as ethersProviders from '@ethersproject/providers';
@@ -524,7 +524,7 @@ describe('SwapsController', () => {
         topAssetsLastFetched: 2,
         tokensLastFetched: 3,
       };
-      const rootMessenger = new ControllerMessenger<
+      const rootMessenger = new Messenger<
         NetworkControllerGetNetworkClientByIdAction,
         NetworkControllerNetworkDidChangeEvent
       >();
@@ -575,7 +575,7 @@ describe('SwapsController', () => {
     it('clears the main part of state and initializes the cached data for the new chain ID if none previously existed', async () => {
       const networkClientId = 'AAAA-BBBB-CCCC-DDDD';
       const chainId = BSC_CHAIN_ID;
-      const rootMessenger = new ControllerMessenger<
+      const rootMessenger = new Messenger<
         NetworkControllerGetNetworkClientByIdAction,
         NetworkControllerNetworkDidChangeEvent
       >();
@@ -637,7 +637,7 @@ describe('SwapsController', () => {
     it('does not change state if the new chain ID is not among the list of supported chain IDs', async () => {
       const networkClientId = 'AAAA-BBBB-CCCC-DDDD';
       const chainId = '0x99999999';
-      const rootMessenger = new ControllerMessenger<
+      const rootMessenger = new Messenger<
         NetworkControllerGetNetworkClientByIdAction,
         NetworkControllerNetworkDidChangeEvent
       >();
@@ -5296,6 +5296,161 @@ describe('SwapsController', () => {
       const result = swapsUtil.isGasFeeStateLegacy(gasFeeState);
 
       expect(result).toBe(false);
+    });
+  });
+
+  describe('metadata', () => {
+    it('includes expected state in debug snapshots', () => {
+      const controller = getSwapsController();
+
+      expect(
+        deriveStateFromMetadata(
+          controller.state,
+          controller.metadata,
+          'anonymous',
+        ),
+      ).toMatchInlineSnapshot(`
+        {
+          "aggregatorMetadata": null,
+          "aggregatorMetadataLastFetched": 0,
+          "isInPolling": false,
+          "pollingCyclesLeft": 3,
+          "quoteRefreshSeconds": null,
+          "quotesLastFetched": 0,
+          "tokens": null,
+          "tokensLastFetched": 0,
+          "topAssets": null,
+        }
+      `);
+    });
+
+    it('includes expected state in state logs', () => {
+      const controller = getSwapsController();
+
+      expect(
+        deriveStateFromMetadata(
+          controller.state,
+          controller.metadata,
+          'includeInStateLogs',
+        ),
+      ).toMatchInlineSnapshot(`
+        {
+          "aggregatorMetadataLastFetched": 0,
+          "approvalTransaction": null,
+          "error": {
+            "description": null,
+            "key": null,
+          },
+          "fetchParams": {
+            "destinationToken": "",
+            "slippage": 0,
+            "sourceAmount": 0,
+            "sourceToken": "",
+            "walletAddress": "",
+          },
+          "fetchParamsMetaData": {
+            "destinationTokenInfo": {
+              "address": "",
+              "decimals": 0,
+              "symbol": "",
+            },
+            "networkClientId": "mainnet",
+            "sourceTokenInfo": {
+              "address": "",
+              "decimals": 0,
+              "symbol": "",
+            },
+          },
+          "isInPolling": false,
+          "pollingCyclesLeft": 3,
+          "quoteRefreshSeconds": null,
+          "quoteValues": {},
+          "quotes": {},
+          "quotesLastFetched": 0,
+          "tokensLastFetched": 0,
+          "topAggId": null,
+          "topAggSavings": null,
+          "usedCustomGas": null,
+          "usedGasEstimate": null,
+        }
+      `);
+    });
+
+    it('persists expected state', () => {
+      const controller = getSwapsController();
+
+      expect(
+        deriveStateFromMetadata(
+          controller.state,
+          controller.metadata,
+          'persist',
+        ),
+      ).toMatchInlineSnapshot(`{}`);
+    });
+
+    it('exposes expected state to UI', () => {
+      const controller = getSwapsController();
+
+      expect(
+        deriveStateFromMetadata(
+          controller.state,
+          controller.metadata,
+          'usedInUi',
+        ),
+      ).toMatchInlineSnapshot(`
+        {
+          "aggregatorMetadata": null,
+          "aggregatorMetadataLastFetched": 0,
+          "approvalTransaction": null,
+          "chainCache": {
+            "0x1": {
+              "aggregatorMetadata": null,
+              "aggregatorMetadataLastFetched": 0,
+              "tokens": null,
+              "tokensLastFetched": 0,
+              "topAssets": null,
+              "topAssetsLastFetched": 0,
+            },
+          },
+          "error": {
+            "description": null,
+            "key": null,
+          },
+          "fetchParams": {
+            "destinationToken": "",
+            "slippage": 0,
+            "sourceAmount": 0,
+            "sourceToken": "",
+            "walletAddress": "",
+          },
+          "fetchParamsMetaData": {
+            "destinationTokenInfo": {
+              "address": "",
+              "decimals": 0,
+              "symbol": "",
+            },
+            "networkClientId": "mainnet",
+            "sourceTokenInfo": {
+              "address": "",
+              "decimals": 0,
+              "symbol": "",
+            },
+          },
+          "isInPolling": false,
+          "pollingCyclesLeft": 3,
+          "quoteRefreshSeconds": null,
+          "quoteValues": {},
+          "quotes": {},
+          "quotesLastFetched": 0,
+          "tokens": null,
+          "tokensLastFetched": 0,
+          "topAggId": null,
+          "topAggSavings": null,
+          "topAssets": null,
+          "usedCustomGas": null,
+          "usedGasEstimate": null,
+        }
+      `);
     });
   });
 });
