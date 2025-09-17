@@ -7,12 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [14.0.0]
+
 ### Added
 
 - Add two new controller state metadata properties: `includeInStateLogs` and `usedInUi` ([#1234](https://github.com/MetaMask/swaps-controller/pull/408))
 
 ### Changed
 
+- **BREAKING:** Bump peer dependency `@metamask/gas-fee-controller` from `^22.0.0` to `^24.0.0` ([#412](https://github.com/MetaMask/swaps-controller/pull/412))
+- **BREAKING:** Bump peer dependency `@metamask/network-controller` from `^22.0.0` to `^24.0.0` ([#412](https://github.com/MetaMask/swaps-controller/pull/412))
 - Bump `@metamask/base-controller` from `^7.0.1` to `^8.0.3` ([#1234](https://github.com/MetaMask/swaps-controller/pull/408))
 
 ## [13.3.0]
@@ -374,7 +378,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use standalone gas API endpoint ([#70](https://github.com/MetaMask/swaps-controller/pull/70))
 - Bump @metamask/controllers from 14.1.0 to 14.2.0 ([#69](https://github.com/MetaMask/swaps-controller/pull/69))
 
-[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v13.3.0...HEAD
+[Unreleased]: https://github.com/MetaMask/swaps-controller/compare/v14.0.0...HEAD
+[14.0.0]: https://github.com/MetaMask/swaps-controller/compare/v13.3.0...v14.0.0
 [13.3.0]: https://github.com/MetaMask/swaps-controller/compare/v13.2.0...v13.3.0
 [13.2.0]: https://github.com/MetaMask/swaps-controller/compare/v13.1.0...v13.2.0
 [13.1.0]: https://github.com/MetaMask/swaps-controller/compare/v13.0.0...v13.1.0
