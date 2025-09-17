@@ -9,17 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [14.0.0]
 
-### Uncategorized
-
-- chore: Bump peer dependencies to latest versions ([#412](https://github.com/MetaMask/swaps-controller/pull/412))
-- feat: add `includeInStateLogs` and `usedInUi` to metadata ([#411](https://github.com/MetaMask/swaps-controller/pull/411))
-
 ### Added
 
 - Add two new controller state metadata properties: `includeInStateLogs` and `usedInUi` ([#1234](https://github.com/MetaMask/swaps-controller/pull/408))
 
 ### Changed
 
+- **BREAKING:** Bump peer dependency `@metamask/gas-fee-controller` from `^22.0.0` to `^24.0.0` ([#412](https://github.com/MetaMask/swaps-controller/pull/412))
+- **BREAKING:** Bump peer dependency `@metamask/network-controller` from `^22.0.0` to `^24.0.0` ([#412](https://github.com/MetaMask/swaps-controller/pull/412))
 - Bump `@metamask/base-controller` from `^7.0.1` to `^8.0.3` ([#1234](https://github.com/MetaMask/swaps-controller/pull/408))
 
 ## [13.3.0]
