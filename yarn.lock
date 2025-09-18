@@ -1588,7 +1588,7 @@ __metadata:
     "@metamask/gas-fee-controller": "npm:^24.0.0"
     "@metamask/json-rpc-engine": "npm:^10.0.1"
     "@metamask/network-controller": "npm:^24.1.0"
-    "@metamask/utils": "npm:^10.0.0"
+    "@metamask/utils": "npm:^11.8.0"
     "@types/jest": "npm:^29.5.14"
     "@types/node": "npm:^20.10.4"
     "@typescript-eslint/eslint-plugin": "npm:^5.42.1"
