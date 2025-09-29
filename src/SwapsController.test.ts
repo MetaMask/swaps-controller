@@ -10,19 +10,28 @@ import {
   SwapsControllerState,
 } from './types';
 import * as swapsUtil from './swapsUtil';
-import {
-  NetworkClientId,
-  NetworkControllerGetNetworkClientByIdAction,
-  NetworkControllerNetworkDidChangeEvent,
-} from '@metamask/network-controller';
+import { NetworkClientId } from '@metamask/network-controller';
 import { FakeProvider } from './fake-provider.test';
 import { Hex } from '@metamask/utils';
-import { deriveStateFromMetadata, Messenger } from '@metamask/base-controller';
+import { deriveStateFromMetadata } from '@metamask/base-controller/next';
 import * as ethQueryModule from '@metamask/eth-query';
+import {
+  Messenger,
+  MessengerActions,
+  MessengerEvents,
+  MOCK_ANY_NAMESPACE,
+  MockAnyNamespace,
+} from '@metamask/messenger';
 import * as ethersContracts from '@ethersproject/contracts';
 import * as ethersProviders from '@ethersproject/providers';
 import { Interface } from '@ethersproject/abi';
 import abiERC20 from 'human-standard-token-abi';
+
+type AllActions = MessengerActions<SwapsControllerMessenger>;
+
+type AllEvents = MessengerEvents<SwapsControllerMessenger>;
+
+type RootMessenger = Messenger<MockAnyNamespace, AllActions, AllEvents>;
 
 // Override this module so that its members can be spied on
 jest.mock('@metamask/eth-query', () => {
@@ -524,10 +533,9 @@ describe('SwapsController', () => {
         topAssetsLastFetched: 2,
         tokensLastFetched: 3,
       };
-      const rootMessenger = new Messenger<
-        NetworkControllerGetNetworkClientByIdAction,
-        NetworkControllerNetworkDidChangeEvent
-      >();
+      const rootMessenger: RootMessenger = new Messenger({
+        namespace: MOCK_ANY_NAMESPACE,
+      });
       rootMessenger.registerActionHandler(
         'NetworkController:getNetworkClientById',
         // @ts-expect-error Intentionally not providing a full
@@ -545,10 +553,19 @@ describe('SwapsController', () => {
           );
         },
       );
-      const swapsControllerMessenger = rootMessenger.getRestricted({
-        name: 'SwapsController',
-        allowedActions: ['NetworkController:getNetworkClientById'],
-        allowedEvents: ['NetworkController:networkDidChange'],
+      const swapsControllerMessenger = new Messenger<
+        'SwapsController',
+        AllActions,
+        AllEvents,
+        RootMessenger
+      >({
+        namespace: 'SwapsController',
+        parent: rootMessenger,
+      });
+      rootMessenger.delegate({
+        messenger: swapsControllerMessenger,
+        actions: ['NetworkController:getNetworkClientById'],
+        events: ['NetworkController:networkDidChange'],
       });
       const controller = getSwapsController({
         options: {
@@ -575,10 +592,9 @@ describe('SwapsController', () => {
     it('clears the main part of state and initializes the cached data for the new chain ID if none previously existed', async () => {
       const networkClientId = 'AAAA-BBBB-CCCC-DDDD';
       const chainId = BSC_CHAIN_ID;
-      const rootMessenger = new Messenger<
-        NetworkControllerGetNetworkClientByIdAction,
-        NetworkControllerNetworkDidChangeEvent
-      >();
+      const rootMessenger: RootMessenger = new Messenger({
+        namespace: MOCK_ANY_NAMESPACE,
+      });
       rootMessenger.registerActionHandler(
         'NetworkController:getNetworkClientById',
         // @ts-expect-error Intentionally not providing a full
@@ -596,10 +612,19 @@ describe('SwapsController', () => {
           );
         },
       );
-      const swapsControllerMessenger = rootMessenger.getRestricted({
-        name: 'SwapsController',
-        allowedActions: ['NetworkController:getNetworkClientById'],
-        allowedEvents: ['NetworkController:networkDidChange'],
+      const swapsControllerMessenger = new Messenger<
+        'SwapsController',
+        AllActions,
+        AllEvents,
+        RootMessenger
+      >({
+        namespace: 'SwapsController',
+        parent: rootMessenger,
+      });
+      rootMessenger.delegate({
+        messenger: swapsControllerMessenger,
+        actions: ['NetworkController:getNetworkClientById'],
+        events: ['NetworkController:networkDidChange'],
       });
       const controller = getSwapsController({
         options: {
@@ -637,10 +662,9 @@ describe('SwapsController', () => {
     it('does not change state if the new chain ID is not among the list of supported chain IDs', async () => {
       const networkClientId = 'AAAA-BBBB-CCCC-DDDD';
       const chainId = '0x99999999';
-      const rootMessenger = new Messenger<
-        NetworkControllerGetNetworkClientByIdAction,
-        NetworkControllerNetworkDidChangeEvent
-      >();
+      const rootMessenger: RootMessenger = new Messenger({
+        namespace: MOCK_ANY_NAMESPACE,
+      });
       rootMessenger.registerActionHandler(
         'NetworkController:getNetworkClientById',
         // @ts-expect-error Intentionally not providing a full
@@ -658,10 +682,19 @@ describe('SwapsController', () => {
           );
         },
       );
-      const swapsControllerMessenger = rootMessenger.getRestricted({
-        name: 'SwapsController',
-        allowedActions: ['NetworkController:getNetworkClientById'],
-        allowedEvents: ['NetworkController:networkDidChange'],
+      const swapsControllerMessenger = new Messenger<
+        'SwapsController',
+        AllActions,
+        AllEvents,
+        RootMessenger
+      >({
+        namespace: 'SwapsController',
+        parent: rootMessenger,
+      });
+      rootMessenger.delegate({
+        messenger: swapsControllerMessenger,
+        actions: ['NetworkController:getNetworkClientById'],
+        events: ['NetworkController:networkDidChange'],
       });
       const controller = getSwapsController({
         options: {
@@ -5307,7 +5340,7 @@ describe('SwapsController', () => {
         deriveStateFromMetadata(
           controller.state,
           controller.metadata,
-          'anonymous',
+          'includeInDebugSnapshot',
         ),
       ).toMatchInlineSnapshot(`
         {
