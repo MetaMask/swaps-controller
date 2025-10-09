@@ -10,10 +10,12 @@ jobs:
     if: ${{ github.event.issue.pull_request && startsWith(github.event.comment.body, '@metamaskbot publish-preview') }}
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       pull-requests: read
     outputs:
       IS_FORK: ${{ steps.is-fork.outputs.IS_FORK }}
     steps:
+      - uses: actions/checkout@v4
       - name: Determine whether this PR is from a fork
         id: is-fork
         run: echo "IS_FORK=$(gh pr view --json isCrossRepository --jq '.isCrossRepository' "${PR_NUMBER}" )" >> "$GITHUB_OUTPUT"
@@ -28,8 +30,10 @@ jobs:
     if: ${{ needs.is-fork-pull-request.outputs.IS_FORK == 'false' }}
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       pull-requests: write
     steps:
+      - uses: actions/checkout@v4
       - name: React to the comment
         run: |
           gh api \
