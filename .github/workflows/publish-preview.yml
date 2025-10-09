@@ -14,7 +14,6 @@ jobs:
     outputs:
       IS_FORK: ${{ steps.is-fork.outputs.IS_FORK }}
     steps:
-      - uses: actions/checkout@v4
       - name: Determine whether this PR is from a fork
         id: is-fork
         run: echo "IS_FORK=$(gh pr view --json isCrossRepository --jq '.isCrossRepository' "${PR_NUMBER}" )" >> "$GITHUB_OUTPUT"
@@ -31,8 +30,6 @@ jobs:
     permissions:
       pull-requests: write
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
       - name: React to the comment
         run: |
           gh api \
@@ -51,6 +48,7 @@ jobs:
     needs: react-to-comment
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       pull-requests: write
     steps:
       - uses: actions/checkout@v4
