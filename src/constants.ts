@@ -24,6 +24,7 @@ export const LINEA_CHAIN_ID = toHex('59144');
 export const SWAPS_TESTNET_CHAIN_ID = toHex('1337');
 export const BASE_CHAIN_ID = toHex('8453');
 export const SEI_CHAIN_ID = toHex('1329');
+export const MONAD_CHAIN_ID = toHex('143');
 
 export const CHAIN_ID_TO_NAME_MAP: { [key: string]: string } = {
   [ETH_CHAIN_ID]: 'ethereum',
@@ -37,6 +38,7 @@ export const CHAIN_ID_TO_NAME_MAP: { [key: string]: string } = {
   [SWAPS_TESTNET_CHAIN_ID]: 'ethereum',
   [BASE_CHAIN_ID]: 'base',
   [SEI_CHAIN_ID]: 'sei',
+  [MONAD_CHAIN_ID]: 'monad',
 };
 
 //* APIs base urls
@@ -72,6 +74,8 @@ export const BASE_SWAPS_CONTRACT_ADDRESS =
   '0x9dda6ef3d919c9bc8885d5560999a3640431e8e6';
 export const SEI_SWAPS_CONTRACT_ADDRESS =
   '0x962287c9d5B8a682389E61edAE90ec882325d08b';
+export const MONAD_SWAPS_CONTRACT_ADDRESS =
+  '0x962287c9d5B8a682389E61edAE90ec882325d08b';
 
 export const WETH_CONTRACT_ADDRESS =
   '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
@@ -93,6 +97,8 @@ export const WETH_BASE_CONTRACT_ADDRESS =
   '0x4200000000000000000000000000000000000006';
 export const WSEI_SEI_CONTRACT_ADDRESS =
   '0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7';
+export const WMON_MONAD_CONTRACT_ADDRESS =
+  '0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A';
 
 export const SWAPS_WRAPPED_TOKENS_ADDRESSES: { [key: string]: string } = {
   [ETH_CHAIN_ID]: WETH_CONTRACT_ADDRESS,
@@ -106,6 +112,7 @@ export const SWAPS_WRAPPED_TOKENS_ADDRESSES: { [key: string]: string } = {
   [LINEA_CHAIN_ID]: WETH_LINEA_CONTRACT_ADDRESS,
   [BASE_CHAIN_ID]: WETH_BASE_CONTRACT_ADDRESS,
   [SEI_CHAIN_ID]: WSEI_SEI_CONTRACT_ADDRESS,
+  [MONAD_CHAIN_ID]: WMON_MONAD_CONTRACT_ADDRESS,
 };
 
 export const SWAPS_CONTRACT_ADDRESSES: { [key: string]: string } = {
@@ -120,6 +127,7 @@ export const SWAPS_CONTRACT_ADDRESSES: { [key: string]: string } = {
   [LINEA_CHAIN_ID]: LINEA_SWAPS_CONTRACT_ADDRESS,
   [BASE_CHAIN_ID]: BASE_SWAPS_CONTRACT_ADDRESS,
   [SEI_CHAIN_ID]: SEI_SWAPS_CONTRACT_ADDRESS,
+  [MONAD_CHAIN_ID]: MONAD_SWAPS_CONTRACT_ADDRESS,
 };
 
 export const ALLOWED_CONTRACT_ADDRESSES: { [key: string]: string[] } = {
@@ -167,6 +175,10 @@ export const ALLOWED_CONTRACT_ADDRESSES: { [key: string]: string[] } = {
     SWAPS_CONTRACT_ADDRESSES[SEI_CHAIN_ID],
     SWAPS_WRAPPED_TOKENS_ADDRESSES[SEI_CHAIN_ID],
   ],
+  [MONAD_CHAIN_ID]: [
+    SWAPS_CONTRACT_ADDRESSES[MONAD_CHAIN_ID],
+    SWAPS_WRAPPED_TOKENS_ADDRESSES[MONAD_CHAIN_ID],
+  ],
 };
 
 //* Tokens
@@ -209,6 +221,13 @@ export const SEI_SWAPS_TOKEN_OBJECT: SwapsToken = {
   decimals: 18,
 };
 
+export const MONAD_SWAPS_TOKEN_OBJECT: SwapsToken = {
+  symbol: 'MON',
+  name: 'Monad',
+  address: NATIVE_SWAPS_TOKEN_ADDRESS,
+  decimals: 18,
+};
+
 export const ARBITRUM_SWAPS_TOKEN_OBJECT: SwapsToken = {
   ...ETH_SWAPS_TOKEN_OBJECT,
 };
@@ -241,6 +260,7 @@ export const SWAPS_NATIVE_TOKEN_OBJECTS: { [key: string]: SwapsToken } = {
   [LINEA_CHAIN_ID]: LINEA_SWAPS_TOKEN_OBJECT,
   [BASE_CHAIN_ID]: BASE_SWAPS_TOKEN_OBJECT,
   [SEI_CHAIN_ID]: SEI_SWAPS_TOKEN_OBJECT,
+  [MONAD_CHAIN_ID]: MONAD_SWAPS_TOKEN_OBJECT,
 };
 
 //* Other
