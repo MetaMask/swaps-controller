@@ -92,5 +92,8 @@
       "@metamask/controller-utils>ethereumjs-util>ethereum-cryptography>secp256k1": false
     }
   },
-  "packageManager": "yarn@4.5.3"
+  "packageManager": "yarn@4.5.3",
+  "resolutions": {
+    "ws": "^7.5.10"
+  }
 }
