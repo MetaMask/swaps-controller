@@ -17,11 +17,7 @@ import {
   type GasFeeEstimates,
 } from '@metamask/gas-fee-controller';
 import type { NetworkClientId } from '@metamask/network-controller';
-import {
-  getKnownPropertyNames,
-  isErrorWithMessage,
-  type Hex,
-} from '@metamask/utils';
+import { isErrorWithMessage, type Hex } from '@metamask/utils';
 import { Mutex } from 'async-mutex';
 import { BigNumber } from 'bignumber.js';
 import abiERC20 from 'human-standard-token-abi';
@@ -1260,22 +1256,25 @@ export default class SwapsController extends BaseController<
     this.#handle && clearTimeout(this.#handle);
     this.#pollCount = Number(this.#pollCountLimit) + 1;
     this.update((_state) => {
-      const currentState = { ..._state };
-      const defaultState = getDefaultSwapsControllerState();
-      getKnownPropertyNames(defaultState).forEach((key) => {
-        const typedKey = key;
-        (_state as any)[typedKey] = defaultState[typedKey];
-      });
       _state.isInPolling = false;
-      _state.tokensLastFetched = currentState.tokensLastFetched;
-      _state.aggregatorMetadataLastFetched =
-        currentState.aggregatorMetadataLastFetched;
-      _state.tokens = currentState.tokens;
-      _state.topAssets = currentState.topAssets;
-      _state.aggregatorMetadata = currentState.aggregatorMetadata;
-      _state.chainCache = currentState.chainCache;
       _state.error.key = error.key;
       _state.error.description = error.description;
+
+      // Partially reset state
+      const defaultState = getDefaultSwapsControllerState();
+      _state.quotes = defaultState.quotes;
+      _state.quoteValues = defaultState.quoteValues;
+      _state.fetchParams = defaultState.fetchParams;
+      _state.fetchParamsMetaData = defaultState.fetchParamsMetaData;
+      _state.topAggSavings = defaultState.topAggSavings;
+      _state.approvalTransaction = defaultState.approvalTransaction;
+      _state.quotesLastFetched = defaultState.quotesLastFetched;
+      _state.topAggId = defaultState.topAggId;
+      _state.isInPolling = defaultState.isInPolling;
+      _state.pollingCyclesLeft = defaultState.pollingCyclesLeft;
+      _state.quoteRefreshSeconds = defaultState.quoteRefreshSeconds;
+      _state.usedGasEstimate = defaultState.usedGasEstimate;
+      _state.usedCustomGas = defaultState.usedCustomGas;
     });
   }
 
