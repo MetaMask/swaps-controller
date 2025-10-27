@@ -1,7 +1,6 @@
 import type { AccessList } from '@ethereumjs/tx';
 import type { Web3Provider } from '@ethersproject/providers';
 import type {
-  RestrictedMessenger,
   ControllerStateChangeEvent,
   ControllerGetStateAction,
 } from '@metamask/base-controller';
@@ -11,6 +10,7 @@ import type {
   GasFeeController,
   GasFeeEstimates,
 } from '@metamask/gas-fee-controller';
+import type { Messenger } from '@metamask/messenger';
 import type {
   NetworkClient,
   NetworkClientId,
@@ -365,12 +365,10 @@ export type AllowedEvents = NetworkControllerNetworkDidChangeEvent;
 /**
  * The messenger for the SwapsController.
  */
-export type SwapsControllerMessenger = RestrictedMessenger<
+export type SwapsControllerMessenger = Messenger<
   typeof controllerName,
   SwapsControllerActions | AllowedActions,
-  SwapsControllerEvents | AllowedEvents,
-  AllowedActions['type'],
-  AllowedEvents['type']
+  SwapsControllerEvents | AllowedEvents
 >;
 
 export type SwapsControllerOptions = {

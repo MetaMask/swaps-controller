@@ -1,7 +1,6 @@
 import { Contract } from '@ethersproject/contracts';
 import { Web3Provider } from '@ethersproject/providers';
-import type { StateMetadata } from '@metamask/base-controller';
-import { BaseController } from '@metamask/base-controller';
+import { BaseController, type StateMetadata } from '@metamask/base-controller';
 import {
   gweiDecToWEIBN,
   query,
@@ -15,11 +14,7 @@ import {
   type GasFeeEstimates,
 } from '@metamask/gas-fee-controller';
 import type { NetworkClientId } from '@metamask/network-controller';
-import {
-  getKnownPropertyNames,
-  isErrorWithMessage,
-  type Hex,
-} from '@metamask/utils';
+import { isErrorWithMessage, type Hex } from '@metamask/utils';
 import { Mutex } from 'async-mutex';
 import { BigNumber } from 'bignumber.js';
 import abiERC20 from 'human-standard-token-abi';
@@ -75,121 +70,121 @@ const metadata: StateMetadata<SwapsControllerState> = {
   quotes: {
     includeInStateLogs: true,
     persist: false,
-    anonymous: false,
+    includeInDebugSnapshot: false,
     usedInUi: true,
   },
   quoteValues: {
     includeInStateLogs: true,
     persist: false,
-    anonymous: false,
+    includeInDebugSnapshot: false,
     usedInUi: true,
   },
   fetchParams: {
     includeInStateLogs: true,
     persist: false,
-    anonymous: false,
+    includeInDebugSnapshot: false,
     usedInUi: true,
   },
   fetchParamsMetaData: {
     includeInStateLogs: true,
     persist: false,
-    anonymous: false,
+    includeInDebugSnapshot: false,
     usedInUi: true,
   },
   topAggSavings: {
     includeInStateLogs: true,
     persist: false,
-    anonymous: false,
+    includeInDebugSnapshot: false,
     usedInUi: true,
   },
   aggregatorMetadata: {
     includeInStateLogs: false,
     persist: false,
-    anonymous: true,
+    includeInDebugSnapshot: true,
     usedInUi: true,
   },
   tokens: {
     includeInStateLogs: false,
     persist: false,
-    anonymous: true,
+    includeInDebugSnapshot: true,
     usedInUi: true,
   },
   topAssets: {
     includeInStateLogs: false,
     persist: false,
-    anonymous: true,
+    includeInDebugSnapshot: true,
     usedInUi: true,
   },
   approvalTransaction: {
     includeInStateLogs: true,
     persist: false,
-    anonymous: false,
+    includeInDebugSnapshot: false,
     usedInUi: true,
   },
   aggregatorMetadataLastFetched: {
     includeInStateLogs: true,
     persist: false,
-    anonymous: true,
+    includeInDebugSnapshot: true,
     usedInUi: true,
   },
   quotesLastFetched: {
     includeInStateLogs: true,
     persist: false,
-    anonymous: true,
+    includeInDebugSnapshot: true,
     usedInUi: true,
   },
   error: {
     includeInStateLogs: true,
     persist: false,
-    anonymous: false,
+    includeInDebugSnapshot: false,
     usedInUi: true,
   },
   topAggId: {
     includeInStateLogs: true,
     persist: false,
-    anonymous: false,
+    includeInDebugSnapshot: false,
     usedInUi: true,
   },
   tokensLastFetched: {
     includeInStateLogs: true,
     persist: false,
-    anonymous: true,
+    includeInDebugSnapshot: true,
     usedInUi: true,
   },
   isInPolling: {
     includeInStateLogs: true,
     persist: false,
-    anonymous: true,
+    includeInDebugSnapshot: true,
     usedInUi: true,
   },
   pollingCyclesLeft: {
     includeInStateLogs: true,
     persist: false,
-    anonymous: true,
+    includeInDebugSnapshot: true,
     usedInUi: true,
   },
   quoteRefreshSeconds: {
     includeInStateLogs: true,
     persist: false,
-    anonymous: true,
+    includeInDebugSnapshot: true,
     usedInUi: true,
   },
   usedGasEstimate: {
     includeInStateLogs: true,
     persist: false,
-    anonymous: false,
+    includeInDebugSnapshot: false,
     usedInUi: true,
   },
   usedCustomGas: {
     includeInStateLogs: true,
     persist: false,
-    anonymous: false,
+    includeInDebugSnapshot: false,
     usedInUi: true,
   },
   chainCache: {
     includeInStateLogs: false,
     persist: false,
-    anonymous: false,
+    includeInDebugSnapshot: false,
     usedInUi: true,
   },
 };
@@ -670,42 +665,42 @@ export default class SwapsController extends BaseController<
     this.#pollCountLimit = pollCountLimit;
     this.#supportedChainIds = supportedChainIds;
 
-    this.messagingSystem.registerActionHandler(
+    this.messenger.registerActionHandler(
       `SwapsController:updateQuotesWithGasPrice`,
       this.updateQuotesWithGasPrice.bind(this),
     );
 
-    this.messagingSystem.registerActionHandler(
+    this.messenger.registerActionHandler(
       `SwapsController:updateSelectedQuoteWithGasLimit`,
       this.updateSelectedQuoteWithGasLimit.bind(this),
     );
 
-    this.messagingSystem.registerActionHandler(
+    this.messenger.registerActionHandler(
       `SwapsController:startFetchAndSetQuotes`,
       this.startFetchAndSetQuotes.bind(this),
     );
 
-    this.messagingSystem.registerActionHandler(
+    this.messenger.registerActionHandler(
       `SwapsController:fetchTokenWithCache`,
       this.fetchTokenWithCache.bind(this),
     );
 
-    this.messagingSystem.registerActionHandler(
+    this.messenger.registerActionHandler(
       `SwapsController:fetchTopAssetsWithCache`,
       this.fetchTopAssetsWithCache.bind(this),
     );
 
-    this.messagingSystem.registerActionHandler(
+    this.messenger.registerActionHandler(
       `SwapsController:fetchAggregatorMetadataWithCache`,
       this.fetchAggregatorMetadataWithCache.bind(this),
     );
 
-    this.messagingSystem.registerActionHandler(
+    this.messenger.registerActionHandler(
       `SwapsController:stopPollingAndResetState`,
       this.stopPollingAndResetState.bind(this),
     );
 
-    this.messagingSystem.subscribe(
+    this.messenger.subscribe(
       'NetworkController:networkDidChange',
       (networkControllerState) => {
         const chainId = this.#getChainId(
@@ -1258,22 +1253,25 @@ export default class SwapsController extends BaseController<
     this.#handle && clearTimeout(this.#handle);
     this.#pollCount = Number(this.#pollCountLimit) + 1;
     this.update((_state) => {
-      const currentState = { ..._state };
-      const defaultState = getDefaultSwapsControllerState();
-      getKnownPropertyNames(defaultState).forEach((key) => {
-        const typedKey = key;
-        (_state as any)[typedKey] = defaultState[typedKey];
-      });
       _state.isInPolling = false;
-      _state.tokensLastFetched = currentState.tokensLastFetched;
-      _state.aggregatorMetadataLastFetched =
-        currentState.aggregatorMetadataLastFetched;
-      _state.tokens = currentState.tokens;
-      _state.topAssets = currentState.topAssets;
-      _state.aggregatorMetadata = currentState.aggregatorMetadata;
-      _state.chainCache = currentState.chainCache;
       _state.error.key = error.key;
       _state.error.description = error.description;
+
+      // Partially reset state
+      const defaultState = getDefaultSwapsControllerState();
+      _state.quotes = defaultState.quotes;
+      _state.quoteValues = defaultState.quoteValues;
+      _state.fetchParams = defaultState.fetchParams;
+      _state.fetchParamsMetaData = defaultState.fetchParamsMetaData;
+      _state.topAggSavings = defaultState.topAggSavings;
+      _state.approvalTransaction = defaultState.approvalTransaction;
+      _state.quotesLastFetched = defaultState.quotesLastFetched;
+      _state.topAggId = defaultState.topAggId;
+      _state.isInPolling = defaultState.isInPolling;
+      _state.pollingCyclesLeft = defaultState.pollingCyclesLeft;
+      _state.quoteRefreshSeconds = defaultState.quoteRefreshSeconds;
+      _state.usedGasEstimate = defaultState.usedGasEstimate;
+      _state.usedCustomGas = defaultState.usedCustomGas;
     });
   }
 
@@ -1328,7 +1326,7 @@ export default class SwapsController extends BaseController<
   };
 
   #setNetwork(networkClientId: NetworkClientId) {
-    const networkClient = this.messagingSystem.call(
+    const networkClient = this.messenger.call(
       'NetworkController:getNetworkClientById',
       networkClientId,
     );
@@ -1351,7 +1349,7 @@ export default class SwapsController extends BaseController<
   }
 
   #getChainId(networkClientId: NetworkClientId) {
-    const networkClient = this.messagingSystem.call(
+    const networkClient = this.messenger.call(
       'NetworkController:getNetworkClientById',
       networkClientId,
     );
