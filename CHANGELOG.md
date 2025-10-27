@@ -9,14 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [15.0.0]
 
-### Uncategorized
-
-- publish-preview: Always check out, all the time ([#429](https://github.com/MetaMask/swaps-controller/pull/429))
-- publish-preview: Allow checkout, only checkout when needed ([#428](https://github.com/MetaMask/swaps-controller/pull/428))
-- Update publish-preview to allow read access to PRs ([#427](https://github.com/MetaMask/swaps-controller/pull/427))
-- Properly set GitHub token for `gh` ([#426](https://github.com/MetaMask/swaps-controller/pull/426))
-- Add preview builds ([#423](https://github.com/MetaMask/swaps-controller/pull/423))
-
 ### Changed
 
 - **BREAKING:** Use new `Messenger` from `@metamask/messenger` ([#421](https://github.com/MetaMask/swaps-controller/pull/421))
