@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **BREAKING:** Use new `Messenger` from `@metamask/messenger` ([#421](https://github.com/MetaMask/swaps-controller/pull/421))
   - Previously, `SwapsController` accepted a `RestrictedMessenger` instance from `@metamask/base-controller`.
 - **BREAKING:** Metadata property `anonymous` renamed to `includeInDebugSnapshot` ([#421](https://github.com/MetaMask/swaps-controller/pull/421))
+- **BREAKING:** Bump peer dependency `@metamask/gas-fee-controller` from `^24.0.0` to `^25.0.0` ([#421](https://github.com/MetaMask/swaps-controller/pull/421))
+- **BREAKING:** Bump peer dependency `@metamask/network-controller` from `^24.0.0` to `^25.0.0` ([#421](https://github.com/MetaMask/swaps-controller/pull/421))
 - Bump `@metamask/base-controller` from `^8.0.3` to `^9.0.0`(([#421](https://github.com/MetaMask/swaps-controller/pull/421))
 
 ## [14.0.0]
