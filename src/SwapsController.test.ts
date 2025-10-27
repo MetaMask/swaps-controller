@@ -13,7 +13,7 @@ import * as swapsUtil from './swapsUtil';
 import { NetworkClientId } from '@metamask/network-controller';
 import { FakeProvider } from './fake-provider.test';
 import { Hex } from '@metamask/utils';
-import { deriveStateFromMetadata } from '@metamask/base-controller/next';
+import { deriveStateFromMetadata } from '@metamask/base-controller';
 import * as ethQueryModule from '@metamask/eth-query';
 import {
   Messenger,
