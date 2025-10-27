@@ -1184,7 +1184,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metamask/base-controller@npm:^8.0.1, @metamask/base-controller@npm:^8.1.0, @metamask/base-controller@npm:^8.4.2":
+"@metamask/base-controller@npm:^8.0.1, @metamask/base-controller@npm:^8.1.0":
   version: 8.4.2
   resolution: "@metamask/base-controller@npm:8.4.2"
   dependencies:
@@ -1192,6 +1192,17 @@ __metadata:
     "@metamask/utils": "npm:^11.8.1"
     immer: "npm:^9.0.6"
   checksum: 10/e5c4d97a35952072dc8e93c90a334ea60a8d9faa7c15584b5ce8f60b151cf56a7dd5304cb8549b183cdd61d53421b45e3c4688170fcd0a3e2c6a184aeb942067
+  languageName: node
+  linkType: hard
+
+"@metamask/base-controller@npm:^9.0.0":
+  version: 9.0.0
+  resolution: "@metamask/base-controller@npm:9.0.0"
+  dependencies:
+    "@metamask/messenger": "npm:^0.3.0"
+    "@metamask/utils": "npm:^11.8.1"
+    immer: "npm:^9.0.6"
+  checksum: 10/27554d34ec85c4b585b87850c90dfeaaf9c7e6430f2ab2fa80a1ec06ccc17641e118afab7ad765a0b7255ffef37bc9f6ca5065d459228a2dc660bc463293310d
   languageName: node
   linkType: hard
 
@@ -1504,7 +1515,7 @@ __metadata:
     "@ethersproject/providers": "npm:^5.7.0"
     "@lavamoat/allow-scripts": "npm:^3.0.0"
     "@metamask/auto-changelog": "npm:^3.4.4"
-    "@metamask/base-controller": "npm:^8.4.2"
+    "@metamask/base-controller": "npm:^9.0.0"
     "@metamask/controller-utils": "npm:^11.3.0"
     "@metamask/error-reporting-service": "npm:^2.0.0"
     "@metamask/eslint-config": "npm:^12.2.0"

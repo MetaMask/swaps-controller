@@ -1,9 +1,6 @@
 import { Contract } from '@ethersproject/contracts';
 import { Web3Provider } from '@ethersproject/providers';
-import {
-  BaseController,
-  type StateMetadata,
-} from '@metamask/base-controller/next';
+import { BaseController, type StateMetadata } from '@metamask/base-controller';
 import {
   gweiDecToWEIBN,
   query,
