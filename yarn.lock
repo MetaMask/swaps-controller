@@ -1184,17 +1184,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metamask/base-controller@npm:^8.0.1":
-  version: 8.4.2
-  resolution: "@metamask/base-controller@npm:8.4.2"
-  dependencies:
-    "@metamask/messenger": "npm:^0.3.0"
-    "@metamask/utils": "npm:^11.8.1"
-    immer: "npm:^9.0.6"
-  checksum: 10/e5c4d97a35952072dc8e93c90a334ea60a8d9faa7c15584b5ce8f60b151cf56a7dd5304cb8549b183cdd61d53421b45e3c4688170fcd0a3e2c6a184aeb942067
-  languageName: node
-  linkType: hard
-
 "@metamask/base-controller@npm:^9.0.0":
   version: 9.0.0
   resolution: "@metamask/base-controller@npm:9.0.0"
@@ -1227,12 +1216,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metamask/error-reporting-service@npm:^2.0.0":
-  version: 2.0.0
-  resolution: "@metamask/error-reporting-service@npm:2.0.0"
+"@metamask/error-reporting-service@npm:^3.0.0":
+  version: 3.0.0
+  resolution: "@metamask/error-reporting-service@npm:3.0.0"
   dependencies:
-    "@metamask/base-controller": "npm:^8.0.1"
-  checksum: 10/639206e3d3fcf136243503073692b97cac194dc6f2003e62db58315b82393be8d6426d22b0e0c97c7f2903ffa3c11ef4600565576bcb58ea6ff72fce74e18d59
+    "@metamask/base-controller": "npm:^9.0.0"
+    "@metamask/messenger": "npm:^0.3.0"
+  checksum: 10/f62921c4b185ae2d7524230da35e8f6e9d18554931fc1c72da2c0e59a27c8b7ceaa12d5a94f6fda4a9a313abce71fa59c76954615a13e28df7830b7e716664e5
   languageName: node
   linkType: hard
 
@@ -1528,7 +1518,7 @@ __metadata:
     "@metamask/auto-changelog": "npm:^3.4.4"
     "@metamask/base-controller": "npm:^9.0.0"
     "@metamask/controller-utils": "npm:^11.3.0"
-    "@metamask/error-reporting-service": "npm:^2.0.0"
+    "@metamask/error-reporting-service": "npm:^3.0.0"
     "@metamask/eslint-config": "npm:^12.2.0"
     "@metamask/eslint-config-jest": "npm:^12.1.0"
     "@metamask/eslint-config-nodejs": "npm:^12.1.0"
