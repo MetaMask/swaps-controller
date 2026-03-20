@@ -1,5 +1,8 @@
 # SwapsController
 
+> [!WARNING]
+> **This package is deprecated.** Please use [`BridgeController`](https://github.com/MetaMask/core/tree/main/packages/bridge-controller) and [`BridgeStatusController`](https://github.com/MetaMask/core/tree/main/packages/bridge-status-controller) from [@metamask/core](https://github.com/MetaMask/core/) instead.
+
 MetaMask Swaps controller.
 
 ## Installation
